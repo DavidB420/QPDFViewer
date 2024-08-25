@@ -7,7 +7,12 @@
 #include <qlineedit.h>
 #include <qpushbutton.h>
 #include <qfiledialog.h>
-#include <mupdf/fitz.h>
+#include <memory>
+#include <poppler/cpp/poppler-document.h>
+#include <poppler/cpp/poppler-page.h>
+#include <poppler/cpp/poppler-image.h>
+#include <poppler/cpp/poppler-page-renderer.h>
+#include <cstdio>
 
 Viewer::Viewer(QWidget* parent)
 {
@@ -83,7 +88,17 @@ void Viewer::openFile()
 		tr("Open PDF file"), NULL, tr("PDF Files (*.pdf)"));
 
 	if (fileName != NULL) {
-		fz_context* ctx = fz_new_context(NULL, NULL, FZ_STORE_UNLIMITED);
+		poppler::document* doc = poppler::document::load_from_file(fileName.toStdString());
+		poppler::page *testPage = doc->create_page(0);
+		poppler::page_renderer pr;
+
+		poppler::image img = pr.render_page(testPage,
+			(float)72 * 100 / 100, (float)72 * 100 / 100,
+			-1, -1, -1, -1, poppler::rotate_0);
+
+		unsigned char* test = (unsigned char*)img.data();
+		for (int i = 0; i < img.height() * img.width(); i++)
+			printf(" %02x ", test[i]);
 	}
 }
 
