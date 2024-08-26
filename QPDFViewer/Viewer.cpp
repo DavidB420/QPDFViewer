@@ -7,12 +7,8 @@
 #include <qlineedit.h>
 #include <qpushbutton.h>
 #include <qfiledialog.h>
-#include <memory>
-#include <poppler/cpp/poppler-document.h>
-#include <poppler/cpp/poppler-page.h>
-#include <poppler/cpp/poppler-image.h>
-#include <poppler/cpp/poppler-page-renderer.h>
-#include <cstdio>
+#include <qcombobox.h>
+#include <qlayout.h>
 
 Viewer::Viewer(QWidget* parent)
 {
@@ -48,25 +44,38 @@ Viewer::Viewer(QWidget* parent)
 	QLabel* pageLbl = new QLabel(this);
 	pageLbl->setText("Page: ");
 	toolBar->addWidget(pageLbl);
-	QLineEdit* pageNumber = new QLineEdit(this);
+	pageNumber = new QLineEdit(this);
 	pageNumber->setMaximumWidth(50);
 	pageNumber->setFixedHeight(20);
 	pageNumber->setAlignment(Qt::AlignCenter);
+	pageNumber->setValidator(new QIntValidator(this));
+	connect(pageNumber, &QLineEdit::returnPressed, this, &Viewer::setAndUpdatePage);
 	toolBar->addWidget(pageNumber);
-	QPushButton* upButton = new QPushButton(this);
+	upButton = new QPushButton(this);
 	upButton->setText(QString::fromUtf8(u8"▲"));
 	upButton->setFixedWidth(45);
 	toolBar->addWidget(upButton);
-	QPushButton* downButton = new QPushButton(this);
+	connect(upButton, &QPushButton::clicked, this, &Viewer::setAndUpdatePage);
+	downButton = new QPushButton(this);
 	downButton->setText(QString::fromUtf8(u8"▼"));
 	downButton->setFixedWidth(45);
+	connect(downButton, &QPushButton::clicked, this, &Viewer::setAndUpdatePage);
 	toolBar->addWidget(downButton);
-	QLabel* totalPage = new QLabel(this);
+	totalPage = new QLabel(this);
 	totalPage->setText(" of ");
 	toolBar->addWidget(totalPage);
 	QLabel* scaleLbl = new QLabel(this);
 	scaleLbl->setText("Scale Document:");
 	toolBar->addWidget(scaleLbl);
+	scaleBox = new QComboBox(this);
+	scaleBox->setEditable(true);
+	scaleBox->setValidator(new QRegExpValidator(QRegExp("[0-9]*%?"),this));
+	scaleBox->setInsertPolicy(QComboBox::NoInsert);
+	for (int i = 1; i <= 16; i++)
+		scaleBox->insertItem(i-1, QString::number(i * 25) + "%");
+	connect(scaleBox->lineEdit(), &QLineEdit::returnPressed, this, &Viewer::setAndUpdateScale);
+	connect(scaleBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &Viewer::setAndUpdateScale);
+	toolBar->addWidget(scaleBox);
 	QLineEdit* searchBox = new QLineEdit(this);
 	searchBox->setFixedHeight(20);
 	toolBar->addWidget(searchBox);
@@ -76,6 +85,12 @@ Viewer::Viewer(QWidget* parent)
 	QPushButton* forwardsSearch = new QPushButton(this);
 	forwardsSearch->setText("Look Forwards");
 	toolBar->addWidget(forwardsSearch);
+
+	//Initialize scroll area
+	scrollArea = new QScrollArea(this);
+	scrollArea->setBackgroundRole(QPalette::Mid);
+	scrollArea->setAlignment(Qt::AlignCenter);
+	setCentralWidget(scrollArea);
 }
 
 Viewer::~Viewer()
@@ -88,17 +103,14 @@ void Viewer::openFile()
 		tr("Open PDF file"), NULL, tr("PDF Files (*.pdf)"));
 
 	if (fileName != NULL) {
-		poppler::document* doc = poppler::document::load_from_file(fileName.toStdString());
-		poppler::page *testPage = doc->create_page(0);
-		poppler::page_renderer pr;
-
-		poppler::image img = pr.render_page(testPage,
-			(float)72 * 100 / 100, (float)72 * 100 / 100,
-			-1, -1, -1, -1, poppler::rotate_0);
-
-		unsigned char* test = (unsigned char*)img.data();
-		for (int i = 0; i < img.height() * img.width(); i++)
-			printf(" %02x ", test[i]);
+		if (engine != NULL)
+			delete engine;
+		engine = new PDFEngine(fileName.toStdString(), this);
+		scrollArea->setWidget(engine->returnImage());
+		totalPage->setText(" of " + QString::number(engine->getTotalNumberOfPages()) + " ");
+		pageNumber->setText(QString::number(engine->getCurrentPage()));
+		this->setWindowTitle(this->windowTitle() + " - " + fileName);
+		scaleBox->setCurrentIndex(3);
 	}
 }
 
@@ -112,6 +124,47 @@ void Viewer::aboutApp()
 	//Display about box
 	QMessageBox::about(this, tr("About QPDFViewer"),
 		tr("<b>QPDFViewer 1.0</b><br>Written by David Badiei, 2024\nLicensed under GNU General Public License v3 (GPL-3)"));
+}
+
+void Viewer::setAndUpdatePage()
+{
+	if (engine != NULL) {
+		if (pageNumber == sender()) {
+			if (!engine->setCurrentPage(pageNumber->text().toInt())) {
+				QMessageBox::critical(this, "Out of bounds", "Entered value out of bounds!");
+				return;
+			}
+		}
+		else {
+			bool result = false;
+			if (upButton == sender())
+				result = engine->setCurrentPage(engine->getCurrentPage() + 1);
+			else if (downButton == sender())
+				result = engine->setCurrentPage(engine->getCurrentPage() - 1);
+
+			if (!result)
+				return;
+			else
+				pageNumber->setText(QString::number(engine->getCurrentPage()));
+		}
+		
+		scrollArea->setWidget(engine->returnImage());
+	}
+}
+
+void Viewer::setAndUpdateScale()
+{
+	if (scaleBox->currentText().endsWith("%"))
+		scaleBox->setCurrentText(scaleBox->currentText().mid(0, scaleBox->currentText().length() - 1));
+	
+	if (!engine->setCurrentScale(scaleBox->currentText().toInt())) {
+		QMessageBox::critical(this, "Out of bounds", "Entered value out of bounds!");
+		return;
+	}
+
+	scrollArea->setWidget(engine->returnImage());
+
+	scaleBox->setCurrentText(scaleBox->currentText() + "%");
 }
 
 

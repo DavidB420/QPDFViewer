@@ -34,10 +34,18 @@
     <ClCompile Include="Viewer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="PDFEngine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="Viewer.h">
       <Filter>Header Files</Filter>
     </QtMoc>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="PDFEngine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
