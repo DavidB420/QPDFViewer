@@ -18,10 +18,13 @@ public:
 	int getCurrentPage();
 	bool setCurrentPage(int page);
 	bool setCurrentScale(int scale);
+	bool findPhraseInDocument(std::string phrase, poppler::page::search_direction_enum direction);
 private:
 	QWidget *parentWindow;
 	QLabel* outputLabel;
 	poppler::document* doc;
+	poppler::rectf selectedRect;
+	poppler::rectf foundRect;
 	int currentPage;
 	int scaleValue;
 };

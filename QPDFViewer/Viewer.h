@@ -25,6 +25,9 @@ private:
 	QPushButton* upButton;
 	QPushButton* downButton;
 	QComboBox* scaleBox;
+	QPushButton* backwardsSearch;
+	QPushButton* forwardsSearch;
+	QLineEdit* searchBox;
 	void setAndUpdatePageKey(int key = -1);
 private slots:
 	void openFile();
@@ -32,6 +35,7 @@ private slots:
 	void aboutApp();
 	void setAndUpdatePage();
 	void setAndUpdateScale();
+	void findPhrase();
 
 };
 

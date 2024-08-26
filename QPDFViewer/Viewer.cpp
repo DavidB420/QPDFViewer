@@ -76,15 +76,17 @@ Viewer::Viewer(QWidget* parent)
 	connect(scaleBox->lineEdit(), &QLineEdit::returnPressed, this, &Viewer::setAndUpdateScale);
 	connect(scaleBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &Viewer::setAndUpdateScale);
 	toolBar->addWidget(scaleBox);
-	QLineEdit* searchBox = new QLineEdit(this);
+	searchBox = new QLineEdit(this);
 	searchBox->setFixedHeight(20);
 	toolBar->addWidget(searchBox);
-	QPushButton* backwardsSearch = new QPushButton(this);
+	backwardsSearch = new QPushButton(this);
 	backwardsSearch->setText("Look Backwards");
 	toolBar->addWidget(backwardsSearch);
-	QPushButton* forwardsSearch = new QPushButton(this);
+	connect(backwardsSearch, &QPushButton::pressed, this, &Viewer::findPhrase);
+	forwardsSearch = new QPushButton(this);
 	forwardsSearch->setText("Look Forwards");
 	toolBar->addWidget(forwardsSearch);
+	connect(forwardsSearch, &QPushButton::pressed, this, &Viewer::findPhrase);
 
 	//Initialize scroll area
 	scrollArea = new QScrollArea(this);
@@ -178,6 +180,21 @@ void Viewer::setAndUpdateScale()
 	scrollArea->setWidget(engine->returnImage());
 
 	scaleBox->setCurrentText(scaleBox->currentText() + "%");
+}
+
+void Viewer::findPhrase()
+{
+	bool result = false;
+
+	if (forwardsSearch == sender())
+		result = engine->findPhraseInDocument(searchBox->text().toStdString(),poppler::page::search_next_result);
+	else if (backwardsSearch == sender())
+		result = engine->findPhraseInDocument(searchBox->text().toStdString(),poppler::page::search_previous_result);
+
+	if (result)
+		scrollArea->setWidget(engine->returnImage());
+	else
+		QMessageBox::warning(this, "Could not find phrase", "Could not find phrase: " + searchBox->text());
 }
 
 
