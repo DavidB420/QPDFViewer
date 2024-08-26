@@ -49,17 +49,17 @@ Viewer::Viewer(QWidget* parent)
 	pageNumber->setFixedHeight(20);
 	pageNumber->setAlignment(Qt::AlignCenter);
 	pageNumber->setValidator(new QIntValidator(this));
-	connect(pageNumber, &QLineEdit::returnPressed, this, &Viewer::setAndUpdatePage);
+	connect(pageNumber, &QLineEdit::returnPressed, this, & Viewer::setAndUpdatePage);
 	toolBar->addWidget(pageNumber);
 	upButton = new QPushButton(this);
 	upButton->setText(QString::fromUtf8(u8"▲"));
 	upButton->setFixedWidth(45);
 	toolBar->addWidget(upButton);
-	connect(upButton, &QPushButton::clicked, this, &Viewer::setAndUpdatePage);
+	connect(upButton, &QPushButton::clicked, this, & Viewer::setAndUpdatePage);
 	downButton = new QPushButton(this);
 	downButton->setText(QString::fromUtf8(u8"▼"));
 	downButton->setFixedWidth(45);
-	connect(downButton, &QPushButton::clicked, this, &Viewer::setAndUpdatePage);
+	connect(downButton, &QPushButton::clicked, this, & Viewer::setAndUpdatePage);
 	toolBar->addWidget(downButton);
 	totalPage = new QLabel(this);
 	totalPage->setText(" of ");
@@ -97,6 +97,17 @@ Viewer::~Viewer()
 {
 }
 
+void Viewer::keyPressEvent(QKeyEvent* event)
+{
+	switch (event->key())
+	{
+	case Qt::Key_F1:
+	case Qt::Key_F2:
+		setAndUpdatePageKey(event->key());
+		break;
+	}
+}
+
 void Viewer::openFile()
 {
 	QString fileName = QFileDialog::getOpenFileName(this,
@@ -126,7 +137,9 @@ void Viewer::aboutApp()
 		tr("<b>QPDFViewer 1.0</b><br>Written by David Badiei, 2024\nLicensed under GNU General Public License v3 (GPL-3)"));
 }
 
-void Viewer::setAndUpdatePage()
+void Viewer::setAndUpdatePage() { setAndUpdatePageKey(); }
+
+void Viewer::setAndUpdatePageKey(int key)
 {
 	if (engine != NULL) {
 		if (pageNumber == sender()) {
@@ -137,9 +150,9 @@ void Viewer::setAndUpdatePage()
 		}
 		else {
 			bool result = false;
-			if (upButton == sender())
+			if (upButton == sender() || key == Qt::Key_F2)
 				result = engine->setCurrentPage(engine->getCurrentPage() + 1);
-			else if (downButton == sender())
+			else if (downButton == sender() || key == Qt::Key_F1)
 				result = engine->setCurrentPage(engine->getCurrentPage() - 1);
 
 			if (!result)

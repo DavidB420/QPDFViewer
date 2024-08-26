@@ -7,6 +7,7 @@
 #include <qlineedit.h>
 #include <qpushbutton.h>
 #include <qcombobox.h>
+#include <QKeyEvent>
 #include "PDFEngine.h"
 
 class Viewer : public QMainWindow
@@ -15,6 +16,7 @@ class Viewer : public QMainWindow
 public:
 	explicit Viewer(QWidget* parent = 0);
 	~Viewer();
+	void keyPressEvent(QKeyEvent* event);
 private:
 	PDFEngine* engine;
 	QScrollArea* scrollArea;
@@ -23,6 +25,7 @@ private:
 	QPushButton* upButton;
 	QPushButton* downButton;
 	QComboBox* scaleBox;
+	void setAndUpdatePageKey(int key = -1);
 private slots:
 	void openFile();
 	void exitApp();
