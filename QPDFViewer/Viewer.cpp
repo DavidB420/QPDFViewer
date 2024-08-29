@@ -21,6 +21,10 @@ Viewer::Viewer(QWidget* parent)
 	setMenuBar(mBar);
 	QMenu* fileMenu = new QMenu(this);
 	fileMenu = mBar->addMenu(tr("&File"));
+	QMenu* pageMenu = new QMenu(this);
+	pageMenu = mBar->addMenu(tr("&Page"));
+	QMenu* navMenu = new QMenu(this);
+	navMenu = mBar->addMenu(tr("&Navigation"));
 	QMenu* aboutmenu = new QMenu(this);
 	aboutmenu = mBar->addMenu(tr("&About"));
 	QAction* openAct = new QAction(tr("&Open..."), this);
@@ -32,6 +36,13 @@ Viewer::Viewer(QWidget* parent)
 	QAction* exitAct = new QAction(tr("&Exit"), this);
 	fileMenu->addAction(exitAct);
 	connect(exitAct, &QAction::triggered, this, &Viewer::exitApp);
+	QAction* rotate90CWAct = new QAction(QString::fromUtf8(u8"Rotate 90° CW"), this);
+	pageMenu->addAction(rotate90CWAct);
+	QAction* rotate90CCWAct = new QAction(QString::fromUtf8(u8"Rotate 90° CCW"), this);
+	pageMenu->addAction(rotate90CCWAct);
+	QAction* navBarShowAct = new QAction(tr("&Show Navigation Bar"), this);
+	navBarShowAct->setCheckable(true);
+	navMenu->addAction(navBarShowAct);
 	QAction* aboutAct = new QAction(tr("&About"), this);
 	aboutmenu->addAction(aboutAct);
 	connect(aboutAct, &QAction::triggered, this, &Viewer::aboutApp);
