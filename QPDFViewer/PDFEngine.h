@@ -7,21 +7,23 @@
 #include <poppler/cpp/poppler-image.h>
 #include <poppler/cpp/poppler-page-renderer.h>
 #include <string>
-#include <qlabel.h>
+#include "Page.h"
 
 class PDFEngine
 {
 public:
 	PDFEngine(std::string fileName,QWidget *parentWindow);
-	QLabel* returnImage();
+	Page* returnImage();
 	int getTotalNumberOfPages();
 	int getCurrentPage();
 	bool setCurrentPage(int page);
 	bool setCurrentScale(int scale);
 	bool findPhraseInDocument(std::string phrase, poppler::page::search_direction_enum direction);
+	void displayTextBox(QRectF dim);
+	void displayAllText();
 private:
 	QWidget *parentWindow;
-	QLabel* outputLabel;
+	Page* outputLabel;
 	poppler::document* doc;
 	poppler::rectf selectedRect;
 	poppler::rectf foundRect;

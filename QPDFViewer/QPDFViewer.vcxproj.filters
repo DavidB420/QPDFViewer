@@ -37,6 +37,12 @@
     <ClCompile Include="PDFEngine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Page.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TextBoxDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="Viewer.h">
@@ -45,6 +51,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PDFEngine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Page.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TextBoxDialog.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -6,6 +6,8 @@
 #include <qpainter.h>
 #include <string>
 #include <poppler/cpp/poppler-global.h>
+#include "Page.h"
+#include "TextBoxDialog.h"
 
 PDFEngine::PDFEngine(std::string fileName, QWidget *parentWindow)
 {
@@ -21,7 +23,7 @@ PDFEngine::PDFEngine(std::string fileName, QWidget *parentWindow)
 	selectedRect = poppler::rectf(0, 0, 0, 0);
 }
 
-QLabel *PDFEngine::returnImage()
+Page *PDFEngine::returnImage()
 {
 	poppler::page* page = doc->create_page(currentPage-1);
 	poppler::page_renderer pr;
@@ -31,20 +33,17 @@ QLabel *PDFEngine::returnImage()
 
 	QImage image((uchar*)img.data(), img.width(), img.height(), img.bytes_per_row(), QImage::Format_ARGB32);
 	
-	if (selectedRect.x() != 0 && selectedRect.y() != 0 && selectedRect.width() != 0 && selectedRect.height() != 0) {
-		QPainter painter(&image);
-		painter.setBrush(Qt::NoBrush);
-		painter.setPen(Qt::red);
-		painter.drawRect(selectedRect.x() * scaleValue / 75, selectedRect.y() * scaleValue / 75, selectedRect.width() * scaleValue / 75, selectedRect.height() * scaleValue / 75);
-		selectedRect = poppler::rectf(0, 0, 0, 0);
-	}
-	
 	if (outputLabel != NULL)
 		delete outputLabel;
 
-	outputLabel = new QLabel(this->parentWindow);
-	outputLabel->setPixmap(QPixmap::fromImage(image));
+	outputLabel = new Page(this->parentWindow, this, &image);
 	outputLabel->resize(img.width(), img.height());
+	
+	if (selectedRect.x() != 0 && selectedRect.y() != 0 && selectedRect.width() != 0 && selectedRect.height() != 0) {
+		QRectF rect(selectedRect.x() * scaleValue / 75, selectedRect.y() * scaleValue / 75, selectedRect.width() * scaleValue / 75, selectedRect.height() * scaleValue / 75);
+		outputLabel->drawSelection(rect);
+		selectedRect = poppler::rectf(0, 0, 0, 0);
+	}
 
 	delete page;
 
@@ -116,4 +115,19 @@ bool PDFEngine::findPhraseInDocument(std::string phrase, poppler::page::search_d
 	}
 
 	return result;
+}
+
+void PDFEngine::displayTextBox(QRectF dim)
+{
+	poppler::page* page = doc->create_page(currentPage - 1);
+	std::string foundText = page->text(poppler::rectf(dim.x() / scaleValue * 75, dim.y() / scaleValue * 75, dim.width() / scaleValue * 75, dim.height() / scaleValue * 75)).to_latin1();
+	delete page;
+	TextBoxDialog* dialog = new TextBoxDialog(this->parentWindow, &foundText);
+	dialog->show();
+}
+
+void PDFEngine::displayAllText()
+{
+	QRectF rect(0, 0, outputLabel->width(), outputLabel->height());
+	displayTextBox(rect);
 }

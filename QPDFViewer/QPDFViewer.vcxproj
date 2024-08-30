@@ -100,7 +100,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Page.cpp" />
     <ClCompile Include="PDFEngine.cpp" />
+    <ClCompile Include="TextBoxDialog.cpp" />
     <ClCompile Include="Viewer.cpp" />
     <QtRcc Include="QPDFViewer.qrc" />
     <ClCompile Include="main.cpp" />
@@ -109,7 +111,9 @@
     <QtMoc Include="Viewer.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Page.h" />
     <ClInclude Include="PDFEngine.h" />
+    <ClInclude Include="TextBoxDialog.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">

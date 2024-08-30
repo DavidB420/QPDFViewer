@@ -30,6 +30,9 @@ Viewer::Viewer(QWidget* parent)
 	QAction* openAct = new QAction(tr("&Open..."), this);
 	connect(openAct, &QAction::triggered, this, &Viewer::openFile);
 	fileMenu->addAction(openAct);
+	QAction* pageTextAct = new QAction(tr("&Page Text"), this);
+	connect(pageTextAct, &QAction::triggered, this, &Viewer::getPageText);
+	fileMenu->addAction(pageTextAct);
 	QAction* printAct = new QAction(tr("&Print"), this);
 	fileMenu->addAction(printAct);
 	fileMenu->addSeparator();
@@ -206,6 +209,11 @@ void Viewer::findPhrase()
 		scrollArea->setWidget(engine->returnImage());
 	else
 		QMessageBox::warning(this, "Could not find phrase", "Could not find phrase: " + searchBox->text());
+}
+
+void Viewer::getPageText()
+{
+	engine->displayAllText();
 }
 
 

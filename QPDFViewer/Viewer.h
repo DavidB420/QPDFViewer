@@ -36,6 +36,7 @@ private slots:
 	void setAndUpdatePage();
 	void setAndUpdateScale();
 	void findPhrase();
+	void getPageText();
 
 };
 
