@@ -8,6 +8,7 @@
 #include <poppler/cpp/poppler-global.h>
 #include "Page.h"
 #include "TextBoxDialog.h"
+#include "StringConv.h"
 
 PDFEngine::PDFEngine(std::string fileName, QWidget *parentWindow)
 {
@@ -95,10 +96,10 @@ bool PDFEngine::findPhraseInDocument(std::string phrase, poppler::page::search_d
 		if (direction == poppler::page::search_previous_result && currentPage != currentSearch) {
 			result = true;
 			while (result)
-				result = page->search(poppler::ustring::from_latin1(phrase), foundRect, poppler::page::search_next_result, poppler::case_insensitive, poppler::rotate_0);
+				result = page->search(fromStdStringToPopplerString(phrase), foundRect, poppler::page::search_next_result, poppler::case_insensitive, poppler::rotate_0);
 		}
 		
-		result = page->search(poppler::ustring::from_latin1(phrase), foundRect, direction, poppler::case_insensitive, poppler::rotate_0);
+		result = page->search(fromStdStringToPopplerString(phrase), foundRect, direction, poppler::case_insensitive, poppler::rotate_0);
 
 		if (result) {
 			selectedRect = poppler::rectf(foundRect.x(), foundRect.y(), foundRect.width(), foundRect.height());
@@ -120,7 +121,7 @@ bool PDFEngine::findPhraseInDocument(std::string phrase, poppler::page::search_d
 void PDFEngine::displayTextBox(QRectF dim)
 {
 	poppler::page* page = doc->create_page(currentPage - 1);
-	std::string foundText = page->text(poppler::rectf(dim.x() / scaleValue * 75, dim.y() / scaleValue * 75, dim.width() / scaleValue * 75, dim.height() / scaleValue * 75)).to_latin1();
+	std::string foundText = fromPopplerStringStdString(page->text(poppler::rectf(dim.x() / scaleValue * 75, dim.y() / scaleValue * 75, dim.width() / scaleValue * 75, dim.height() / scaleValue * 75)));
 	delete page;
 	TextBoxDialog* dialog = new TextBoxDialog(this->parentWindow, &foundText);
 	dialog->show();
