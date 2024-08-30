@@ -7,6 +7,7 @@ Page::Page(QWidget* parent, PDFEngine* pdfParent, QImage *img)
 	pagePixmap = QPixmap::fromImage(*img);
 	this->parent = pdfParent;
 	dragging = false;
+	isDragging = false;
 }
 
 void Page::mousePressEvent(QMouseEvent* event)
@@ -21,6 +22,7 @@ void Page::mouseMoveEvent(QMouseEvent* event)
 {
 	if (dragging) {
 		currentPoint = event->pos();
+		isDragging = true;
 		update();
 	}
 }
@@ -30,8 +32,13 @@ void Page::mouseReleaseEvent(QMouseEvent* event)
 	if (event->button() == Qt::LeftButton && dragging) {
 		dragging = false;
 		update();
-		QRectF selectionRect(firstPoint, currentPoint);
-		parent->displayTextBox(selectionRect);
+		if (isDragging) {
+			QRectF selectionRect(firstPoint, currentPoint);
+			parent->displayTextBox(selectionRect);
+		}
+		isDragging = false;
+		currentPoint = QPointF(0,0);
+		firstPoint = QPointF(0,0);
 	}
 }
 

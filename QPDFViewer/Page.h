@@ -19,7 +19,7 @@ public:
 	void paintEvent(QPaintEvent* event);
 	void drawSelection(QRectF rect);
 private:
-	bool dragging;
+	bool dragging, isDragging;
 	QPixmap pagePixmap;
 	QPointF firstPoint, currentPoint;
 	PDFEngine* parent;
