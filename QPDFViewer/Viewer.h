@@ -9,6 +9,7 @@
 #include <qcombobox.h>
 #include <QKeyEvent>
 #include "PDFEngine.h"
+#include "NavigationBar.h"
 
 class Viewer : public QMainWindow
 {
@@ -28,6 +29,9 @@ private:
 	QPushButton* backwardsSearch;
 	QPushButton* forwardsSearch;
 	QLineEdit* searchBox;
+	QHBoxLayout* layout;
+	QAction* navBarShowAct;
+	NavigationBar* navBar;
 	void setAndUpdatePageKey(int key = -1);
 private slots:
 	void openFile();
@@ -37,6 +41,7 @@ private slots:
 	void setAndUpdateScale();
 	void findPhrase();
 	void getPageText();
+	void showNavBar();
 
 };
 

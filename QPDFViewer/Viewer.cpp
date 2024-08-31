@@ -43,9 +43,10 @@ Viewer::Viewer(QWidget* parent)
 	pageMenu->addAction(rotate90CWAct);
 	QAction* rotate90CCWAct = new QAction(QString::fromUtf8(u8"Rotate 90° CCW"), this);
 	pageMenu->addAction(rotate90CCWAct);
-	QAction* navBarShowAct = new QAction(tr("&Show Navigation Bar"), this);
+	navBarShowAct = new QAction(tr("&Show Navigation Bar"), this);
 	navBarShowAct->setCheckable(true);
 	navMenu->addAction(navBarShowAct);
+	connect(navBarShowAct, &QAction::triggered, this, &Viewer::showNavBar);
 	QAction* aboutAct = new QAction(tr("&About"), this);
 	aboutmenu->addAction(aboutAct);
 	connect(aboutAct, &QAction::triggered, this, &Viewer::aboutApp);
@@ -102,11 +103,16 @@ Viewer::Viewer(QWidget* parent)
 	toolBar->addWidget(forwardsSearch);
 	connect(forwardsSearch, &QPushButton::pressed, this, &Viewer::findPhrase);
 
-	//Initialize scroll area
+	//Initialize scroll area and hbox layout
+	layout = new QHBoxLayout;
 	scrollArea = new QScrollArea(this);
 	scrollArea->setBackgroundRole(QPalette::Mid);
 	scrollArea->setAlignment(Qt::AlignCenter);
-	setCentralWidget(scrollArea);
+	layout->addWidget(scrollArea);
+	layout->setContentsMargins(0, 0, 0, 0);
+	QWidget* layoutWidget = new QWidget(this);
+	layoutWidget->setLayout(layout);
+	setCentralWidget(layoutWidget);
 }
 
 Viewer::~Viewer()
@@ -136,7 +142,7 @@ void Viewer::openFile()
 		scrollArea->setWidget(engine->returnImage());
 		totalPage->setText(" of " + QString::number(engine->getTotalNumberOfPages()) + " ");
 		pageNumber->setText(QString::number(engine->getCurrentPage()));
-		this->setWindowTitle(this->windowTitle() + " - " + fileName);
+		this->setWindowTitle("QPDFViewer - " + fileName);
 		scaleBox->setCurrentIndex(3);
 	}
 }
@@ -150,7 +156,7 @@ void Viewer::aboutApp()
 {
 	//Display about box
 	QMessageBox::about(this, tr("About QPDFViewer"),
-		tr("<b>QPDFViewer 1.0</b><br>Written by David Badiei, 2024\nLicensed under GNU General Public License v3 (GPL-3)"));
+		tr("<b>QPDFViewer 1.0</b><br>Written by David Badiei, 2024<br>Licensed under GNU General Public License v3 (GPL-3)"));
 }
 
 void Viewer::setAndUpdatePage() { setAndUpdatePageKey(); }
@@ -214,6 +220,18 @@ void Viewer::findPhrase()
 void Viewer::getPageText()
 {
 	engine->displayAllText();
+}
+
+void Viewer::showNavBar()
+{
+	if (navBarShowAct->isChecked()) {
+		navBar = new NavigationBar(this);
+		layout->insertWidget(0,navBar);
+		engine->addNavOutline(navBar->returnTree());
+	}
+	else {
+		delete navBar;
+	}
 }
 
 

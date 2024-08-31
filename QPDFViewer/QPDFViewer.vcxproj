@@ -100,6 +100,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="NavigationBar.cpp" />
     <ClCompile Include="Page.cpp" />
     <ClCompile Include="PDFEngine.cpp" />
     <ClCompile Include="StringConv.cpp" />
@@ -112,6 +113,7 @@
     <QtMoc Include="Viewer.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="NavigationBar.h" />
     <ClInclude Include="Page.h" />
     <ClInclude Include="PDFEngine.h" />
     <ClInclude Include="StringConv.h" />

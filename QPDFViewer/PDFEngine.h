@@ -6,7 +6,10 @@
 #include <poppler/cpp/poppler-page.h>
 #include <poppler/cpp/poppler-image.h>
 #include <poppler/cpp/poppler-page-renderer.h>
+#include <poppler/cpp/poppler-toc.h>
 #include <string>
+#include <qtreeview.h>
+#include <qstandarditemmodel.h>
 #include "Page.h"
 
 class PDFEngine
@@ -21,6 +24,7 @@ public:
 	bool findPhraseInDocument(std::string phrase, poppler::page::search_direction_enum direction);
 	void displayTextBox(QRectF dim);
 	void displayAllText();
+	void addNavOutline(QTreeView* tView);
 private:
 	QWidget *parentWindow;
 	Page* outputLabel;
@@ -29,6 +33,7 @@ private:
 	poppler::rectf foundRect;
 	int currentPage;
 	int scaleValue;
+	void recursivelyFillModel(poppler::toc_item* currentItem, QStandardItem* rootItem);
 };
 
 #endif

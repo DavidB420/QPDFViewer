@@ -4,8 +4,12 @@
 #include <qlabel.h>
 #include <qwidget.h>
 #include <qpainter.h>
+#include <qtreeview.h>
+#include <qstandarditemmodel.h>
 #include <string>
 #include <poppler/cpp/poppler-global.h>
+#include <poppler/cpp/poppler-toc.h>
+#include <poppler/cpp/poppler-destination.h>
 #include "Page.h"
 #include "TextBoxDialog.h"
 #include "StringConv.h"
@@ -132,3 +136,32 @@ void PDFEngine::displayAllText()
 	QRectF rect(0, 0, outputLabel->width(), outputLabel->height());
 	displayTextBox(rect);
 }
+
+void PDFEngine::addNavOutline(QTreeView* tView)
+{
+	poppler::toc *docToc = doc->create_toc();
+
+	if (docToc != NULL) {
+		QStandardItemModel* model = new QStandardItemModel;
+		
+		poppler::toc_item *currentItem  = docToc->root();
+		QStandardItem* rootItem = model->invisibleRootItem();
+
+		recursivelyFillModel(currentItem, rootItem);
+
+		tView->setModel(model);
+	}
+}
+
+void PDFEngine::recursivelyFillModel(poppler::toc_item* currentItem, QStandardItem* rootItem)
+{
+	for (int i = 0; i < currentItem->children().size(); i++) {
+		poppler::toc_item* newItem = currentItem->children().at(i);
+		QStandardItem *newModelItem = new QStandardItem(QString::fromStdString(fromPopplerStringStdString(newItem->title())));
+		rootItem->appendRow(newModelItem);
+
+		if (newItem->children().size() > 0)
+			recursivelyFillModel(newItem, newModelItem);
+	}
+}
+
