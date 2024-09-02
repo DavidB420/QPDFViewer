@@ -1,0 +1,194 @@
+diff --git a/poppler/Gfx.h b/poppler/Gfx.h
+index 81a620b..ecfb449 100644
+--- a/poppler/Gfx.h
++++ b/poppler/Gfx.h
+@@ -48,7 +48,10 @@ class PDFDoc;
+ class XRef;
+ class Array;
+ class Stream;
++namespace poppler_private {
+ class Parser;
++}
++using namespace poppler_private;
+ class Dict;
+ class Function;
+ class OutputDev;
+diff --git a/poppler/Parser.h b/poppler/Parser.h
+index b379b67..c3d85bd 100644
+--- a/poppler/Parser.h
++++ b/poppler/Parser.h
+@@ -33,6 +33,7 @@
+ // Parser
+ //------------------------------------------------------------------------
+ 
++namespace poppler_private {
+ class POPPLER_PRIVATE_EXPORT Parser
+ {
+ public:
+@@ -72,5 +73,7 @@ private:
+     void shift(int objNum = -1);
+     void shift(const char *cmdA, int objNum);
+ };
++}
++using namespace poppler_private;
+ 
+ #endif
+diff --git a/poppler/XRef.h b/poppler/XRef.h
+index e2b2ca8..7d6acbb 100644
+--- a/poppler/XRef.h
++++ b/poppler/XRef.h
+@@ -46,7 +46,10 @@
+ 
+ class Dict;
+ class Stream;
++namespace poppler_private {
+ class Parser;
++}
++using namespace poppler_private;
+ class ObjectStream;
+ 
+ //------------------------------------------------------------------------
+diff --git a/cpp/poppler-toc-private.h b/cpp/poppler-toc-private.h
+index 814fbda2..c9c841c2 100644
+--- a/cpp/poppler-toc-private.h
++++ b/cpp/poppler-toc-private.h
+@@ -57,3 +57,4 @@ 
+     std::vector<toc_item *> children;
+     ustring title;
++    int destPageNum;
+     bool is_open;
+ };
+diff --git a/cpp/poppler-toc.cpp b/cpp/poppler-toc.cpp
+index 4a52c499..65deef9e 100644
+--- a/cpp/poppler-toc.cpp
++++ b/cpp/poppler-toc.cpp
+@@ -63,5 +63,6 @@ toc_item_private::~toc_item_private()
+ void toc_item_private::load(const OutlineItem *item)
+ {
+     const std::vector<Unicode> &title_unicode = item->getTitle();
++    destPageNum = item->getPageNum();
+     title = detail::unicode_to_ustring(title_unicode.data(), title_unicode.size());
+     is_open = item->isOpen();
+ }
+diff --git a/cpp/poppler-toc.cpp b/cpp/poppler-toc.cpp
+index 4a52c499..65deef9e 100644
+--- a/cpp/poppler-toc.cpp
++++ b/cpp/poppler-toc.cpp
+@@ -152,0 +152,7 @@
++/**
++ \returns the page number of the TOC item
++ */
++int poppler::toc_item::destPageNum() const
++{
++    return d->destPageNum;
++}
++
+diff --git a/cpp/poppler-toc.h b/cpp/poppler-toc.h
+index 1e528a6e..0e869002 100644
+--- a/cpp/poppler-toc.h
++++ b/cpp/poppler-toc.h
+@@ -52,6 +52,7 @@ public:
+     ~toc_item();
+ 
+     ustring title() const;
++    int destPageNum() const;
+     bool is_open() const;
+ 
+     std::vector<toc_item *> children() const;
+     
+diff --git a/poppler/Array.h b/poppler/Array.h
+index 50bc9d0a..e60ac181 100644
+--- a/poppler/Array.h
++++ b/poppler/Array.h
+@@ -71,6 +71,7 @@ public:
+ 
+     // Accessors.
+     Object get(int i, int recursion = 0) const;
++    std::vector<Object> elems; // array of elements
+     // Same as above but if the returned object is a fetched Ref returns such Ref in returnRef, otherwise returnRef is Ref::INVALID()
+     Object get(int i, Ref *returnRef, int recursion = 0) const;
+     const Object &getNF(int i) const;
+@@ -84,7 +85,6 @@ private:
+     int decRef() { return --ref; }
+ 
+     XRef *xref; // the xref table for this PDF file
+-    std::vector<Object> elems; // array of elements
+     std::atomic_int ref; // reference count
+     mutable std::recursive_mutex mutex;
+ };
+diff --git a/poppler/Link.h b/poppler/Link.h
+index 6337d793..607cd843 100644
+--- a/poppler/Link.h
++++ b/poppler/Link.h
+@@ -92,10 +92,11 @@ public:
+     // A List of the next actions to execute in order.
+     const std::vector<std::unique_ptr<LinkAction>> &nextActions() const;
+ 
++    std::vector<std::unique_ptr<LinkAction>> nextActionList;
++
+ private:
+     static std::unique_ptr<LinkAction> parseAction(const Object *obj, const std::optional<std::string> &baseURI, std::set<int> *seenNextActions);
+ 
+-    std::vector<std::unique_ptr<LinkAction>> nextActionList;
+ };
+ 
+ //------------------------------------------------------------------------
+diff --git a/poppler/Outline.cc b/poppler/Outline.cc
+index 9e760662..b3fcdb2a 100644
+--- a/poppler/Outline.cc
++++ b/poppler/Outline.cc
+@@ -93,6 +93,7 @@ static void insertChildHelper(const std::string &itemTitle, int destPageNum, uns
+ 
+     GooString *g = new GooString(itemTitle);
+     outlineItem.dictSet("Title", Object(g));
++    outlineItem.dictSet("PageNum", Object(destPageNum));
+     outlineItem.dictSet("Dest", Object(a));
+     outlineItem.dictSet("Count", Object(1));
+     outlineItem.dictAdd("Parent", Object(parentObjRef));
+@@ -419,10 +420,26 @@ OutlineItem::OutlineItem(const Dict *dict, Ref refA, OutlineItem *parentA, XRef
+     obj1 = dict->lookup("Dest");
+     if (!obj1.isNull()) {
+         action = LinkAction::parseDest(&obj1);
++        LinkGoTo *pageLink = new LinkGoTo(&obj1);
++        if (pageLink->getDest() != NULL)
++            pageNum = docA->getCatalog()->findPage(pageLink->getDest()->getPageRef());
++        else
++            pageNum = 0;
++        delete pageLink;
+     } else {
+         obj1 = dict->lookup("A");
+         if (!obj1.isNull()) {
+             action = LinkAction::parseAction(&obj1);
++            Object obj2 = obj1.dictLookup("S");
++            if (obj2.isName("GoTo")) {
++                Object obj3 = obj1.dictLookup("D");
++                LinkGoTo *pageLink = new LinkGoTo(&obj3);
++                if (pageLink->getDest() != NULL)
++                    pageNum = docA->getCatalog()->findPage(pageLink->getDest()->getPageRef());
++                else
++                    pageNum = 0;
++                delete pageLink;
++            }
+         }
+     }
+ 
+diff --git a/poppler/Outline.h b/poppler/Outline.h
+index 877eaac4..c37e520f 100644
+--- a/poppler/Outline.h
++++ b/poppler/Outline.h
+@@ -94,6 +94,7 @@ public:
+     OutlineItem &operator=(const OutlineItem &) = delete;
+     static std::vector<OutlineItem *> *readItemList(OutlineItem *parent, const Object *firstItemRef, XRef *xrefA, PDFDoc *docA);
+     const std::vector<Unicode> &getTitle() const { return title; }
++    const int &getPageNum() const { return pageNum; }
+     void setTitle(const std::string &titleA);
+     bool setPageDest(int i);
+     // OutlineItem keeps the ownership of the action
+@@ -114,6 +115,7 @@ private:
+     PDFDoc *doc;
+     XRef *xref;
+     std::vector<Unicode> title;
++    int pageNum;
+     std::unique_ptr<LinkAction> action;
+     bool startsOpen;
+     std::vector<OutlineItem *> *kids; // nullptr if this item is closed or has no kids
