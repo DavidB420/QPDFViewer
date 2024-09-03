@@ -158,6 +158,7 @@ void PDFEngine::recursivelyFillModel(poppler::toc_item* currentItem, QStandardIt
 	for (int i = 0; i < currentItem->children().size(); i++) {
 		poppler::toc_item* newItem = currentItem->children().at(i);
 		QStandardItem *newModelItem = new QStandardItem(QString::fromStdString(fromPopplerStringStdString(newItem->title())));
+		newModelItem->setEditable(false);
 		rootItem->appendRow(newModelItem);
 
 		if (newItem->children().size() > 0)
