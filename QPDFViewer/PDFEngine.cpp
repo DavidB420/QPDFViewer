@@ -13,6 +13,7 @@
 #include "Page.h"
 #include "TextBoxDialog.h"
 #include "StringConv.h"
+#include "NavigationBar.h"
 
 PDFEngine::PDFEngine(std::string fileName, QWidget *parentWindow)
 {
@@ -137,7 +138,7 @@ void PDFEngine::displayAllText()
 	displayTextBox(rect);
 }
 
-void PDFEngine::addNavOutline(QTreeView* tView)
+void PDFEngine::addNavOutline(NavigationBar* navBar)
 {
 	poppler::toc *docToc = doc->create_toc();
 
@@ -147,13 +148,13 @@ void PDFEngine::addNavOutline(QTreeView* tView)
 		poppler::toc_item *currentItem  = docToc->root();
 		QStandardItem* rootItem = model->invisibleRootItem();
 
-		recursivelyFillModel(currentItem, rootItem);
+		recursivelyFillModel(currentItem, rootItem, navBar);
 
-		tView->setModel(model);
+		navBar->returnTree()->setModel(model);
 	}
 }
 
-void PDFEngine::recursivelyFillModel(poppler::toc_item* currentItem, QStandardItem* rootItem)
+void PDFEngine::recursivelyFillModel(poppler::toc_item* currentItem, QStandardItem* rootItem, NavigationBar* navBar)
 {
 	for (int i = 0; i < currentItem->children().size(); i++) {
 		poppler::toc_item* newItem = currentItem->children().at(i);
@@ -161,8 +162,13 @@ void PDFEngine::recursivelyFillModel(poppler::toc_item* currentItem, QStandardIt
 		newModelItem->setEditable(false);
 		rootItem->appendRow(newModelItem);
 
+		NavTuple nTuple;
+		nTuple.pageNum = newItem->destPageNum();
+		nTuple.sItem = newModelItem;
+		navBar->navItems.push_back(nTuple);
+
 		if (newItem->children().size() > 0)
-			recursivelyFillModel(newItem, newModelItem);
+			recursivelyFillModel(newItem, newModelItem, navBar);
 	}
 }
 

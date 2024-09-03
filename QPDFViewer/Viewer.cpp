@@ -227,11 +227,18 @@ void Viewer::showNavBar()
 	if (navBarShowAct->isChecked()) {
 		navBar = new NavigationBar(this);
 		layout->insertWidget(0,navBar);
-		engine->addNavOutline(navBar->returnTree());
+		engine->addNavOutline(navBar);
+		connect(navBar, &NavigationBar::itemClicked, this, &Viewer::updatePageNavBar);
 	}
 	else {
 		delete navBar;
 	}
+}
+
+void Viewer::updatePageNavBar(const int pNum)
+{
+	engine->setCurrentPage(pNum);
+	scrollArea->setWidget(engine->returnImage());
 }
 
 

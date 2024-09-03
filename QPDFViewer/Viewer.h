@@ -42,6 +42,7 @@ private slots:
 	void findPhrase();
 	void getPageText();
 	void showNavBar();
+	void updatePageNavBar(const int pNum);
 
 };
 

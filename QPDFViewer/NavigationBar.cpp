@@ -15,6 +15,7 @@ NavigationBar::NavigationBar(QWidget* parent)
 	navTree = new QTreeView(this);
 	navTree->header()->setVisible(false);
 	layout->addWidget(navTree);
+	connect(navTree, &QTreeView::clicked, this, &NavigationBar::onItemClicked);
 
 	this->setLayout(layout);
 
@@ -24,4 +25,17 @@ NavigationBar::NavigationBar(QWidget* parent)
 QTreeView* NavigationBar::returnTree()
 {
 	return navTree;
+}
+
+void NavigationBar::onItemClicked(const QModelIndex& index)
+{
+	QStandardItemModel* model = qobject_cast<QStandardItemModel*>(navTree->model());
+	QStandardItem* item = model->itemFromIndex(index);
+
+	for (int i = 0; i < navItems.size(); i++) {
+		if (navItems.at(i).sItem == item) {
+			emit itemClicked(navItems.at(i).pageNum);
+			break;
+		}
+	}
 }

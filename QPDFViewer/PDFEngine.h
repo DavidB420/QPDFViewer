@@ -11,6 +11,7 @@
 #include <qtreeview.h>
 #include <qstandarditemmodel.h>
 #include "Page.h"
+#include "NavigationBar.h"
 
 class PDFEngine
 {
@@ -24,7 +25,7 @@ public:
 	bool findPhraseInDocument(std::string phrase, poppler::page::search_direction_enum direction);
 	void displayTextBox(QRectF dim);
 	void displayAllText();
-	void addNavOutline(QTreeView* tView);
+	void addNavOutline(NavigationBar* tView);
 private:
 	QWidget *parentWindow;
 	Page* outputLabel;
@@ -33,7 +34,7 @@ private:
 	poppler::rectf foundRect;
 	int currentPage;
 	int scaleValue;
-	void recursivelyFillModel(poppler::toc_item* currentItem, QStandardItem* rootItem);
+	void recursivelyFillModel(poppler::toc_item* currentItem, QStandardItem* rootItem, NavigationBar *navBar);
 };
 
 #endif

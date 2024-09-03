@@ -113,7 +113,7 @@
     <QtMoc Include="Viewer.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="NavigationBar.h" />
+    <QtMoc Include="NavigationBar.h" />
     <ClInclude Include="Page.h" />
     <ClInclude Include="PDFEngine.h" />
     <ClInclude Include="StringConv.h" />
