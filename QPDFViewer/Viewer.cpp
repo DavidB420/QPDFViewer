@@ -9,6 +9,9 @@
 #include <qfiledialog.h>
 #include <qcombobox.h>
 #include <qlayout.h>
+#include <qtabwidget.h>
+#include <vector>
+#include "TabItem.h"
 
 Viewer::Viewer(QWidget* parent)
 {
@@ -107,11 +110,12 @@ Viewer::Viewer(QWidget* parent)
 
 	//Initialize scroll area and hbox layout
 	layout = new QHBoxLayout;
-	scrollArea = new QScrollArea(this);
-	scrollArea->setBackgroundRole(QPalette::Mid);
-	scrollArea->setAlignment(Qt::AlignCenter);
-	layout->addWidget(scrollArea);
+	tWidget = new QTabWidget(this);
+	layout->addWidget(tWidget);
 	layout->setContentsMargins(0, 0, 0, 0);
+	currentTab = 0;
+	tabItems.push_back(new TabItem("No PDF loaded"));
+	tWidget->addTab(tabItems.at(currentTab), tabItems.at(currentTab)->getTitle());
 	QWidget* layoutWidget = new QWidget(this);
 	layoutWidget->setLayout(layout);
 	setCentralWidget(layoutWidget);
@@ -138,12 +142,13 @@ void Viewer::openFile()
 		tr("Open PDF file"), NULL, tr("PDF Files (*.pdf)"));
 
 	if (fileName != NULL) {
-		if (engine != NULL)
-			delete engine;
-		engine = new PDFEngine(fileName.toStdString(), this);
-		scrollArea->setWidget(engine->returnImage());
-		totalPage->setText(" of " + QString::number(engine->getTotalNumberOfPages()) + " ");
-		pageNumber->setText(QString::number(engine->getCurrentPage()));
+		if (tabItems.at(currentTab)->getEngine() != NULL)
+			delete tabItems.at(currentTab)->getEngine();
+		tabItems.at(currentTab)->setPDFEngine(fileName.toStdString(), this);
+		tabItems.at(currentTab)->setFilePath(fileName);
+		tabItems.at(currentTab)->updateScrollArea();
+		totalPage->setText(" of " + QString::number(tabItems.at(currentTab)->getEngine()->getTotalNumberOfPages()) + " ");
+		pageNumber->setText(QString::number(tabItems.at(currentTab)->getEngine()->getCurrentPage()));
 		this->setWindowTitle("QPDFViewer - " + fileName);
 		scaleBox->setCurrentIndex(3);
 	}
@@ -165,9 +170,9 @@ void Viewer::setAndUpdatePage() { setAndUpdatePageKey(); }
 
 void Viewer::setAndUpdatePageKey(int key)
 {
-	if (engine != NULL) {
+	if (tabItems.at(currentTab)->getEngine() != NULL) {
 		if (pageNumber == sender()) {
-			if (!engine->setCurrentPage(pageNumber->text().toInt())) {
+			if (!tabItems.at(currentTab)->getEngine()->setCurrentPage(pageNumber->text().toInt())) {
 				QMessageBox::critical(this, "Out of bounds", "Entered value out of bounds!");
 				return;
 			}
@@ -175,17 +180,17 @@ void Viewer::setAndUpdatePageKey(int key)
 		else {
 			bool result = false;
 			if (upButton == sender() || key == Qt::Key_F2)
-				result = engine->setCurrentPage(engine->getCurrentPage() + 1);
+				result = tabItems.at(currentTab)->getEngine()->setCurrentPage(tabItems.at(currentTab)->getEngine()->getCurrentPage() + 1);
 			else if (downButton == sender() || key == Qt::Key_F1)
-				result = engine->setCurrentPage(engine->getCurrentPage() - 1);
+				result = tabItems.at(currentTab)->getEngine()->setCurrentPage(tabItems.at(currentTab)->getEngine()->getCurrentPage() - 1);
 
 			if (!result)
 				return;
 			else
-				pageNumber->setText(QString::number(engine->getCurrentPage()));
+				pageNumber->setText(QString::number(tabItems.at(currentTab)->getEngine()->getCurrentPage()));
 		}
 		
-		scrollArea->setWidget(engine->returnImage());
+		tabItems.at(currentTab)->updateScrollArea();
 	}
 }
 
@@ -194,12 +199,12 @@ void Viewer::setAndUpdateScale()
 	if (scaleBox->currentText().endsWith("%"))
 		scaleBox->setCurrentText(scaleBox->currentText().mid(0, scaleBox->currentText().length() - 1));
 	
-	if (!engine->setCurrentScale(scaleBox->currentText().toInt())) {
+	if (!tabItems.at(currentTab)->getEngine()->setCurrentScale(scaleBox->currentText().toInt())) {
 		QMessageBox::critical(this, "Out of bounds", "Entered value out of bounds!");
 		return;
 	}
 
-	scrollArea->setWidget(engine->returnImage());
+	tabItems.at(currentTab)->updateScrollArea();
 
 	scaleBox->setCurrentText(scaleBox->currentText() + "%");
 }
@@ -209,13 +214,13 @@ void Viewer::findPhrase()
 	bool result = false;
 
 	if (forwardsSearch == sender())
-		result = engine->findPhraseInDocument(searchBox->text().toStdString(),poppler::page::search_next_result);
+		result = tabItems.at(currentTab)->getEngine()->findPhraseInDocument(searchBox->text().toStdString(), poppler::page::search_next_result);
 	else if (backwardsSearch == sender())
-		result = engine->findPhraseInDocument(searchBox->text().toStdString(),poppler::page::search_previous_result);
+		result = tabItems.at(currentTab)->getEngine()->findPhraseInDocument(searchBox->text().toStdString(),poppler::page::search_previous_result);
 
 	if (result) {
-		scrollArea->setWidget(engine->returnImage());
-		pageNumber->setText(QString::number(engine->getCurrentPage()));
+		tabItems.at(currentTab)->updateScrollArea();
+		pageNumber->setText(QString::number(tabItems.at(currentTab)->getEngine()->getCurrentPage()));
 	}
 	else
 		QMessageBox::warning(this, "Could not find phrase", "Could not find phrase: " + searchBox->text());
@@ -223,7 +228,7 @@ void Viewer::findPhrase()
 
 void Viewer::getPageText()
 {
-	engine->displayAllText();
+	tabItems.at(currentTab)->getEngine()->displayAllText();
 }
 
 void Viewer::showNavBar()
@@ -231,7 +236,7 @@ void Viewer::showNavBar()
 	if (navBarShowAct->isChecked()) {
 		navBar = new NavigationBar(this);
 		layout->insertWidget(0,navBar);
-		engine->addNavOutline(navBar);
+		tabItems.at(currentTab)->getEngine()->addNavOutline(navBar);
 		connect(navBar, &NavigationBar::itemClicked, this, &Viewer::updatePageNavBar);
 	}
 	else {
@@ -241,18 +246,18 @@ void Viewer::showNavBar()
 
 void Viewer::updatePageNavBar(const int pNum)
 {
-	engine->setCurrentPage(pNum);
-	scrollArea->setWidget(engine->returnImage());
+	tabItems.at(currentTab)->getEngine()->setCurrentPage(pNum);
+	tabItems.at(currentTab)->updateScrollArea();
 }
 
 void Viewer::rotatePage()
 {
 	if (rotate90CWAct == sender())
-		engine->rotatePDF(true);
+		tabItems.at(currentTab)->getEngine()->rotatePDF(true);
 	else if (rotate90CCWAct == sender())
-		engine->rotatePDF(false);
+		tabItems.at(currentTab)->getEngine()->rotatePDF(false);
 
-	scrollArea->setWidget(engine->returnImage());
+	tabItems.at(currentTab)->updateScrollArea();
 }
 
 

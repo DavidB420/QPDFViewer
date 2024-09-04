@@ -7,9 +7,12 @@
 #include <qlineedit.h>
 #include <qpushbutton.h>
 #include <qcombobox.h>
+#include <qtabwidget.h>
+#include <vector>
 #include <QKeyEvent>
 #include "PDFEngine.h"
 #include "NavigationBar.h"
+#include "TabItem.h"
 
 class Viewer : public QMainWindow
 {
@@ -19,8 +22,6 @@ public:
 	~Viewer();
 	void keyPressEvent(QKeyEvent* event);
 private:
-	PDFEngine* engine;
-	QScrollArea* scrollArea;
 	QLabel* totalPage;
 	QLineEdit* pageNumber;
 	QPushButton* upButton;
@@ -33,6 +34,9 @@ private:
 	QAction* navBarShowAct;
 	NavigationBar* navBar;
 	QAction* rotate90CWAct, *rotate90CCWAct;
+	QTabWidget* tWidget;
+	std::vector <TabItem*> tabItems;
+	int currentTab;
 	void setAndUpdatePageKey(int key = -1);
 private slots:
 	void openFile();
