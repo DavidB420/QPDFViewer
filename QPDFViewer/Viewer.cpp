@@ -213,8 +213,10 @@ void Viewer::findPhrase()
 	else if (backwardsSearch == sender())
 		result = engine->findPhraseInDocument(searchBox->text().toStdString(),poppler::page::search_previous_result);
 
-	if (result)
+	if (result) {
 		scrollArea->setWidget(engine->returnImage());
+		pageNumber->setText(QString::number(engine->getCurrentPage()));
+	}
 	else
 		QMessageBox::warning(this, "Could not find phrase", "Could not find phrase: " + searchBox->text());
 }

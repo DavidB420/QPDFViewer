@@ -90,6 +90,7 @@ bool PDFEngine::setCurrentScale(int scale)
 
 bool PDFEngine::findPhraseInDocument(std::string phrase, poppler::page::search_direction_enum direction)
 {
+
 	int currentSearch = currentPage;
 	bool result = false;
 	selectedRect = poppler::rectf(0, 0, 0, 0);
@@ -102,11 +103,17 @@ bool PDFEngine::findPhraseInDocument(std::string phrase, poppler::page::search_d
 
 		if (direction == poppler::page::search_previous_result && currentPage != currentSearch) {
 			result = true;
-			while (result)
+			int iter = 0;
+			while (result) {
 				result = page->search(fromStdStringToPopplerString(phrase), foundRect, poppler::page::search_next_result, poppler::case_insensitive, pdfRotation);
+				iter++;
+			}
+			if (iter == 2)
+				result = true;
 		}
 		
-		result = page->search(fromStdStringToPopplerString(phrase), foundRect, direction, poppler::case_insensitive, pdfRotation);
+		if (!result)
+			result = page->search(fromStdStringToPopplerString(phrase), foundRect, direction, poppler::case_insensitive, pdfRotation);
 
 		if (result) {
 			selectedRect = poppler::rectf(foundRect.x(), foundRect.y(), foundRect.width(), foundRect.height());
