@@ -32,6 +32,7 @@ private:
 	QHBoxLayout* layout;
 	QAction* navBarShowAct;
 	NavigationBar* navBar;
+	QAction* rotate90CWAct, *rotate90CCWAct;
 	void setAndUpdatePageKey(int key = -1);
 private slots:
 	void openFile();
@@ -43,6 +44,7 @@ private slots:
 	void getPageText();
 	void showNavBar();
 	void updatePageNavBar(const int pNum);
+	void rotatePage();
 
 };
 

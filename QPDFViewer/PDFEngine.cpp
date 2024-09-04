@@ -27,6 +27,8 @@ PDFEngine::PDFEngine(std::string fileName, QWidget *parentWindow)
 	scaleValue = 100;
 
 	selectedRect = poppler::rectf(0, 0, 0, 0);
+
+	pdfRotation = poppler::rotate_0;
 }
 
 Page *PDFEngine::returnImage()
@@ -35,7 +37,7 @@ Page *PDFEngine::returnImage()
 	poppler::page_renderer pr;
 	poppler::image img = pr.render_page(page,
 		(float)72 * scaleValue / 75, (float)72 * scaleValue / 75,
-		-1, -1, -1, -1, poppler::rotate_0);
+		-1, -1, -1, -1, pdfRotation);
 
 	QImage image((uchar*)img.data(), img.width(), img.height(), img.bytes_per_row(), QImage::Format_ARGB32);
 	
@@ -101,10 +103,10 @@ bool PDFEngine::findPhraseInDocument(std::string phrase, poppler::page::search_d
 		if (direction == poppler::page::search_previous_result && currentPage != currentSearch) {
 			result = true;
 			while (result)
-				result = page->search(fromStdStringToPopplerString(phrase), foundRect, poppler::page::search_next_result, poppler::case_insensitive, poppler::rotate_0);
+				result = page->search(fromStdStringToPopplerString(phrase), foundRect, poppler::page::search_next_result, poppler::case_insensitive, pdfRotation);
 		}
 		
-		result = page->search(fromStdStringToPopplerString(phrase), foundRect, direction, poppler::case_insensitive, poppler::rotate_0);
+		result = page->search(fromStdStringToPopplerString(phrase), foundRect, direction, poppler::case_insensitive, pdfRotation);
 
 		if (result) {
 			selectedRect = poppler::rectf(foundRect.x(), foundRect.y(), foundRect.width(), foundRect.height());
@@ -151,6 +153,37 @@ void PDFEngine::addNavOutline(NavigationBar* navBar)
 		recursivelyFillModel(currentItem, rootItem, navBar);
 
 		navBar->returnTree()->setModel(model);
+	}
+}
+
+void PDFEngine::rotatePDF(bool plus90)
+{
+	int x = pdfRotation;
+
+	if (plus90) {
+		x++;
+		if (x == 4)
+			x = 0;
+	}
+	else {
+		x--;
+		if (x == -1)
+			x = 3;
+	}
+
+	switch (x) {
+	case 0:
+		pdfRotation = poppler::rotate_0;
+		break;
+	case 1:
+		pdfRotation = poppler::rotate_90;
+		break;
+	case 2:
+		pdfRotation = poppler::rotate_180;
+		break;
+	case 3:
+		pdfRotation = poppler::rotate_270;
+		break;
 	}
 }
 

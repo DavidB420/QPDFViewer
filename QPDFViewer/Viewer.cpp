@@ -39,10 +39,12 @@ Viewer::Viewer(QWidget* parent)
 	QAction* exitAct = new QAction(tr("&Exit"), this);
 	fileMenu->addAction(exitAct);
 	connect(exitAct, &QAction::triggered, this, &Viewer::exitApp);
-	QAction* rotate90CWAct = new QAction(QString::fromUtf8(u8"Rotate 90° CW"), this);
+	rotate90CWAct = new QAction(QString::fromUtf8(u8"Rotate 90° CW"), this);
 	pageMenu->addAction(rotate90CWAct);
-	QAction* rotate90CCWAct = new QAction(QString::fromUtf8(u8"Rotate 90° CCW"), this);
+	connect(rotate90CWAct, &QAction::triggered, this, &Viewer::rotatePage);
+	rotate90CCWAct = new QAction(QString::fromUtf8(u8"Rotate 90° CCW"), this);
 	pageMenu->addAction(rotate90CCWAct);
+	connect(rotate90CCWAct, &QAction::triggered, this, &Viewer::rotatePage);
 	navBarShowAct = new QAction(tr("&Show Navigation Bar"), this);
 	navBarShowAct->setCheckable(true);
 	navMenu->addAction(navBarShowAct);
@@ -238,6 +240,16 @@ void Viewer::showNavBar()
 void Viewer::updatePageNavBar(const int pNum)
 {
 	engine->setCurrentPage(pNum);
+	scrollArea->setWidget(engine->returnImage());
+}
+
+void Viewer::rotatePage()
+{
+	if (rotate90CWAct == sender())
+		engine->rotatePDF(true);
+	else if (rotate90CCWAct == sender())
+		engine->rotatePDF(false);
+
 	scrollArea->setWidget(engine->returnImage());
 }
 

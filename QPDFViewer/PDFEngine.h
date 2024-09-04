@@ -26,12 +26,14 @@ public:
 	void displayTextBox(QRectF dim);
 	void displayAllText();
 	void addNavOutline(NavigationBar* tView);
+	void rotatePDF(bool plus90);
 private:
 	QWidget *parentWindow;
 	Page* outputLabel;
 	poppler::document* doc;
 	poppler::rectf selectedRect;
 	poppler::rectf foundRect;
+	poppler::rotation_enum pdfRotation;
 	int currentPage;
 	int scaleValue;
 	void recursivelyFillModel(poppler::toc_item* currentItem, QStandardItem* rootItem, NavigationBar *navBar);
