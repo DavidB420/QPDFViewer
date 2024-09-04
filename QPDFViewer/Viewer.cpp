@@ -10,6 +10,9 @@
 #include <qcombobox.h>
 #include <qlayout.h>
 #include <qtabwidget.h>
+#include <qtabbar.h>
+#include <qtoolbutton.h>
+#include <qtabbar.h>
 #include <vector>
 #include "TabItem.h"
 
@@ -111,11 +114,17 @@ Viewer::Viewer(QWidget* parent)
 	//Initialize scroll area and hbox layout
 	layout = new QHBoxLayout;
 	tWidget = new QTabWidget(this);
+	tWidget->setMovable(true);
+	tWidget->setTabsClosable(true);
 	layout->addWidget(tWidget);
 	layout->setContentsMargins(0, 0, 0, 0);
 	currentTab = 0;
-	tabItems.push_back(new TabItem("No PDF loaded"));
-	tWidget->addTab(tabItems.at(currentTab), tabItems.at(currentTab)->getTitle());
+	tabItems.push_back(new TabItem());
+	tWidget->addTab(tabItems.at(currentTab), "No PDF loaded");
+	tWidget->addTab(new QWidget(), tr("+"));
+	connect(tWidget, &QTabWidget::tabBarClicked, this, &Viewer::onTabClicked);
+	connect(tWidget->tabBar(), &QTabBar::tabMoved, this, &Viewer::onTabMoved);
+	connect(tWidget, &QTabWidget::tabCloseRequested, this, &Viewer::onTabCloseRequested);
 	QWidget* layoutWidget = new QWidget(this);
 	layoutWidget->setLayout(layout);
 	setCentralWidget(layoutWidget);
@@ -147,6 +156,7 @@ void Viewer::openFile()
 		tabItems.at(currentTab)->setPDFEngine(fileName.toStdString(), this);
 		tabItems.at(currentTab)->setFilePath(fileName);
 		tabItems.at(currentTab)->updateScrollArea();
+		tWidget->setTabText(currentTab, QString::fromStdString(tabItems.at(currentTab)->getFileName()));
 		totalPage->setText(" of " + QString::number(tabItems.at(currentTab)->getEngine()->getTotalNumberOfPages()) + " ");
 		pageNumber->setText(QString::number(tabItems.at(currentTab)->getEngine()->getCurrentPage()));
 		this->setWindowTitle("QPDFViewer - " + fileName);
@@ -258,6 +268,51 @@ void Viewer::rotatePage()
 		tabItems.at(currentTab)->getEngine()->rotatePDF(false);
 
 	tabItems.at(currentTab)->updateScrollArea();
+}
+
+void Viewer::onTabClicked(int index)
+{
+	if (index == tWidget->count() - 1) {
+		if (tWidget->count() == 1) {
+			delete tWidget->widget(0);
+			tWidget->removeTab(0);
+		}
+		tabItems.push_back(new TabItem());
+		currentTab++;
+		int currentIndex = tWidget->insertTab(currentTab, tabItems.at(currentTab), "No PDF loaded");
+		tWidget->setCurrentIndex(currentIndex);
+	}
+	else {
+		currentTab = index;
+	}
+}
+
+void Viewer::onTabMoved(int from, int to)
+{
+	if (from == tWidget->count() - 1 || to == tWidget->count() - 1) {
+		tWidget->tabBar()->blockSignals(true);
+		tWidget->tabBar()->moveTab(to, from);
+		tWidget->tabBar()->blockSignals(false);
+		tWidget->setCurrentIndex(currentTab);
+	}
+}
+
+void Viewer::onTabCloseRequested(int index)
+{
+	if (index != tWidget->count() - 1) {
+		tWidget->removeTab(index);
+		delete tabItems.at(index);
+		tabItems.erase(tabItems.begin()+index);
+		if (currentTab > 0)
+			currentTab--;
+		tWidget->setCurrentIndex(currentTab);
+	}
+
+	if (tWidget->count() == 1) {
+		tWidget->insertTab(0, new QWidget(), "");
+		tWidget->setTabVisible(0,false);
+		tWidget->setCurrentIndex(0);
+	}
 }
 
 

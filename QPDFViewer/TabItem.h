@@ -8,16 +8,14 @@
 class TabItem : public QWidget
 {
 public:
-	TabItem(QString title);
+	TabItem();
 	PDFEngine* getEngine();
 	QString getFilePath();
-	QString getTitle();
 	QScrollArea* getScrollArea();
 	void setPDFEngine(std::string fileName, QWidget* parentWindow);
-	void setTitle(QString title);
 	void setFilePath(QString filePath);
 	void updateScrollArea();
-	QString getFileName();
+	std::string getFileName();
 private:
 	PDFEngine* engine;
 	QString title;

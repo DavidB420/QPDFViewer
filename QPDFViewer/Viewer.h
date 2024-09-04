@@ -49,7 +49,9 @@ private slots:
 	void showNavBar();
 	void updatePageNavBar(const int pNum);
 	void rotatePage();
-
+	void onTabClicked(int index);
+	void onTabMoved(int from, int to);
+	void onTabCloseRequested(int index);
 };
 
 #endif

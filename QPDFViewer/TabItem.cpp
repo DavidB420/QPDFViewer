@@ -1,11 +1,10 @@
 #include "TabItem.h"
 #include <qlayout.h>
 
-TabItem::TabItem(QString title)
+TabItem::TabItem()
 {
 	engine = NULL;
 	filePath = "";
-	this->title = title;
 
 	scrollArea = new QScrollArea(this);
 	scrollArea->setBackgroundRole(QPalette::Mid);
@@ -28,11 +27,6 @@ QString TabItem::getFilePath()
 	return filePath;
 }
 
-QString TabItem::getTitle()
-{
-	return title;
-}
-
 QScrollArea* TabItem::getScrollArea()
 {
 	return scrollArea;
@@ -41,11 +35,6 @@ QScrollArea* TabItem::getScrollArea()
 void TabItem::setPDFEngine(std::string fileName, QWidget* parentWindow)
 {
 	engine = new PDFEngine(fileName, parentWindow);
-}
-
-void TabItem::setTitle(QString title)
-{
-	this->title = title;
 }
 
 void TabItem::setFilePath(QString filePath)
@@ -58,8 +47,19 @@ void TabItem::updateScrollArea()
 	scrollArea->setWidget(engine->returnImage());
 }
 
-QString TabItem::getFileName()
+std::string TabItem::getFileName()
 {
-	return QString();
+	int startFN = 0;
+
+	std::string filePathStd = filePath.toStdString();
+
+	for (int i = filePathStd.length() - 1; i >= 0; i--) {
+		if (filePathStd.at(i) == '\\' || filePathStd.at(i) == '/') {
+			startFN = i+1;
+			break;
+		}
+	}
+
+	return filePathStd.substr(startFN,filePathStd.length());
 }
 
