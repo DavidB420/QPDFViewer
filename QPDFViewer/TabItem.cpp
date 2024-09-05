@@ -5,6 +5,7 @@ TabItem::TabItem()
 {
 	engine = NULL;
 	filePath = "";
+	useNavBar = false;
 
 	scrollArea = new QScrollArea(this);
 	scrollArea->setBackgroundRole(QPalette::Mid);
@@ -32,6 +33,11 @@ QScrollArea* TabItem::getScrollArea()
 	return scrollArea;
 }
 
+bool TabItem::getUseNavBar()
+{
+	return useNavBar;
+}
+
 void TabItem::setPDFEngine(std::string fileName, QWidget* parentWindow)
 {
 	engine = new PDFEngine(fileName, parentWindow);
@@ -45,6 +51,11 @@ void TabItem::setFilePath(QString filePath)
 void TabItem::updateScrollArea()
 {
 	scrollArea->setWidget(engine->returnImage());
+}
+
+void TabItem::setUseNavBar(bool enabled)
+{
+	useNavBar = enabled;
 }
 
 std::string TabItem::getFileName()

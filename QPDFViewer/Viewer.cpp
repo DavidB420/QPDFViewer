@@ -122,6 +122,7 @@ Viewer::Viewer(QWidget* parent)
 	tabItems.push_back(new TabItem());
 	tWidget->addTab(tabItems.at(currentTab), "No PDF loaded");
 	tWidget->addTab(new QWidget(), tr("+"));
+	tWidget->tabBar()->setTabButton(tWidget->count() - 1, QTabBar::RightSide, nullptr);
 	connect(tWidget, &QTabWidget::tabBarClicked, this, &Viewer::onTabClicked);
 	connect(tWidget->tabBar(), &QTabBar::tabMoved, this, &Viewer::onTabMoved);
 	connect(tWidget, &QTabWidget::tabCloseRequested, this, &Viewer::onTabCloseRequested);
@@ -244,13 +245,18 @@ void Viewer::getPageText()
 void Viewer::showNavBar()
 {
 	if (navBarShowAct->isChecked()) {
+		if (navBar != NULL)
+			delete navBar;
 		navBar = new NavigationBar(this);
 		layout->insertWidget(0,navBar);
 		tabItems.at(currentTab)->getEngine()->addNavOutline(navBar);
 		connect(navBar, &NavigationBar::itemClicked, this, &Viewer::updatePageNavBar);
+		tabItems.at(currentTab)->setUseNavBar(true);
 	}
 	else {
 		delete navBar;
+		navBar = NULL;
+		tabItems.at(currentTab)->setUseNavBar(false);
 	}
 }
 
@@ -273,17 +279,39 @@ void Viewer::rotatePage()
 void Viewer::onTabClicked(int index)
 {
 	if (index == tWidget->count() - 1) {
-		if (tWidget->count() == 1) {
-			delete tWidget->widget(0);
+		if (tWidget->count() == 2 && tWidget->widget(0)->isEnabled() == false) {
+			tWidget->setTabVisible(0, true);
 			tWidget->removeTab(0);
 		}
 		tabItems.push_back(new TabItem());
-		currentTab++;
+		currentTab = tWidget->count() - 1;
 		int currentIndex = tWidget->insertTab(currentTab, tabItems.at(currentTab), "No PDF loaded");
 		tWidget->setCurrentIndex(currentIndex);
 	}
-	else {
+
+	if (index != tWidget->count() - 1)
 		currentTab = index;
+
+	if (tabItems.at(currentTab)->getFilePath().length() > 0)
+		this->setWindowTitle("QPDFViewer - " + tabItems.at(currentTab)->getFilePath());
+	else
+		this->setWindowTitle("QPDFViewer");
+
+	if (tabItems.at(currentTab)->getUseNavBar())
+		navBarShowAct->setChecked(true);
+	else
+		navBarShowAct->setChecked(false);
+	showNavBar();
+	
+	if (tabItems.at(currentTab)->getEngine() != NULL) {
+		pageNumber->setText(QString::number(tabItems.at(currentTab)->getEngine()->getCurrentPage()));
+		scaleBox->setCurrentText(QString::number(tabItems.at(currentTab)->getEngine()->getScaleValue()) + "%");
+		totalPage->setText(" of " + QString::number(tabItems.at(currentTab)->getEngine()->getTotalNumberOfPages()) + " ");
+	}
+	else {
+		pageNumber->setText("");
+		scaleBox->setCurrentText("25%");
+		totalPage->setText(" of ");
 	}
 }
 
@@ -295,13 +323,16 @@ void Viewer::onTabMoved(int from, int to)
 		tWidget->tabBar()->blockSignals(false);
 		tWidget->setCurrentIndex(currentTab);
 	}
+	else {
+		std::swap(tabItems[from], tabItems[to]);
+		currentTab = from;
+	}
 }
 
 void Viewer::onTabCloseRequested(int index)
 {
-	if (index != tWidget->count() - 1) {
+	if (index < tWidget->count() - 1) {
 		tWidget->removeTab(index);
-		delete tabItems.at(index);
 		tabItems.erase(tabItems.begin()+index);
 		if (currentTab > 0)
 			currentTab--;
@@ -309,7 +340,9 @@ void Viewer::onTabCloseRequested(int index)
 	}
 
 	if (tWidget->count() == 1) {
-		tWidget->insertTab(0, new QWidget(), "");
+		QWidget* wdgt = new QWidget();
+		wdgt->setEnabled(false);
+		tWidget->insertTab(0, wdgt, "");
 		tWidget->setTabVisible(0,false);
 		tWidget->setCurrentIndex(0);
 	}

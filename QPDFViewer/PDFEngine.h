@@ -20,6 +20,7 @@ public:
 	Page* returnImage();
 	int getTotalNumberOfPages();
 	int getCurrentPage();
+	int getScaleValue();
 	bool setCurrentPage(int page);
 	bool setCurrentScale(int scale);
 	bool findPhraseInDocument(std::string phrase, poppler::page::search_direction_enum direction);

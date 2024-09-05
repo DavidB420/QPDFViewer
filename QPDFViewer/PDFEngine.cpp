@@ -68,6 +68,11 @@ int PDFEngine::getCurrentPage()
 	return currentPage;
 }
 
+int PDFEngine::getScaleValue()
+{
+	return scaleValue;
+}
+
 bool PDFEngine::setCurrentPage(int page)
 {
 	if (page <= 0 || page > getTotalNumberOfPages())
