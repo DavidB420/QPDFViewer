@@ -10,6 +10,11 @@ Page::Page(QWidget* parent, PDFEngine* pdfParent, QImage *img)
 	isDragging = false;
 }
 
+QPixmap Page::getPagePixmap()
+{
+	return pagePixmap;
+}
+
 void Page::mousePressEvent(QMouseEvent* event)
 {
 	if (event->button() == Qt::LeftButton) {

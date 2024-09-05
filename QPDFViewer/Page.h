@@ -13,6 +13,7 @@ class Page : public QLabel
 {
 public:
 	Page(QWidget* parent = 0, PDFEngine *pdfParent = 0, QImage *img = 0);
+	QPixmap getPagePixmap();
 	void mousePressEvent(QMouseEvent* event);
 	void mouseMoveEvent(QMouseEvent* event);
 	void mouseReleaseEvent(QMouseEvent* event);

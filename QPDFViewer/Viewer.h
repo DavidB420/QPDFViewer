@@ -52,6 +52,7 @@ private slots:
 	void onTabClicked(int index);
 	void onTabMoved(int from, int to);
 	void onTabCloseRequested(int index);
+	void getPrintDialog();
 };
 
 #endif

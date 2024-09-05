@@ -13,6 +13,9 @@
 #include <qtabbar.h>
 #include <qtoolbutton.h>
 #include <qtabbar.h>
+#include <qpainter.h>
+#include <QtPrintSupport/qprinter.h>
+#include <QtPrintSupport/qprintdialog.h>
 #include <vector>
 #include "TabItem.h"
 
@@ -41,6 +44,7 @@ Viewer::Viewer(QWidget* parent)
 	fileMenu->addAction(pageTextAct);
 	QAction* printAct = new QAction(tr("&Print"), this);
 	fileMenu->addAction(printAct);
+	connect(printAct, &QAction::triggered, this, &Viewer::getPrintDialog);
 	fileMenu->addSeparator();
 	QAction* exitAct = new QAction(tr("&Exit"), this);
 	fileMenu->addAction(exitAct);
@@ -345,6 +349,22 @@ void Viewer::onTabCloseRequested(int index)
 		tWidget->insertTab(0, wdgt, "");
 		tWidget->setTabVisible(0,false);
 		tWidget->setCurrentIndex(0);
+	}
+}
+
+void Viewer::getPrintDialog()
+{
+	QPrinter printer;
+	QPrintDialog dialog(&printer, this);
+	if (dialog.exec()) {
+		QPainter painter(&printer);
+		QRect rect = painter.viewport();
+		QPixmap pMap = tabItems.at(currentTab)->getEngine()->returnImage()->getPagePixmap();
+		QSize size = pMap.size();
+		size.scale(rect.size(), Qt::KeepAspectRatio);
+		painter.setViewport(rect.x(), rect.y(), size.width(), size.height());
+		painter.setWindow(pMap.rect());
+		painter.drawPixmap(0, 0, pMap);
 	}
 }
 
