@@ -359,12 +359,37 @@ void Viewer::getPrintDialog()
 	if (dialog.exec()) {
 		QPainter painter(&printer);
 		QRect rect = painter.viewport();
-		QPixmap pMap = tabItems.at(currentTab)->getEngine()->returnImage()->getPagePixmap();
-		QSize size = pMap.size();
-		size.scale(rect.size(), Qt::KeepAspectRatio);
-		painter.setViewport(rect.x(), rect.y(), size.width(), size.height());
-		painter.setWindow(pMap.rect());
-		painter.drawPixmap(0, 0, pMap);
+		int min = 0, max = 0;
+		if (printer.printRange() == QPrinter::AllPages) {
+			min = 1;
+			max = tabItems.at(currentTab)->getEngine()->getTotalNumberOfPages();
+		}
+		else if (printer.printRange() == QPrinter::PageRange){
+			min = dialog.fromPage();
+			max = dialog.toPage();
+		}
+		if (min >= 1 && max <= tabItems.at(currentTab)->getEngine()->getTotalNumberOfPages()) {
+			int tmp = tabItems.at(currentTab)->getEngine()->getCurrentPage();
+			for (int i = 0; i < printer.copyCount(); i++) {
+				for (int j = min; j <= max; j++) {
+					tabItems.at(currentTab)->getEngine()->setCurrentPage(j);
+					tabItems.at(currentTab)->updateScrollArea();
+					QPixmap pMap = tabItems.at(currentTab)->getEngine()->returnImage()->getPagePixmap();
+					QSize size = pMap.size();
+					size.scale(rect.size(), Qt::KeepAspectRatio);
+					painter.setViewport(rect.x(), rect.y(), size.width(), size.height());
+					painter.setWindow(pMap.rect());
+					painter.drawPixmap(0, 0, pMap);
+
+					if (j < max)
+						printer.newPage();
+				}
+			}
+			tabItems.at(currentTab)->getEngine()->setCurrentPage(tmp);
+			tabItems.at(currentTab)->updateScrollArea();
+		}
+		else
+			QMessageBox::critical(this, "Page range out of bounds", "Entered page range out of bounds!");
 	}
 }
 
