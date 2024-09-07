@@ -38,21 +38,27 @@ Viewer::Viewer(QWidget* parent)
 	aboutmenu = mBar->addMenu(tr("&About"));
 	QAction* openAct = new QAction(tr("&Open..."), this);
 	connect(openAct, &QAction::triggered, this, &Viewer::openFileDialog);
+	openAct->setIcon(QIcon(":/images/assets/openIcon.png"));
 	fileMenu->addAction(openAct);
 	pageTextAct = new QAction(tr("&Page Text"), this);
 	connect(pageTextAct, &QAction::triggered, this, &Viewer::getPageText);
+	pageTextAct->setIcon(QIcon(":/images/assets/pageTextIcon.png"));
 	fileMenu->addAction(pageTextAct);
 	printAct = new QAction(tr("&Print"), this);
 	fileMenu->addAction(printAct);
 	connect(printAct, &QAction::triggered, this, &Viewer::getPrintDialog);
+	printAct->setIcon(QIcon(":/images/assets/printIcon.png"));
 	fileMenu->addSeparator();
 	QAction* exitAct = new QAction(tr("&Exit"), this);
 	fileMenu->addAction(exitAct);
+	exitAct->setIcon(QIcon(":/images/assets/closeIcon.png"));
 	connect(exitAct, &QAction::triggered, this, &Viewer::exitApp);
 	rotate90CWAct = new QAction(QString::fromUtf8(u8"Rotate 90° CW"), this);
 	pageMenu->addAction(rotate90CWAct);
+	rotate90CWAct->setIcon(QIcon(":/images/assets/rotate90CWIcon.png"));
 	connect(rotate90CWAct, &QAction::triggered, this, &Viewer::rotatePage);
 	rotate90CCWAct = new QAction(QString::fromUtf8(u8"Rotate 90° CCW"), this);
+	rotate90CCWAct->setIcon(QIcon(":/images/assets/rotate90CCWIcon.png"));
 	pageMenu->addAction(rotate90CCWAct);
 	connect(rotate90CCWAct, &QAction::triggered, this, &Viewer::rotatePage);
 	navBarShowAct = new QAction(tr("&Show Navigation Bar"), this);
@@ -62,6 +68,7 @@ Viewer::Viewer(QWidget* parent)
 	QAction* aboutAct = new QAction(tr("&About"), this);
 	aboutmenu->addAction(aboutAct);
 	connect(aboutAct, &QAction::triggered, this, &Viewer::aboutApp);
+	aboutAct->setIcon(QIcon(":/images/assets/aboutIcon.png"));
 
 	//Add toolbar
 	QToolBar* toolBar = new QToolBar(this);
@@ -79,12 +86,12 @@ Viewer::Viewer(QWidget* parent)
 	connect(pageNumber, &QLineEdit::returnPressed, this, & Viewer::setAndUpdatePage);
 	toolBar->addWidget(pageNumber);
 	upButton = new QPushButton(this);
-	upButton->setText(QString::fromUtf8(u8"▲"));
+	upButton->setIcon(QIcon(":/images/assets/upIcon.png"));
 	upButton->setFixedWidth(45);
 	toolBar->addWidget(upButton);
 	connect(upButton, &QPushButton::clicked, this, & Viewer::setAndUpdatePage);
 	downButton = new QPushButton(this);
-	downButton->setText(QString::fromUtf8(u8"▼"));
+	downButton->setIcon(QIcon(":/images/assets/downIcon.png"));
 	downButton->setFixedWidth(45);
 	connect(downButton, &QPushButton::clicked, this, & Viewer::setAndUpdatePage);
 	toolBar->addWidget(downButton);
@@ -107,11 +114,13 @@ Viewer::Viewer(QWidget* parent)
 	searchBox->setFixedHeight(20);
 	toolBar->addWidget(searchBox);
 	backwardsSearch = new QPushButton(this);
-	backwardsSearch->setText("Look Backwards");
+	backwardsSearch->setFixedWidth(85);
+	backwardsSearch->setIcon(QIcon(":/images/assets/backwardsIcon.png"));
 	toolBar->addWidget(backwardsSearch);
 	connect(backwardsSearch, &QPushButton::pressed, this, &Viewer::findPhrase);
 	forwardsSearch = new QPushButton(this);
-	forwardsSearch->setText("Look Forwards");
+	forwardsSearch->setFixedWidth(85);
+	forwardsSearch->setIcon(QIcon(":/images/assets/forwardsIcon.png"));
 	toolBar->addWidget(forwardsSearch);
 	connect(forwardsSearch, &QPushButton::pressed, this, &Viewer::findPhrase);
 

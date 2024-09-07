@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -39,11 +39,15 @@
     <QtInstall>tools_qt5</QtInstall>
     <QtModules>core;gui;widgets;printsupport</QtModules>
     <QtBuildConfig>debug</QtBuildConfig>
+    <QMakeCodeLines>
+    </QMakeCodeLines>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'" Label="QtSettings">
     <QtInstall>tools_qt5</QtInstall>
     <QtModules>core;gui;widgets</QtModules>
     <QtBuildConfig>release</QtBuildConfig>
+    <QMakeCodeLines>
+    </QMakeCodeLines>
   </PropertyGroup>
   <Target Name="QtMsBuildNotFound" BeforeTargets="CustomBuild;ClCompile" Condition="!Exists('$(QtMsBuild)\qt.targets') or !Exists('$(QtMsBuild)\qt.props')">
     <Message Importance="High" Text="QtMsBuild: could not locate qt.targets, qt.props; project may not build correctly." />
@@ -117,9 +121,27 @@
     <QtMoc Include="NavigationBar.h" />
     <ClInclude Include="Page.h" />
     <ClInclude Include="PDFEngine.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="StringConv.h" />
     <ClInclude Include="TabItem.h" />
     <ClInclude Include="TextBoxDialog.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="QPDFViewer.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="assets\aboutIcon.png" />
+    <Image Include="assets\backwardsIcon.png" />
+    <Image Include="assets\closeIcon.png" />
+    <Image Include="assets\downIcon.png" />
+    <Image Include="assets\icon.ico" />
+    <Image Include="assets\icon.png" />
+    <Image Include="assets\openIcon.png" />
+    <Image Include="assets\pageTextIcon.png" />
+    <Image Include="assets\printIcon.png" />
+    <Image Include="assets\rotate90CCWIcon.png" />
+    <Image Include="assets\rotate90CWIcon.png" />
+    <Image Include="assets\upIcon.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">

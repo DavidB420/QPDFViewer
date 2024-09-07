@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Source Files">
@@ -20,6 +20,9 @@
     <Filter Include="Translation Files">
       <UniqueIdentifier>{639EADAA-A684-42e4-A9AD-28FC9BCB8F7C}</UniqueIdentifier>
       <Extensions>ts</Extensions>
+    </Filter>
+    <Filter Include="Resource Files\assets">
+      <UniqueIdentifier>{fe5fbd88-0f30-4df4-bd28-47f79c399d12}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -77,5 +80,51 @@
     <ClInclude Include="TabItem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="QPDFViewer.rc">
+      <Filter>Resource files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="assets\aboutIcon.png">
+      <Filter>Resource Files\assets</Filter>
+    </Image>
+    <Image Include="assets\backwardsIcon.png">
+      <Filter>Resource Files\assets</Filter>
+    </Image>
+    <Image Include="assets\closeIcon.png">
+      <Filter>Resource Files\assets</Filter>
+    </Image>
+    <Image Include="assets\downIcon.png">
+      <Filter>Resource Files\assets</Filter>
+    </Image>
+    <Image Include="assets\icon.ico">
+      <Filter>Resource Files\assets</Filter>
+    </Image>
+    <Image Include="assets\icon.png">
+      <Filter>Resource Files\assets</Filter>
+    </Image>
+    <Image Include="assets\openIcon.png">
+      <Filter>Resource Files\assets</Filter>
+    </Image>
+    <Image Include="assets\pageTextIcon.png">
+      <Filter>Resource Files\assets</Filter>
+    </Image>
+    <Image Include="assets\printIcon.png">
+      <Filter>Resource Files\assets</Filter>
+    </Image>
+    <Image Include="assets\rotate90CCWIcon.png">
+      <Filter>Resource Files\assets</Filter>
+    </Image>
+    <Image Include="assets\rotate90CWIcon.png">
+      <Filter>Resource Files\assets</Filter>
+    </Image>
+    <Image Include="assets\upIcon.png">
+      <Filter>Resource Files\assets</Filter>
+    </Image>
   </ItemGroup>
 </Project>

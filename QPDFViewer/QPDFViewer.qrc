@@ -1,4 +1,17 @@
 <RCC>
-    <qresource prefix="QPDFViewer">
+    <qresource prefix="/QPDFViewer"/>
+    <qresource prefix="/images">
+        <file>assets/openIcon.png</file>
+        <file>assets/pageTextIcon.png</file>
+        <file>assets/printIcon.png</file>
+        <file>assets/closeIcon.png</file>
+        <file>assets/rotate90CWIcon.png</file>
+        <file>assets/rotate90CCWIcon.png</file>
+        <file>assets/aboutIcon.png</file>
+        <file>assets/upIcon.png</file>
+        <file>assets/downIcon.png</file>
+        <file>assets/backwardsIcon.png</file>
+        <file>assets/forwardsIcon.png</file>
+        <file>assets/icon.png</file>
     </qresource>
 </RCC>
