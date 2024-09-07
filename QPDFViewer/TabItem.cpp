@@ -1,8 +1,28 @@
+/**
+ * Copyright 2024 David Badiei
+ *
+ * This file is part of QPDFViewer, hereafter referred to as the program.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
 #include "TabItem.h"
 #include <qlayout.h>
 
 TabItem::TabItem()
 {
+	//Stores scroll area, pdf engine, file path and other tab dependent stuff
 	engine = NULL;
 	filePath = "";
 	useNavBar = false;
@@ -60,6 +80,7 @@ void TabItem::setUseNavBar(bool enabled)
 
 std::string TabItem::getFileName()
 {
+	//Remove file path and just get the file name
 	int startFN = 0;
 
 	std::string filePathStd = filePath.toStdString();

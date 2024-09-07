@@ -1,4 +1,23 @@
-﻿#include "Viewer.h"
+﻿/**
+ * Copyright 2024 David Badiei
+ *
+ * This file is part of QPDFViewer, hereafter referred to as the program.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#include "Viewer.h"
 #include <qmenubar.h>
 #include <qapplication.h>
 #include <qmessagebox.h>
@@ -124,7 +143,7 @@ Viewer::Viewer(QWidget* parent)
 	toolBar->addWidget(forwardsSearch);
 	connect(forwardsSearch, &QPushButton::pressed, this, &Viewer::findPhrase);
 
-	//Initialize scroll area and hbox layout
+	//Initialize tabs and layout
 	layout = new QHBoxLayout;
 	tWidget = new QTabWidget(this);
 	tWidget->setMovable(true);
@@ -143,6 +162,7 @@ Viewer::Viewer(QWidget* parent)
 	layoutWidget->setLayout(layout);
 	setCentralWidget(layoutWidget);
 
+	//Disable pdf control buttons
 	checkIfPDFLoaded();
 }
 
@@ -164,6 +184,7 @@ void Viewer::keyPressEvent(QKeyEvent* event)
 void Viewer::openFile(QString fileName)
 {
 	if (fileName != NULL) {
+		//Create and setup pdf engine and other controls based on file
 		if (tabItems.at(currentTab)->getEngine() != NULL)
 			delete tabItems.at(currentTab)->getEngine();
 		tabItems.at(currentTab)->setPDFEngine(fileName.toStdString(), this);
@@ -174,8 +195,11 @@ void Viewer::openFile(QString fileName)
 		pageNumber->setText(QString::number(tabItems.at(currentTab)->getEngine()->getCurrentPage()));
 		this->setWindowTitle("QPDFViewer - " + fileName);
 		scaleBox->setCurrentIndex(3);
+
+		//Enable all buttons now that pdf engine object exits
 		checkIfPDFLoaded();
 
+		//Check if we have data in the nav bar, if so make sure to show it when the file is loaded
 		if (navBar != NULL) {
 			delete navBar;
 			navBar = NULL;
@@ -194,6 +218,7 @@ void Viewer::openFile(QString fileName)
 
 void Viewer::openFileDialog()
 {
+	//Create open file dialog then open the selected file
 	QString fileName = QFileDialog::getOpenFileName(this,
 		tr("Open PDF file"), NULL, tr("PDF Files (*.pdf)"));
 
@@ -216,6 +241,7 @@ void Viewer::setAndUpdatePage() { setAndUpdatePageKey(); }
 
 void Viewer::setAndUpdatePageKey(int key)
 {
+	//Updates page number either when function keys or arrow buttons are pressed
 	if (tabItems.at(currentTab)->getEngine() != NULL) {
 		if (pageNumber == sender()) {
 			if (!tabItems.at(currentTab)->getEngine()->setCurrentPage(pageNumber->text().toInt())) {
@@ -236,12 +262,14 @@ void Viewer::setAndUpdatePageKey(int key)
 				pageNumber->setText(QString::number(tabItems.at(currentTab)->getEngine()->getCurrentPage()));
 		}
 		
+		//Refresh page
 		tabItems.at(currentTab)->updateScrollArea();
 	}
 }
 
 void Viewer::setAndUpdateScale()
 {
+	//Update scale if valid
 	if (tabItems.at(currentTab)->getEngine() != NULL) {
 		if (scaleBox->currentText().endsWith("%"))
 			scaleBox->setCurrentText(scaleBox->currentText().mid(0, scaleBox->currentText().length() - 1));
@@ -251,6 +279,7 @@ void Viewer::setAndUpdateScale()
 			return;
 		}
 
+		//Refresh page then update scale box
 		tabItems.at(currentTab)->updateScrollArea();
 
 		scaleBox->setCurrentText(scaleBox->currentText() + "%");
@@ -259,6 +288,7 @@ void Viewer::setAndUpdateScale()
 
 void Viewer::findPhrase()
 {
+	//Search for phrase either forwards or backwards
 	bool result = false;
 
 	if (forwardsSearch == sender())
@@ -276,11 +306,13 @@ void Viewer::findPhrase()
 
 void Viewer::getPageText()
 {
+	//Display all text in the page in seperate window
 	tabItems.at(currentTab)->getEngine()->displayAllText();
 }
 
 void Viewer::showNavBar()
 {
+	//Show nav bar if the action is checked
 	if (navBarShowAct->isChecked()) {
 		if (navBar != NULL) {
 			delete navBar;
@@ -301,12 +333,14 @@ void Viewer::showNavBar()
 
 void Viewer::updatePageNavBar(const int pNum)
 {
+	//Update the page based on button clicked in nav bar
 	tabItems.at(currentTab)->getEngine()->setCurrentPage(pNum);
 	tabItems.at(currentTab)->updateScrollArea();
 }
 
 void Viewer::rotatePage()
 {
+	//Rotate and update page either 90 CW or CCWs
 	if (rotate90CWAct == sender())
 		tabItems.at(currentTab)->getEngine()->rotatePDF(true);
 	else if (rotate90CCWAct == sender())
@@ -317,31 +351,38 @@ void Viewer::rotatePage()
 
 void Viewer::onTabClicked(int index)
 {
+	//If plus button has been pressed
 	if (index == tWidget->count() - 1) {
+		//Delete invisible tab if there are now pdf tabs open beforehand
 		if (tWidget->count() == 2 && tWidget->widget(0)->isEnabled() == false) {
 			tWidget->setTabVisible(0, true);
 			tWidget->removeTab(0);
 		}
+		//Create new tab and set it as the current tab
 		tabItems.push_back(new TabItem());
 		currentTab = tWidget->count() - 1;
 		int currentIndex = tWidget->insertTab(currentTab, tabItems.at(currentTab), "No PDF loaded");
 		tWidget->setCurrentIndex(currentIndex);
 	}
 
+	//Update current tab if we are not pressing the the plus buttton
 	if (index != tWidget->count() - 1)
 		currentTab = index;
 
+	//Change window title depending on if a pdf has been loaded or not
 	if (tabItems.at(currentTab)->getFilePath().length() > 0)
 		this->setWindowTitle("QPDFViewer - " + tabItems.at(currentTab)->getFilePath());
 	else
 		this->setWindowTitle("QPDFViewer");
 
+	//Check if clicked tab has been using the nav bar
 	if (tabItems.at(currentTab)->getUseNavBar())
 		navBarShowAct->setChecked(true);
 	else
 		navBarShowAct->setChecked(false);
 	showNavBar();
 	
+	//Update some of the controls depending on if a pdf has been loaded or not
 	if (tabItems.at(currentTab)->getEngine() != NULL) {
 		pageNumber->setText(QString::number(tabItems.at(currentTab)->getEngine()->getCurrentPage()));
 		scaleBox->setCurrentText(QString::number(tabItems.at(currentTab)->getEngine()->getScaleValue()) + "%");
@@ -353,18 +394,22 @@ void Viewer::onTabClicked(int index)
 		totalPage->setText(" of ");
 	}
 
+	//Enable or disable some of the controls depending on if a pdf has been loaded or not
 	checkIfPDFLoaded();
 }
 
 void Viewer::onTabMoved(int from, int to)
 {
+	//If user moved a tab onto the plus tab
 	if (from == tWidget->count() - 1 || to == tWidget->count() - 1) {
+		//Move it back
 		tWidget->tabBar()->blockSignals(true);
 		tWidget->tabBar()->moveTab(to, from);
 		tWidget->tabBar()->blockSignals(false);
 		tWidget->setCurrentIndex(currentTab);
 	}
 	else {
+		//Otherwise do the move
 		std::swap(tabItems[from], tabItems[to]);
 		currentTab = from;
 	}
@@ -372,6 +417,7 @@ void Viewer::onTabMoved(int from, int to)
 
 void Viewer::onTabCloseRequested(int index)
 {
+	//Check if this isnt the plus tab, otherwise do the remove
 	if (index < tWidget->count() - 1) {
 		tWidget->removeTab(index);
 		tabItems.erase(tabItems.begin()+index);
@@ -380,6 +426,7 @@ void Viewer::onTabCloseRequested(int index)
 		tWidget->setCurrentIndex(currentTab);
 	}
 
+	//If we have no tabs left, create an invisible one so the plus button isnt in focus
 	if (tWidget->count() == 1) {
 		QWidget* wdgt = new QWidget();
 		wdgt->setEnabled(false);
@@ -396,6 +443,8 @@ void Viewer::getPrintDialog()
 	if (dialog.exec()) {
 		QPainter painter(&printer);
 		QRect rect = painter.viewport();
+		
+		//Check if we are printing all or just a selection
 		int min = 0, max = 0;
 		if (printer.printRange() == QPrinter::AllPages) {
 			min = 1;
@@ -405,6 +454,8 @@ void Viewer::getPrintDialog()
 			min = dialog.fromPage();
 			max = dialog.toPage();
 		}
+		
+		//If range is valid print the range * any copies the user wants
 		if (min >= 1 && max <= tabItems.at(currentTab)->getEngine()->getTotalNumberOfPages()) {
 			int tmp = tabItems.at(currentTab)->getEngine()->getCurrentPage();
 			for (int i = 0; i < printer.copyCount(); i++) {
@@ -422,6 +473,8 @@ void Viewer::getPrintDialog()
 						printer.newPage();
 				}
 			}
+
+			//Reset page as it was taken over by the print operation
 			tabItems.at(currentTab)->getEngine()->setCurrentPage(tmp);
 			tabItems.at(currentTab)->updateScrollArea();
 		}
@@ -432,6 +485,7 @@ void Viewer::getPrintDialog()
 
 void Viewer::checkIfPDFLoaded()
 {
+	//Turn controls on or off depending if we have the engine loaded
 	bool toggle;
 
 	if (tabItems.at(currentTab)->getEngine() == NULL)

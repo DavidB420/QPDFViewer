@@ -1,3 +1,22 @@
+/**
+ * Copyright 2024 David Badiei
+ *
+ * This file is part of QPDFViewer, hereafter referred to as the program.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
 #include "NavigationBar.h"
 #include <qlabel.h>
 #include <qlayout.h>
@@ -6,6 +25,7 @@
 
 NavigationBar::NavigationBar(QWidget* parent)
 {
+	//Draw nav bar with tree view
 	QVBoxLayout* layout = new QVBoxLayout;
 	
 	QLabel* navLabel = new QLabel(this);
@@ -34,6 +54,7 @@ int NavigationBar::returnNumOfItems()
 
 void NavigationBar::onItemClicked(const QModelIndex& index)
 {
+	//Emit signal that navigates to page number of the nav item
 	QStandardItemModel* model = qobject_cast<QStandardItemModel*>(navTree->model());
 	QStandardItem* item = model->itemFromIndex(index);
 
