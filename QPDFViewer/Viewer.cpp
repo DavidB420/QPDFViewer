@@ -37,7 +37,7 @@ Viewer::Viewer(QWidget* parent)
 	QMenu* aboutmenu = new QMenu(this);
 	aboutmenu = mBar->addMenu(tr("&About"));
 	QAction* openAct = new QAction(tr("&Open..."), this);
-	connect(openAct, &QAction::triggered, this, &Viewer::openFile);
+	connect(openAct, &QAction::triggered, this, &Viewer::openFileDialog);
 	fileMenu->addAction(openAct);
 	pageTextAct = new QAction(tr("&Page Text"), this);
 	connect(pageTextAct, &QAction::triggered, this, &Viewer::getPageText);
@@ -152,11 +152,8 @@ void Viewer::keyPressEvent(QKeyEvent* event)
 	}
 }
 
-void Viewer::openFile()
+void Viewer::openFile(QString fileName)
 {
-	QString fileName = QFileDialog::getOpenFileName(this,
-		tr("Open PDF file"), NULL, tr("PDF Files (*.pdf)"));
-
 	if (fileName != NULL) {
 		if (tabItems.at(currentTab)->getEngine() != NULL)
 			delete tabItems.at(currentTab)->getEngine();
@@ -184,6 +181,14 @@ void Viewer::openFile()
 			showNavBar();
 		}
 	}
+}
+
+void Viewer::openFileDialog()
+{
+	QString fileName = QFileDialog::getOpenFileName(this,
+		tr("Open PDF file"), NULL, tr("PDF Files (*.pdf)"));
+
+	openFile(fileName);
 }
 
 void Viewer::exitApp()
@@ -228,17 +233,19 @@ void Viewer::setAndUpdatePageKey(int key)
 
 void Viewer::setAndUpdateScale()
 {
-	if (scaleBox->currentText().endsWith("%"))
-		scaleBox->setCurrentText(scaleBox->currentText().mid(0, scaleBox->currentText().length() - 1));
-	
-	if (!tabItems.at(currentTab)->getEngine()->setCurrentScale(scaleBox->currentText().toInt())) {
-		QMessageBox::critical(this, "Out of bounds", "Entered value out of bounds!");
-		return;
+	if (tabItems.at(currentTab)->getEngine() != NULL) {
+		if (scaleBox->currentText().endsWith("%"))
+			scaleBox->setCurrentText(scaleBox->currentText().mid(0, scaleBox->currentText().length() - 1));
+
+		if (!tabItems.at(currentTab)->getEngine()->setCurrentScale(scaleBox->currentText().toInt())) {
+			QMessageBox::critical(this, "Out of bounds", "Entered value out of bounds!");
+			return;
+		}
+
+		tabItems.at(currentTab)->updateScrollArea();
+
+		scaleBox->setCurrentText(scaleBox->currentText() + "%");
 	}
-
-	tabItems.at(currentTab)->updateScrollArea();
-
-	scaleBox->setCurrentText(scaleBox->currentText() + "%");
 }
 
 void Viewer::findPhrase()

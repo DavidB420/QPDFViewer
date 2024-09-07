@@ -21,6 +21,7 @@ public:
 	explicit Viewer(QWidget* parent = 0);
 	~Viewer();
 	void keyPressEvent(QKeyEvent* event);
+	void openFile(QString fileName);
 private:
 	QLabel* totalPage;
 	QLineEdit* pageNumber;
@@ -42,7 +43,7 @@ private:
 	int currentTab;
 	void setAndUpdatePageKey(int key = -1);
 private slots:
-	void openFile();
+	void openFileDialog();
 	void exitApp();
 	void aboutApp();
 	void setAndUpdatePage();
