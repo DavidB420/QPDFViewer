@@ -336,6 +336,7 @@ void Viewer::updatePageNavBar(const int pNum)
 	//Update the page based on button clicked in nav bar
 	tabItems.at(currentTab)->getEngine()->setCurrentPage(pNum);
 	tabItems.at(currentTab)->updateScrollArea();
+	pageNumber->setText(QString::number(pNum));
 }
 
 void Viewer::rotatePage()
