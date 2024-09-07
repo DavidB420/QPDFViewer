@@ -34,6 +34,9 @@ private:
 	QAction* navBarShowAct;
 	NavigationBar* navBar;
 	QAction* rotate90CWAct, *rotate90CCWAct;
+	QAction* pageTextAct;
+	QAction* printAct;
+
 	QTabWidget* tWidget;
 	std::vector <TabItem*> tabItems;
 	int currentTab;
@@ -53,6 +56,7 @@ private slots:
 	void onTabMoved(int from, int to);
 	void onTabCloseRequested(int index);
 	void getPrintDialog();
+	void checkIfPDFLoaded();
 };
 
 #endif

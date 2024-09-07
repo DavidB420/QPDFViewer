@@ -39,10 +39,10 @@ Viewer::Viewer(QWidget* parent)
 	QAction* openAct = new QAction(tr("&Open..."), this);
 	connect(openAct, &QAction::triggered, this, &Viewer::openFile);
 	fileMenu->addAction(openAct);
-	QAction* pageTextAct = new QAction(tr("&Page Text"), this);
+	pageTextAct = new QAction(tr("&Page Text"), this);
 	connect(pageTextAct, &QAction::triggered, this, &Viewer::getPageText);
 	fileMenu->addAction(pageTextAct);
-	QAction* printAct = new QAction(tr("&Print"), this);
+	printAct = new QAction(tr("&Print"), this);
 	fileMenu->addAction(printAct);
 	connect(printAct, &QAction::triggered, this, &Viewer::getPrintDialog);
 	fileMenu->addSeparator();
@@ -133,6 +133,8 @@ Viewer::Viewer(QWidget* parent)
 	QWidget* layoutWidget = new QWidget(this);
 	layoutWidget->setLayout(layout);
 	setCentralWidget(layoutWidget);
+
+	checkIfPDFLoaded();
 }
 
 Viewer::~Viewer()
@@ -166,6 +168,21 @@ void Viewer::openFile()
 		pageNumber->setText(QString::number(tabItems.at(currentTab)->getEngine()->getCurrentPage()));
 		this->setWindowTitle("QPDFViewer - " + fileName);
 		scaleBox->setCurrentIndex(3);
+		checkIfPDFLoaded();
+
+		if (navBar != NULL) {
+			delete navBar;
+			navBar = NULL;
+		}
+		navBar = new NavigationBar(this);
+		tabItems.at(currentTab)->getEngine()->addNavOutline(navBar);
+		int tmp = navBar->returnNumOfItems();
+		delete navBar;
+		navBar = NULL;
+		if (tmp > 0) {
+			navBarShowAct->setChecked(true);
+			showNavBar();
+		}
 	}
 }
 
@@ -249,8 +266,10 @@ void Viewer::getPageText()
 void Viewer::showNavBar()
 {
 	if (navBarShowAct->isChecked()) {
-		if (navBar != NULL)
+		if (navBar != NULL) {
 			delete navBar;
+			navBar = NULL;
+		}
 		navBar = new NavigationBar(this);
 		layout->insertWidget(0,navBar);
 		tabItems.at(currentTab)->getEngine()->addNavOutline(navBar);
@@ -317,6 +336,8 @@ void Viewer::onTabClicked(int index)
 		scaleBox->setCurrentText("25%");
 		totalPage->setText(" of ");
 	}
+
+	checkIfPDFLoaded();
 }
 
 void Viewer::onTabMoved(int from, int to)
@@ -391,6 +412,30 @@ void Viewer::getPrintDialog()
 		else
 			QMessageBox::critical(this, "Page range out of bounds", "Entered page range out of bounds!");
 	}
+}
+
+void Viewer::checkIfPDFLoaded()
+{
+	bool toggle;
+
+	if (tabItems.at(currentTab)->getEngine() == NULL)
+		toggle = false;
+	else
+		toggle = true;
+
+	pageTextAct->setEnabled(toggle);
+	printAct->setEnabled(toggle);
+	rotate90CCWAct->setEnabled(toggle);
+	rotate90CWAct->setEnabled(toggle);
+	pageNumber->setEnabled(toggle);
+	upButton->setEnabled(toggle);
+	downButton->setEnabled(toggle);
+	scaleBox->setEnabled(toggle);
+	navBarShowAct->setEnabled(toggle);
+	upButton->setEnabled(toggle);
+	downButton->setEnabled(toggle);
+	backwardsSearch->setEnabled(toggle);
+	forwardsSearch->setEnabled(toggle);
 }
 
 

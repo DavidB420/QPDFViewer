@@ -17,6 +17,7 @@ class NavigationBar : public QWidget
 public:
 	NavigationBar(QWidget* parent = 0);
 	QTreeView* returnTree();
+	int returnNumOfItems();
 	std::vector<NavTuple> navItems;
 private:
 	QTreeView* navTree;

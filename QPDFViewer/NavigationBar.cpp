@@ -27,6 +27,11 @@ QTreeView* NavigationBar::returnTree()
 	return navTree;
 }
 
+int NavigationBar::returnNumOfItems()
+{
+	return navItems.size();
+}
+
 void NavigationBar::onItemClicked(const QModelIndex& index)
 {
 	QStandardItemModel* model = qobject_cast<QStandardItemModel*>(navTree->model());
