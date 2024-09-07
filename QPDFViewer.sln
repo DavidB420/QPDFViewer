@@ -5,6 +5,8 @@ VisualStudioVersion = 17.11.35219.272
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "QPDFViewer", "QPDFViewer\QPDFViewer.vcxproj", "{CB5F8A20-B802-4B4A-A501-EE7E0C633D80}"
 EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "QPDFViewer Setup", "QPDFViewer Setup\QPDFViewer Setup.vdproj", "{E3EC926E-00A4-4DA0-855A-A37F8286A66D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -15,6 +17,8 @@ Global
 		{CB5F8A20-B802-4B4A-A501-EE7E0C633D80}.Debug|x64.Build.0 = Debug|x64
 		{CB5F8A20-B802-4B4A-A501-EE7E0C633D80}.Release|x64.ActiveCfg = Release|x64
 		{CB5F8A20-B802-4B4A-A501-EE7E0C633D80}.Release|x64.Build.0 = Release|x64
+		{E3EC926E-00A4-4DA0-855A-A37F8286A66D}.Debug|x64.ActiveCfg = Debug
+		{E3EC926E-00A4-4DA0-855A-A37F8286A66D}.Release|x64.ActiveCfg = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
