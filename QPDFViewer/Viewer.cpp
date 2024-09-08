@@ -234,7 +234,7 @@ void Viewer::aboutApp()
 {
 	//Display about box
 	QMessageBox::about(this, tr("About QPDFViewer"),
-		tr("<b>QPDFViewer 1.0</b><br>Written by David Badiei, 2024<br>Licensed under GNU General Public License v3 (GPL-3)"));
+		tr("<b>QPDFViewer 1.01</b><br>Written by David Badiei, 2024<br>Licensed under GNU General Public License v3 (GPL-3)"));
 }
 
 void Viewer::setAndUpdatePage() { setAndUpdatePageKey(); }
@@ -427,13 +427,22 @@ void Viewer::onTabCloseRequested(int index)
 		tWidget->setCurrentIndex(currentTab);
 	}
 
-	//If we have no tabs left, create an invisible one so the plus button isnt in focus
+	//Delete navbar if only plus button is left
+	if (tWidget->count() == 1) {
+		delete navBar;
+		navBar = NULL;
+	}
+
+	//If we have no tabs left, create an invisible one so the plus button isnt in focus, otherwise update pdf controls
 	if (tWidget->count() == 1) {
 		QWidget* wdgt = new QWidget();
 		wdgt->setEnabled(false);
 		tWidget->insertTab(0, wdgt, "");
 		tWidget->setTabVisible(0,false);
 		tWidget->setCurrentIndex(0);
+	}
+	else {
+		onTabClicked(currentTab);
 	}
 }
 
