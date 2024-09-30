@@ -37,6 +37,7 @@
 #include <QtPrintSupport/qprintdialog.h>
 #include <vector>
 #include "TabItem.h"
+#include "PrintDialog.h"
 
 Viewer::Viewer(QWidget* parent)
 {
@@ -448,6 +449,8 @@ void Viewer::onTabCloseRequested(int index)
 
 void Viewer::getPrintDialog()
 {
+	PrintDialog* pDialog = new PrintDialog(this);
+	pDialog->show();
 	QPrinter printer;
 	QPrintDialog dialog(&printer, this);
 	if (dialog.exec()) {
