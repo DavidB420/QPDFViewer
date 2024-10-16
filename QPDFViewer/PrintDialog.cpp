@@ -4,6 +4,8 @@
 #include <qcombobox.h>
 #include <qspinbox.h>
 #include <qpushbutton.h>
+#include <qprinterinfo.h>
+#include <qlist.h>
 #include <QResizeEvent>
 
 PrintDialog::PrintDialog(QWidget* parent)
@@ -19,6 +21,10 @@ PrintDialog::PrintDialog(QWidget* parent)
 	QHBoxLayout* printerLayout = new QHBoxLayout;
 	printerLayout->addWidget(printerLabel,1);
 	printerLayout->addWidget(printerPullDown,3);
+	printers = QPrinterInfo::availablePrinters();
+	for (const QPrinterInfo printer : printers)
+		printerPullDown->addItem(printer.printerName());
+
 
 	QLabel* orientationLabel = new QLabel(this);
 	orientationLabel->setText("Orientation");
@@ -26,10 +32,16 @@ PrintDialog::PrintDialog(QWidget* parent)
 	QHBoxLayout* orientationLayout = new QHBoxLayout;
 	orientationLayout->addWidget(orientationLabel,1);
 	orientationLayout->addWidget(orientationPullDown,3);
+	orientationPullDown->addItem("Landscape");
+	orientationPullDown->addItem("Vertical");
+	orientationPullDown->addItem("Landscape (reversed)");
+	orientationPullDown->addItem("Vertical (reversed)");
 
 	QLabel* copiesLabel = new QLabel(this);
 	copiesLabel->setText("Copies");
 	QSpinBox* copiesTextBox = new QSpinBox(this);
+	copiesTextBox->setMinimum(1);
+	copiesTextBox->setMaximum(INT_MAX);
 	QHBoxLayout* copiesLayout = new QHBoxLayout;
 	copiesLayout->addWidget(copiesLabel,1);
 	copiesLayout->addWidget(copiesTextBox,3);
@@ -40,21 +52,25 @@ PrintDialog::PrintDialog(QWidget* parent)
 	QHBoxLayout* colorLayout = new QHBoxLayout;
 	colorLayout->addWidget(colorLabel,1);
 	colorLayout->addWidget(colorPullDown,3);
+	colorPullDown->addItem("Color");
+	colorPullDown->addItem("Black and white");
 
 	QLabel* pagesLabel = new QLabel(this);
 	pagesLabel->setText("Pages");
-	QComboBox* pagesPullDown = new QComboBox(this);
+	pagesPullDown = new QComboBox(this);
 	QHBoxLayout* pagesLayout = new QHBoxLayout;
 	pagesLayout->addWidget(pagesLabel,1);
 	pagesLayout->addWidget(pagesPullDown,3);
+	pagesPullDown->addItem("All pages");
+	pagesPullDown->addItem("");
+	connect(pagesPullDown, &QComboBox::currentTextChanged, this, &PrintDialog::handlePagePullDown);
 
-	QLabel* osDialogLink = new QLabel(this);
-	osDialogLink->setText("<a href=\"https://www.example.com\">Print using OS dialog</a>");
-	osDialogLink->setOpenExternalLinks(true);
-	osDialogLink->setTextInteractionFlags(Qt::TextBrowserInteraction);
+	ClickableLink* osDialogLink = new ClickableLink("Print using OS dialog",this);
 	osDialogLink->setMaximumHeight(20);
+	osDialogLink->setCursor(Qt::PointingHandCursor);
 	QHBoxLayout* osDialogLayout = new QHBoxLayout;
 	osDialogLayout->addWidget(osDialogLink,0,Qt::AlignHCenter);
+	connect(osDialogLink, &ClickableLink::clicked, this, &PrintDialog::exitDialog);
 
 	QPushButton* printButton = new QPushButton(this);
 	printButton->setText("Print");
@@ -63,6 +79,7 @@ PrintDialog::PrintDialog(QWidget* parent)
 	QHBoxLayout* buttonLayout = new QHBoxLayout;
 	buttonLayout->addWidget(printButton);
 	buttonLayout->addWidget(cancelButton);
+	connect(cancelButton, &QPushButton::clicked, this, &PrintDialog::exitDialog);
 
 
 	QVBoxLayout* layout = new QVBoxLayout;
@@ -77,4 +94,17 @@ PrintDialog::PrintDialog(QWidget* parent)
 
 
 	this->setLayout(layout);
+}
+
+void PrintDialog::exitDialog()
+{
+	this->reject();
+}
+
+void PrintDialog::handlePagePullDown()
+{
+	if (pagesPullDown->currentIndex() == 0)
+		pagesPullDown->setEditable(false);
+	else
+		pagesPullDown->setEditable(true);
 }

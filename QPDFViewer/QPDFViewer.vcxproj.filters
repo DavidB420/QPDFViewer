@@ -66,6 +66,9 @@
     <QtMoc Include="NavigationBar.h">
       <Filter>Header Files</Filter>
     </QtMoc>
+    <QtMoc Include="PrintDialog.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PDFEngine.h">
@@ -84,9 +87,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="resource.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="PrintDialog.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
