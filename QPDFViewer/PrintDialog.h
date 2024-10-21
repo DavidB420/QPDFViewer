@@ -5,19 +5,39 @@
 #include <qlist.h>
 #include <qprinterinfo.h>
 #include <qcombobox.h>
+#include <qspinbox.h>
 #include <qlabel.h>
+
+struct PrintTaskInfo {
+	QString selectedPrinter;
+	QString pageRange;
+	int copies;
+	bool orientation;
+	bool colorMode;
+};
 
 class PrintDialog : public QDialog
 {
 	Q_OBJECT
 public:
 	PrintDialog(QWidget* parent = 0);
+	PrintTaskInfo returnPrinterInfo();
+	bool getOSDialog();
 private:
 	QList<QPrinterInfo> printers;
 	QComboBox *pagesPullDown;
+	PrintTaskInfo printerInfo;
+	QSpinBox* copiesTextBox;
+	QComboBox* colorPullDown;
+	QComboBox* orientationPullDown;
+	QComboBox* printerPullDown;
+	bool showOSDialog;
 private slots:
 	void handlePagePullDown();
 	void exitDialog();
+	void openOSPrintDialog();
+	void printPressed();
+	void handleIllegalChars();
 };
 
 class ClickableLink : public QLabel {

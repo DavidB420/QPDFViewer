@@ -33,6 +33,10 @@
 #include "NavigationBar.h"
 #include "TabItem.h"
 
+struct MinMaxTuple {
+	int min = 0, max = 0;
+};
+
 class Viewer : public QMainWindow
 {
 	Q_OBJECT
