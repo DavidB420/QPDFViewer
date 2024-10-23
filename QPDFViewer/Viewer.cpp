@@ -489,6 +489,8 @@ void Viewer::getPrintDialog()
 		}
 
 		if (dialogResult) {
+			int copies = printer.copyCount();
+			printer.setCopyCount(1);
 			QPainter painter(&printer);
 			QRect rect = painter.viewport();
 
@@ -512,7 +514,7 @@ void Viewer::getPrintDialog()
 				int max = minMaxList.at(numOfTuples).max;
 				if (min >= 1 && max <= tabItems.at(currentTab)->getEngine()->getTotalNumberOfPages()) {
 					int tmp = tabItems.at(currentTab)->getEngine()->getCurrentPage();
-					for (int i = 0; i < printer.copyCount(); i++) {
+					for (int i = 0; i < copies; i++) {
 						for (int j = min; j <= max; j++) {
 							tabItems.at(currentTab)->getEngine()->setCurrentPage(j);
 							tabItems.at(currentTab)->updateScrollArea();
@@ -523,9 +525,12 @@ void Viewer::getPrintDialog()
 							painter.setWindow(pMap.rect());
 							painter.drawPixmap(0, 0, pMap);
 
-							if (j < max || numOfTuples < minMaxList.size()-1)
+							if (j < max || numOfTuples < minMaxList.size() - 1)
 								printer.newPage();
 						}
+
+						if (i < copies - 1 && numOfTuples == minMaxList.size()-1)
+							printer.newPage();
 					}
 
 					//Reset page as it was taken over by the print operation

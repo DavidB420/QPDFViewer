@@ -137,12 +137,14 @@ void PrintDialog::handleIllegalChars()
 {
 	if (pagesPullDown->isEditable()) {
 		QString pagesStr = pagesPullDown->lineEdit()->text();
-		QChar currentCharacter = pagesStr.at(pagesStr.length() - 1);
-		if (pagesStr.length() > 0 && (currentCharacter < '0' || currentCharacter > '9') && (currentCharacter < ',' || currentCharacter > '-')) {
-			pagesStr.truncate(pagesStr.length() - 1);
-			pagesPullDown->blockSignals(true);
-			pagesPullDown->lineEdit()->setText(pagesStr);
-			pagesPullDown->blockSignals(false);
+		if (pagesStr.length() > 0) {
+			QChar currentCharacter = pagesStr.at(pagesStr.length() - 1);
+			if ((currentCharacter < '0' || currentCharacter > '9') && (currentCharacter < ',' || currentCharacter > '-')) {
+				pagesStr.truncate(pagesStr.length() - 1);
+				pagesPullDown->blockSignals(true);
+				pagesPullDown->lineEdit()->setText(pagesStr);
+				pagesPullDown->blockSignals(false);
+			}
 		}
 	}
 }
