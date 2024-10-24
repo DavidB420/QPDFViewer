@@ -154,7 +154,7 @@ index 9e760662..19d22cee 100644
 +            pageNum = docA->getCatalog()->findPage(pageLink->getDest()->getPageRef());
 +        else {
 +            const GooString *namedDest = pageLink->getNamedDest();
-+            pageNum = findNumber(namedDest);
++            pageNum = namedDest == NULL ? 0 : findNumber(namedDest);
 +        }
 +        delete pageLink;
      } else {
@@ -169,7 +169,7 @@ index 9e760662..19d22cee 100644
 +                    pageNum = docA->getCatalog()->findPage(pageLink->getDest()->getPageRef());
 +                else {
 +                    const GooString *namedDest = pageLink->getNamedDest();
-+                    pageNum = findNumber(namedDest);
++                    pageNum = namedDest == NULL ? 0 : findNumber(namedDest);
 +                }
 +                delete pageLink;
 +            }
