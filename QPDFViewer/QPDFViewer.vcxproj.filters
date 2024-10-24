@@ -55,12 +55,24 @@
     <ClCompile Include="TabItem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="PrintDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TabScrollArea.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="Viewer.h">
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="NavigationBar.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="PrintDialog.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="TabScrollArea.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>
@@ -77,10 +89,10 @@
     <ClInclude Include="StringConv.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="TabItem.h">
+    <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="resource.h">
+    <ClInclude Include="TabItem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

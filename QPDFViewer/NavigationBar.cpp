@@ -22,18 +22,21 @@
 #include <qlayout.h>
 #include <qtreeview.h>
 #include <qheaderview.h>
+#include <qscrollbar.h>
 
 NavigationBar::NavigationBar(QWidget* parent)
 {
 	//Draw nav bar with tree view
 	QVBoxLayout* layout = new QVBoxLayout;
-	
+
 	QLabel* navLabel = new QLabel(this);
 	navLabel->setText("<b>Navigation</b>");
 	layout->addWidget(navLabel);
 
 	navTree = new QTreeView(this);
 	navTree->header()->setVisible(false);
+	navTree->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
+	navTree->header()->setStretchLastSection(false);
 	layout->addWidget(navTree);
 	connect(navTree, &QTreeView::clicked, this, &NavigationBar::onItemClicked);
 

@@ -17,34 +17,24 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TABITEM_H
-#define TABITEM_H
+#ifndef TABSCROLLAREA_H
+#define TABSCROLLAREA_H
 
-#include <qwidget.h>
-#include <qscrollarea.h>
+#include "qscrollarea.h"
 #include <QScrollBar>
-#include "PDFEngine.h"
-#include "TabScrollArea.h"
 
-class TabItem : public QWidget
+class TabScrollArea : public QScrollArea
 {
+	Q_OBJECT
 public:
-	TabItem();
-	PDFEngine* getEngine();
-	QString getFilePath();
-	TabScrollArea* getScrollArea();
-	bool getUseNavBar();
-	void setPDFEngine(std::string fileName, QWidget* parentWindow);
-	void setFilePath(QString filePath);
-	void updateScrollArea();
-	void setUseNavBar(bool enabled);
-	std::string getFileName();
+	TabScrollArea(QWidget* parent = nullptr);
+	bool returnTopOrBottom();
+protected:
+	void wheelEvent(QWheelEvent* event) override;
 private:
-	PDFEngine* engine;
-	QString title;
-	QString filePath;
-	TabScrollArea* scrollArea;
-	bool useNavBar;
+	bool topOrBottom;
+signals:
+	void hitExtremity();
 };
 
 #endif

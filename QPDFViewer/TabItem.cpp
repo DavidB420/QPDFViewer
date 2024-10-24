@@ -27,7 +27,7 @@ TabItem::TabItem()
 	filePath = "";
 	useNavBar = false;
 
-	scrollArea = new QScrollArea(this);
+	scrollArea = new TabScrollArea(this);
 	scrollArea->setBackgroundRole(QPalette::Mid);
 	scrollArea->setAlignment(Qt::AlignCenter);
 
@@ -48,7 +48,7 @@ QString TabItem::getFilePath()
 	return filePath;
 }
 
-QScrollArea* TabItem::getScrollArea()
+TabScrollArea* TabItem::getScrollArea()
 {
 	return scrollArea;
 }

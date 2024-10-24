@@ -36,7 +36,9 @@
 #include <QtPrintSupport/qprinter.h>
 #include <QtPrintSupport/qprintdialog.h>
 #include <vector>
+#include <QDebug>
 #include "TabItem.h"
+#include "PrintDialog.h"
 
 Viewer::Viewer(QWidget* parent)
 {
@@ -155,6 +157,7 @@ Viewer::Viewer(QWidget* parent)
 	tWidget->addTab(tabItems.at(currentTab), "No PDF loaded");
 	tWidget->addTab(new QWidget(), tr("+"));
 	tWidget->tabBar()->setTabButton(tWidget->count() - 1, QTabBar::RightSide, nullptr);
+	connect(tabItems.at(currentTab)->getScrollArea(), &TabScrollArea::hitExtremity, this, &Viewer::setAndUpdatePage);
 	connect(tWidget, &QTabWidget::tabBarClicked, this, &Viewer::onTabClicked);
 	connect(tWidget->tabBar(), &QTabBar::tabMoved, this, &Viewer::onTabMoved);
 	connect(tWidget, &QTabWidget::tabCloseRequested, this, &Viewer::onTabCloseRequested);
@@ -234,7 +237,7 @@ void Viewer::aboutApp()
 {
 	//Display about box
 	QMessageBox::about(this, tr("About QPDFViewer"),
-		tr("<b>QPDFViewer 1.01</b><br>Written by David Badiei, 2024<br>Licensed under GNU General Public License v3 (GPL-3)"));
+		tr("<b>QPDFViewer 1.5</b><br>Written by David Badiei, 2024<br>Licensed under GNU General Public License v3 (GPL-3)"));
 }
 
 void Viewer::setAndUpdatePage() { setAndUpdatePageKey(); }
@@ -251,9 +254,9 @@ void Viewer::setAndUpdatePageKey(int key)
 		}
 		else {
 			bool result = false;
-			if (upButton == sender() || key == Qt::Key_F2)
+			if (upButton == sender() || key == Qt::Key_F2 || (sender() == tabItems.at(currentTab)->getScrollArea() && !tabItems.at(currentTab)->getScrollArea()->returnTopOrBottom()))
 				result = tabItems.at(currentTab)->getEngine()->setCurrentPage(tabItems.at(currentTab)->getEngine()->getCurrentPage() + 1);
-			else if (downButton == sender() || key == Qt::Key_F1)
+			else if (downButton == sender() || key == Qt::Key_F1 || (sender() == tabItems.at(currentTab)->getScrollArea() && tabItems.at(currentTab)->getScrollArea()->returnTopOrBottom()))
 				result = tabItems.at(currentTab)->getEngine()->setCurrentPage(tabItems.at(currentTab)->getEngine()->getCurrentPage() - 1);
 
 			if (!result)
@@ -448,48 +451,103 @@ void Viewer::onTabCloseRequested(int index)
 
 void Viewer::getPrintDialog()
 {
+	PrintDialog* pDialog = new PrintDialog(this);
+	pDialog->show();
 	QPrinter printer;
-	QPrintDialog dialog(&printer, this);
-	if (dialog.exec()) {
-		QPainter painter(&printer);
-		QRect rect = painter.viewport();
-		
-		//Check if we are printing all or just a selection
-		int min = 0, max = 0;
-		if (printer.printRange() == QPrinter::AllPages) {
-			min = 1;
-			max = tabItems.at(currentTab)->getEngine()->getTotalNumberOfPages();
-		}
-		else if (printer.printRange() == QPrinter::PageRange){
-			min = dialog.fromPage();
-			max = dialog.toPage();
-		}
-		
-		//If range is valid print the range * any copies the user wants
-		if (min >= 1 && max <= tabItems.at(currentTab)->getEngine()->getTotalNumberOfPages()) {
-			int tmp = tabItems.at(currentTab)->getEngine()->getCurrentPage();
-			for (int i = 0; i < printer.copyCount(); i++) {
-				for (int j = min; j <= max; j++) {
-					tabItems.at(currentTab)->getEngine()->setCurrentPage(j);
-					tabItems.at(currentTab)->updateScrollArea();
-					QPixmap pMap = tabItems.at(currentTab)->getEngine()->returnImage()->getPagePixmap();
-					QSize size = pMap.size();
-					size.scale(rect.size(), Qt::KeepAspectRatio);
-					painter.setViewport(rect.x(), rect.y(), size.width(), size.height());
-					painter.setWindow(pMap.rect());
-					painter.drawPixmap(0, 0, pMap);
+	
+	//Handle QPDFViewer's native print dialog, or give OS dialog
+	if (pDialog->exec() && pDialog->result() == QDialog::Accepted) {
+		QPrintDialog dialog(&printer, this);
+		int dialogResult = 0;
+		std::vector<MinMaxTuple> minMaxList;
+		if (pDialog->getOSDialog())
+			dialogResult = dialog.exec();
+		else {
+			//Save results in QPrinter
+			printer.setPrinterName(pDialog->returnPrinterInfo().selectedPrinter);
+			printer.setCopyCount(pDialog->returnPrinterInfo().copies);
+			printer.setColorMode(pDialog->returnPrinterInfo().colorMode ? QPrinter::ColorMode::Color : QPrinter::ColorMode::GrayScale);
+			printer.setPageOrientation(pDialog->returnPrinterInfo().orientation == 0 ? QPageLayout::Portrait : QPageLayout::Landscape);
+			printer.setPrintRange(!QString::compare(pDialog->returnPrinterInfo().pageRange, QString("All pages")) ? QPrinter::AllPages : QPrinter::PageRange);
 
-					if (j < max)
-						printer.newPage();
+			//If a specific range is given, save it
+			if (printer.printRange() == QPrinter::PageRange) {
+				QStringList ranges = pDialog->returnPrinterInfo().pageRange.split(",",Qt::SkipEmptyParts);
+				for (const QString& part : ranges) {
+					QStringList numbers = part.split("-", Qt::SkipEmptyParts);
+					if (numbers.size() == 2) {
+						MinMaxTuple newTuple;
+						newTuple.min = numbers.at(0).toInt();
+						newTuple.max = numbers.at(1).toInt();
+						if (newTuple.min <= newTuple.max)
+							minMaxList.push_back(newTuple);
+					}
+					else if (numbers.size() == 1) {
+						MinMaxTuple newTuple;
+						newTuple.min = numbers.at(0).toInt();
+						newTuple.max = numbers.at(0).toInt();
+						minMaxList.push_back(newTuple);
+					}
 				}
 			}
 
-			//Reset page as it was taken over by the print operation
-			tabItems.at(currentTab)->getEngine()->setCurrentPage(tmp);
-			tabItems.at(currentTab)->updateScrollArea();
+			//Dialog completed successfully
+			dialogResult = 1;
 		}
-		else
-			QMessageBox::critical(this, "Page range out of bounds", "Entered page range out of bounds!");
+
+		if (dialogResult) {
+			int copies = printer.copyCount(); //we handle multiple copies, not the printer driver, so qprinter's copy count must be set to 1
+			printer.setCopyCount(1);
+			QPainter painter(&printer);
+			QRect rect = painter.viewport();
+
+			//Check if we are printing all or just a selection
+			if (printer.printRange() == QPrinter::AllPages) {
+				MinMaxTuple newTuple;
+				newTuple.min = 1;
+				newTuple.max = tabItems.at(currentTab)->getEngine()->getTotalNumberOfPages();
+				minMaxList.push_back(newTuple);
+			}
+			else if (printer.printRange() == QPrinter::PageRange && pDialog->getOSDialog()) {
+				MinMaxTuple newTuple;
+				newTuple.min = dialog.fromPage();
+				newTuple.max = dialog.toPage();
+				minMaxList.push_back(newTuple);
+			}
+
+			//If range is valid print the range * any copies the user wants
+			for (int numOfTuples = 0; numOfTuples < minMaxList.size(); numOfTuples++) {
+				int min = minMaxList.at(numOfTuples).min;
+				int max = minMaxList.at(numOfTuples).max;
+				if (min >= 1 && max <= tabItems.at(currentTab)->getEngine()->getTotalNumberOfPages()) {
+					int tmp = tabItems.at(currentTab)->getEngine()->getCurrentPage();
+					for (int i = 0; i < copies; i++) {
+						for (int j = min; j <= max; j++) {
+							tabItems.at(currentTab)->getEngine()->setCurrentPage(j);
+							tabItems.at(currentTab)->updateScrollArea();
+							QPixmap pMap = tabItems.at(currentTab)->getEngine()->returnImage()->getPagePixmap();
+							QSize size = pMap.size();
+							size.scale(rect.size(), Qt::KeepAspectRatio);
+							painter.setViewport(rect.x(), rect.y(), size.width(), size.height());
+							painter.setWindow(pMap.rect());
+							painter.drawPixmap(0, 0, pMap);
+
+							if (j < max || numOfTuples < minMaxList.size() - 1) //create new page if we are on a new page or a new section
+								printer.newPage();
+						}
+
+						if (i < copies - 1 && numOfTuples == minMaxList.size()-1) //only create a new page here if we are on a new copy and last section
+							printer.newPage();
+					}
+
+					//Reset page as it was taken over by the print operation
+					tabItems.at(currentTab)->getEngine()->setCurrentPage(tmp);
+					tabItems.at(currentTab)->updateScrollArea();
+				}
+				else
+					QMessageBox::critical(this, "Page range out of bounds", "Entered page range ( " + QString::number(min) + " , " + QString::number(max) + " ) out of bounds!");
+			}
+		}
 	}
 }
 

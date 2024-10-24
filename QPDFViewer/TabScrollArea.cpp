@@ -17,34 +17,30 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TABITEM_H
-#define TABITEM_H
-
-#include <qwidget.h>
-#include <qscrollarea.h>
-#include <QScrollBar>
-#include "PDFEngine.h"
 #include "TabScrollArea.h"
 
-class TabItem : public QWidget
+TabScrollArea::TabScrollArea(QWidget* parent)
 {
-public:
-	TabItem();
-	PDFEngine* getEngine();
-	QString getFilePath();
-	TabScrollArea* getScrollArea();
-	bool getUseNavBar();
-	void setPDFEngine(std::string fileName, QWidget* parentWindow);
-	void setFilePath(QString filePath);
-	void updateScrollArea();
-	void setUseNavBar(bool enabled);
-	std::string getFileName();
-private:
-	PDFEngine* engine;
-	QString title;
-	QString filePath;
-	TabScrollArea* scrollArea;
-	bool useNavBar;
-};
+	topOrBottom = false;
+}
 
-#endif
+bool TabScrollArea::returnTopOrBottom()
+{
+	return topOrBottom;
+}
+
+void TabScrollArea::wheelEvent(QWheelEvent* event)
+{
+	//run normal qscrollarea wheel code
+	QScrollArea::wheelEvent(event);
+
+	//Move to another page if we reach an extremity when scrolling
+	if (verticalScrollBar()->value() == verticalScrollBar()->maximum()) {
+		topOrBottom = false;
+		emit hitExtremity();
+	}
+	else if (verticalScrollBar()->value() == verticalScrollBar()->minimum()) {
+		topOrBottom = true;
+		emit hitExtremity();
+	}
+}
