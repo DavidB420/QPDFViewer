@@ -4,7 +4,7 @@
 #include <qcombobox.h>
 #include <qspinbox.h>
 #include <qpushbutton.h>
-#include <qprinterinfo.h>
+#include <QtPrintSupport/qprinterinfo.h>
 #include <qlineedit.h>
 #include <qlist.h>
 #include <QResizeEvent>

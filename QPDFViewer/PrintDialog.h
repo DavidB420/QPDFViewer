@@ -3,7 +3,7 @@
 
 #include <qdialog.h>
 #include <qlist.h>
-#include <qprinterinfo.h>
+#include <QtPrintSupport/qprinterinfo.h>
 #include <qcombobox.h>
 #include <qspinbox.h>
 #include <qlabel.h>
