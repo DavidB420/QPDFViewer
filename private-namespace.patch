@@ -134,7 +134,7 @@ index 6337d793..607cd843 100644
  
  //------------------------------------------------------------------------
 diff --git a/poppler/Outline.cc b/poppler/Outline.cc
-index 9e760662..b3fcdb2a 100644
+index 9e760662..19d22cee 100644
 --- a/poppler/Outline.cc
 +++ b/poppler/Outline.cc
 @@ -93,6 +93,7 @@ static void insertChildHelper(const std::string &itemTitle, int destPageNum, uns
@@ -145,15 +145,17 @@ index 9e760662..b3fcdb2a 100644
      outlineItem.dictSet("Dest", Object(a));
      outlineItem.dictSet("Count", Object(1));
      outlineItem.dictAdd("Parent", Object(parentObjRef));
-@@ -419,10 +420,26 @@ OutlineItem::OutlineItem(const Dict *dict, Ref refA, OutlineItem *parentA, XRef
+@@ -419,10 +420,30 @@ OutlineItem::OutlineItem(const Dict *dict, Ref refA, OutlineItem *parentA, XRef
      obj1 = dict->lookup("Dest");
      if (!obj1.isNull()) {
          action = LinkAction::parseDest(&obj1);
 +        LinkGoTo *pageLink = new LinkGoTo(&obj1);
 +        if (pageLink->getDest() != NULL)
 +            pageNum = docA->getCatalog()->findPage(pageLink->getDest()->getPageRef());
-+        else
-+            pageNum = 0;
++        else {
++            const GooString *namedDest = pageLink->getNamedDest();
++            pageNum = findNumber(namedDest);
++        }
 +        delete pageLink;
      } else {
          obj1 = dict->lookup("A");
@@ -165,15 +167,43 @@ index 9e760662..b3fcdb2a 100644
 +                LinkGoTo *pageLink = new LinkGoTo(&obj3);
 +                if (pageLink->getDest() != NULL)
 +                    pageNum = docA->getCatalog()->findPage(pageLink->getDest()->getPageRef());
-+                else
-+                    pageNum = 0;
++                else {
++                    const GooString *namedDest = pageLink->getNamedDest();
++                    pageNum = findNumber(namedDest);
++                }
 +                delete pageLink;
 +            }
          }
      }
  
+@@ -435,6 +456,24 @@ OutlineItem::OutlineItem(const Dict *dict, Ref refA, OutlineItem *parentA, XRef
+     }
+ }
+ 
++int OutlineItem::findNumber(const GooString *testDest)
++{
++    for (int i = 0; i < testDest->getLength(); i++) {
++        if (testDest->getChar(i) == 'p' || testDest->getChar(i) == 'P') {
++            std::string newStr;
++            for (int j = 0; j < testDest->getLength(); j++) {
++                if (testDest->getChar(j) >= '0' && testDest->getChar(j) <= '9')
++                    newStr.push_back(testDest->getChar(j));
++            }
++
++            return std::stoi(newStr);
++        }
++    }
++
++    return 0;
++}
++
++
+ OutlineItem::~OutlineItem()
+ {
+     if (kids) {
+
 diff --git a/poppler/Outline.h b/poppler/Outline.h
-index 877eaac4..c37e520f 100644
+index 877eaac4..984254be 100644
 --- a/poppler/Outline.h
 +++ b/poppler/Outline.h
 @@ -94,6 +94,7 @@ public:
@@ -184,7 +214,7 @@ index 877eaac4..c37e520f 100644
      void setTitle(const std::string &titleA);
      bool setPageDest(int i);
      // OutlineItem keeps the ownership of the action
-@@ -114,6 +115,7 @@ private:
+@@ -114,9 +115,11 @@ private:
      PDFDoc *doc;
      XRef *xref;
      std::vector<Unicode> title;
@@ -192,3 +222,8 @@ index 877eaac4..c37e520f 100644
      std::unique_ptr<LinkAction> action;
      bool startsOpen;
      std::vector<OutlineItem *> *kids; // nullptr if this item is closed or has no kids
++    int findNumber(const GooString *testDest);
+ };
+ 
+ #endif
+
