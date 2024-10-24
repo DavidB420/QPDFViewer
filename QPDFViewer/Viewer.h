@@ -37,6 +37,8 @@ struct MinMaxTuple {
 	int min = 0, max = 0;
 };
 
+class TabItem;
+
 class Viewer : public QMainWindow
 {
 	Q_OBJECT
@@ -45,6 +47,7 @@ public:
 	~Viewer();
 	void keyPressEvent(QKeyEvent* event);
 	void openFile(QString fileName);
+	void setAndUpdatePageKey(int key = -1);
 private:
 	QLabel* totalPage;
 	QLineEdit* pageNumber;
@@ -64,7 +67,6 @@ private:
 	QTabWidget* tWidget;
 	std::vector <TabItem*> tabItems;
 	int currentTab;
-	void setAndUpdatePageKey(int key = -1);
 private slots:
 	void openFileDialog();
 	void exitApp();

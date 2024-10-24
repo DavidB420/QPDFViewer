@@ -36,6 +36,7 @@
 #include <QtPrintSupport/qprinter.h>
 #include <QtPrintSupport/qprintdialog.h>
 #include <vector>
+#include <QDebug>
 #include "TabItem.h"
 #include "PrintDialog.h"
 
@@ -156,6 +157,7 @@ Viewer::Viewer(QWidget* parent)
 	tWidget->addTab(tabItems.at(currentTab), "No PDF loaded");
 	tWidget->addTab(new QWidget(), tr("+"));
 	tWidget->tabBar()->setTabButton(tWidget->count() - 1, QTabBar::RightSide, nullptr);
+	connect(tabItems.at(currentTab)->getScrollArea(), &TabScrollArea::hitExtremity, this, &Viewer::setAndUpdatePage);
 	connect(tWidget, &QTabWidget::tabBarClicked, this, &Viewer::onTabClicked);
 	connect(tWidget->tabBar(), &QTabBar::tabMoved, this, &Viewer::onTabMoved);
 	connect(tWidget, &QTabWidget::tabCloseRequested, this, &Viewer::onTabCloseRequested);
@@ -252,9 +254,9 @@ void Viewer::setAndUpdatePageKey(int key)
 		}
 		else {
 			bool result = false;
-			if (upButton == sender() || key == Qt::Key_F2)
+			if (upButton == sender() || key == Qt::Key_F2 || (sender() == tabItems.at(currentTab)->getScrollArea() && !tabItems.at(currentTab)->getScrollArea()->returnTopOrBottom()))
 				result = tabItems.at(currentTab)->getEngine()->setCurrentPage(tabItems.at(currentTab)->getEngine()->getCurrentPage() + 1);
-			else if (downButton == sender() || key == Qt::Key_F1)
+			else if (downButton == sender() || key == Qt::Key_F1 || (sender() == tabItems.at(currentTab)->getScrollArea() && tabItems.at(currentTab)->getScrollArea()->returnTopOrBottom()))
 				result = tabItems.at(currentTab)->getEngine()->setCurrentPage(tabItems.at(currentTab)->getEngine()->getCurrentPage() - 1);
 
 			if (!result)
