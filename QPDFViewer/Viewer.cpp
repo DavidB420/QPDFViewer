@@ -454,6 +454,8 @@ void Viewer::getPrintDialog()
 	PrintDialog* pDialog = new PrintDialog(this);
 	pDialog->show();
 	QPrinter printer;
+	
+	//Handle QPDFViewer's native print dialog, or give OS dialog
 	if (pDialog->exec() && pDialog->result() == QDialog::Accepted) {
 		QPrintDialog dialog(&printer, this);
 		int dialogResult = 0;
@@ -461,12 +463,14 @@ void Viewer::getPrintDialog()
 		if (pDialog->getOSDialog())
 			dialogResult = dialog.exec();
 		else {
+			//Save results in QPrinter
 			printer.setPrinterName(pDialog->returnPrinterInfo().selectedPrinter);
 			printer.setCopyCount(pDialog->returnPrinterInfo().copies);
 			printer.setColorMode(pDialog->returnPrinterInfo().colorMode ? QPrinter::ColorMode::Color : QPrinter::ColorMode::GrayScale);
 			printer.setPageOrientation(pDialog->returnPrinterInfo().orientation == 0 ? QPageLayout::Portrait : QPageLayout::Landscape);
 			printer.setPrintRange(!QString::compare(pDialog->returnPrinterInfo().pageRange, QString("All pages")) ? QPrinter::AllPages : QPrinter::PageRange);
 
+			//If a specific range is given, save it
 			if (printer.printRange() == QPrinter::PageRange) {
 				QStringList ranges = pDialog->returnPrinterInfo().pageRange.split(",",Qt::SkipEmptyParts);
 				for (const QString& part : ranges) {
@@ -487,11 +491,12 @@ void Viewer::getPrintDialog()
 				}
 			}
 
+			//Dialog completed successfully
 			dialogResult = 1;
 		}
 
 		if (dialogResult) {
-			int copies = printer.copyCount();
+			int copies = printer.copyCount(); //we handle multiple copies, not the printer driver, so qprinter's copy count must be set to 1
 			printer.setCopyCount(1);
 			QPainter painter(&printer);
 			QRect rect = painter.viewport();
@@ -527,11 +532,11 @@ void Viewer::getPrintDialog()
 							painter.setWindow(pMap.rect());
 							painter.drawPixmap(0, 0, pMap);
 
-							if (j < max || numOfTuples < minMaxList.size() - 1)
+							if (j < max || numOfTuples < minMaxList.size() - 1) //create new page if we are on a new page or a new section
 								printer.newPage();
 						}
 
-						if (i < copies - 1 && numOfTuples == minMaxList.size()-1)
+						if (i < copies - 1 && numOfTuples == minMaxList.size()-1) //only create a new page here if we are on a new copy and last section
 							printer.newPage();
 					}
 

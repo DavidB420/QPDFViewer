@@ -1,3 +1,22 @@
+/**
+ * Copyright 2024 David Badiei
+ *
+ * This file is part of QPDFViewer, hereafter referred to as the program.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
 #include "PrintDialog.h"
 #include <qlabel.h>
 #include <qlayout.h>
@@ -116,12 +135,14 @@ void PrintDialog::exitDialog()
 
 void PrintDialog::openOSPrintDialog()
 {
+	//Tell Viewer to show the OS's native print dialog instead
 	showOSDialog = true;
 	this->accept();
 }
 
 void PrintDialog::printPressed()
 {
+	//Save user choices in the printer info structure then return back to Viewer's print function
 	printerInfo.copies = copiesTextBox->value();
 	printerInfo.colorMode = colorPullDown->currentIndex() > 0 ? false : true;
 	printerInfo.orientation = orientationPullDown->currentIndex();
@@ -135,6 +156,7 @@ void PrintDialog::printPressed()
 
 void PrintDialog::handleIllegalChars()
 {
+	//Remove any character entered that is not numerical or a comma or hyphen
 	if (pagesPullDown->isEditable()) {
 		QString pagesStr = pagesPullDown->lineEdit()->text();
 		if (pagesStr.length() > 0) {
@@ -151,6 +173,7 @@ void PrintDialog::handleIllegalChars()
 
 void PrintDialog::handlePagePullDown()
 {
+	//Only allow editing for the second option for page selection
 	if (pagesPullDown->currentIndex() == 0)
 		pagesPullDown->setEditable(false);
 	else
