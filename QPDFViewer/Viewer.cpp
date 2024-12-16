@@ -237,7 +237,7 @@ void Viewer::aboutApp()
 {
 	//Display about box
 	QMessageBox::about(this, tr("About QPDFViewer"),
-		tr("<b>QPDFViewer 1.5</b><br>Written by David Badiei, 2024<br>Licensed under GNU General Public License v3 (GPL-3)"));
+		tr("<b>QPDFViewer 1.51</b><br>Written by David Badiei, 2024<br>Licensed under GNU General Public License v3 (GPL-3)"));
 }
 
 void Viewer::setAndUpdatePage() { setAndUpdatePageKey(); }

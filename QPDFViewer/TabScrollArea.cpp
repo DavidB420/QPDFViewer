@@ -18,6 +18,7 @@
  */
 
 #include "TabScrollArea.h"
+#include <QWheelEvent>
 
 TabScrollArea::TabScrollArea(QWidget* parent)
 {
@@ -34,13 +35,26 @@ void TabScrollArea::wheelEvent(QWheelEvent* event)
 	//run normal qscrollarea wheel code
 	QScrollArea::wheelEvent(event);
 
-	//Move to another page if we reach an extremity when scrolling
-	if (verticalScrollBar()->value() == verticalScrollBar()->maximum()) {
-		topOrBottom = false;
-		emit hitExtremity();
-	}
-	else if (verticalScrollBar()->value() == verticalScrollBar()->minimum()) {
-		topOrBottom = true;
-		emit hitExtremity();
-	}
+    // Check if scrolling is enabled, if so just use delta values, otherwise check if we hit an extremity
+    QScrollBar* vScrollBar = verticalScrollBar();
+    if (!vScrollBar || vScrollBar->maximum() == 0) {
+        
+        if (event->angleDelta().y() < 0)
+            topOrBottom = false;
+        else if (event->angleDelta().y() > 0)
+            topOrBottom = true;
+
+        emit hitExtremity();
+    }
+    else {
+        // Move to another page if we reach an extremity when scrolling
+        if (vScrollBar->value() == vScrollBar->maximum()) {
+            topOrBottom = false;
+            emit hitExtremity();
+        }
+        else if (vScrollBar->value() == vScrollBar->minimum()) {
+            topOrBottom = true;
+            emit hitExtremity();
+        }
+    }
 }
