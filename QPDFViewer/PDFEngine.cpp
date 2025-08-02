@@ -58,6 +58,8 @@ Page *PDFEngine::returnImage()
 	//Create poppler image based on current page, rotation and scale values
 	poppler::page* page = doc->create_page(currentPage-1);
 	poppler::page_renderer pr;
+	pr.set_render_hint(poppler::page_renderer::antialiasing, true);
+	pr.set_render_hint(poppler::page_renderer::text_antialiasing, true);
 	poppler::image img = pr.render_page(page,
 		(float)72 * scaleValue / 75, (float)72 * scaleValue / 75,
 		-1, -1, -1, -1, pdfRotation);
