@@ -1,5 +1,5 @@
 /**
- * Copyright 2024 David Badiei
+ * Copyright 2025 David Badiei
  *
  * This file is part of QPDFViewer, hereafter referred to as the program.
  *
