@@ -42,7 +42,8 @@ NavigationBar::NavigationBar(QWidget* parent)
 
 	this->setLayout(layout);
 
-	this->setFixedWidth(200);
+	this->resize(200, this->height());
+	this->setMinimumWidth(200);
 }
 
 QTreeView* NavigationBar::returnTree()

@@ -27,6 +27,7 @@
 #include <qpushbutton.h>
 #include <qcombobox.h>
 #include <qtabwidget.h>
+#include <qsplitter.h>
 #include <vector>
 #include <QKeyEvent>
 #include "PDFEngine.h"
@@ -58,6 +59,7 @@ private:
 	QPushButton* forwardsSearch;
 	QLineEdit* searchBox;
 	QHBoxLayout* layout;
+	QSplitter* hSplitter;
 	QAction* navBarShowAct;
 	NavigationBar* navBar;
 	QAction* rotate90CWAct, *rotate90CCWAct;

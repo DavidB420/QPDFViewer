@@ -147,10 +147,12 @@ Viewer::Viewer(QWidget* parent)
 
 	//Initialize tabs and layout
 	layout = new QHBoxLayout;
+	hSplitter = new QSplitter(Qt::Horizontal);
 	tWidget = new QTabWidget(this);
 	tWidget->setMovable(true);
 	tWidget->setTabsClosable(true);
-	layout->addWidget(tWidget);
+	hSplitter->addWidget(tWidget);
+	layout->addWidget(hSplitter);
 	layout->setContentsMargins(0, 0, 0, 0);
 	currentTab = 0;
 	tabItems.push_back(new TabItem());
@@ -322,7 +324,10 @@ void Viewer::showNavBar()
 			navBar = NULL;
 		}
 		navBar = new NavigationBar(this);
-		layout->insertWidget(0,navBar);
+		hSplitter->insertWidget(0,navBar);
+		hSplitter->setSizes({ 200, INT_MAX-500 });
+		for (int i = 0; i < hSplitter->count(); i++)
+			hSplitter->setCollapsible(i, false);
 		tabItems.at(currentTab)->getEngine()->addNavOutline(navBar);
 		connect(navBar, &NavigationBar::itemClicked, this, &Viewer::updatePageNavBar);
 		tabItems.at(currentTab)->setUseNavBar(true);
