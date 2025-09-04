@@ -329,8 +329,16 @@ void Viewer::showNavBar()
 		for (int i = 0; i < hSplitter->count(); i++)
 			hSplitter->setCollapsible(i, false);
 		tabItems.at(currentTab)->getEngine()->addNavOutline(navBar);
+		if (tabItems.at(currentTab)->getSplitterData().size() == 1 && tabItems.at(currentTab)->getSplitterData()[0] == '\0')
+			tabItems.at(currentTab)->setSplitterData(hSplitter->saveState());
+		hSplitter->restoreState(tabItems.at(currentTab)->getSplitterData());
 		connect(navBar, &NavigationBar::itemClicked, this, &Viewer::updatePageNavBar);
 		tabItems.at(currentTab)->setUseNavBar(true);
+		QObject::connect(hSplitter, &QSplitter::splitterMoved,
+			[=](int pos, int index) {
+				Q_UNUSED(index);
+				tabItems.at(currentTab)->setSplitterData(hSplitter->saveState());
+			});
 	}
 	else {
 		delete navBar;

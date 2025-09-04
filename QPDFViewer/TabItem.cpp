@@ -26,6 +26,7 @@ TabItem::TabItem()
 	engine = NULL;
 	filePath = "";
 	useNavBar = false;
+	splitterData = { 0 };
 
 	scrollArea = new TabScrollArea(this);
 	scrollArea->setBackgroundRole(QPalette::Mid);
@@ -56,6 +57,16 @@ TabScrollArea* TabItem::getScrollArea()
 bool TabItem::getUseNavBar()
 {
 	return useNavBar;
+}
+
+QByteArray TabItem::getSplitterData()
+{
+	return splitterData;
+}
+
+void TabItem::setSplitterData(QByteArray data)
+{
+	splitterData = data;
 }
 
 void TabItem::setPDFEngine(std::string fileName, QWidget* parentWindow)

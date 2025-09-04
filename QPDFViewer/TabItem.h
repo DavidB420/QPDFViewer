@@ -34,6 +34,8 @@ public:
 	QString getFilePath();
 	TabScrollArea* getScrollArea();
 	bool getUseNavBar();
+	QByteArray getSplitterData();
+	void setSplitterData(QByteArray data);
 	void setPDFEngine(std::string fileName, QWidget* parentWindow);
 	void setFilePath(QString filePath);
 	void updateScrollArea();
@@ -45,6 +47,7 @@ private:
 	QString filePath;
 	TabScrollArea* scrollArea;
 	bool useNavBar;
+	QByteArray splitterData;
 };
 
 #endif
