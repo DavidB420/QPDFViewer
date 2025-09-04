@@ -324,16 +324,24 @@ void Viewer::showNavBar()
 			navBar = NULL;
 		}
 		navBar = new NavigationBar(this);
+
+		//Update splitter with nav bar
 		hSplitter->insertWidget(0,navBar);
 		hSplitter->setSizes({ 200, INT_MAX-500 });
 		for (int i = 0; i < hSplitter->count(); i++)
 			hSplitter->setCollapsible(i, false);
+
 		tabItems.at(currentTab)->getEngine()->addNavOutline(navBar);
+
+		//Save the state if its uninitialized, then restore the state for all runs
 		if (tabItems.at(currentTab)->getSplitterData().size() == 1 && tabItems.at(currentTab)->getSplitterData()[0] == '\0')
 			tabItems.at(currentTab)->setSplitterData(hSplitter->saveState());
 		hSplitter->restoreState(tabItems.at(currentTab)->getSplitterData());
+
 		connect(navBar, &NavigationBar::itemClicked, this, &Viewer::updatePageNavBar);
 		tabItems.at(currentTab)->setUseNavBar(true);
+		
+		//If the splitter is moved save the new state
 		QObject::connect(hSplitter, &QSplitter::splitterMoved,
 			[=](int pos, int index) {
 				Q_UNUSED(index);
