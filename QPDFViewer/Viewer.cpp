@@ -147,10 +147,12 @@ Viewer::Viewer(QWidget* parent)
 
 	//Initialize tabs and layout
 	layout = new QHBoxLayout;
+	hSplitter = new QSplitter(Qt::Horizontal);
 	tWidget = new QTabWidget(this);
 	tWidget->setMovable(true);
 	tWidget->setTabsClosable(true);
-	layout->addWidget(tWidget);
+	hSplitter->addWidget(tWidget);
+	layout->addWidget(hSplitter);
 	layout->setContentsMargins(0, 0, 0, 0);
 	currentTab = 0;
 	tabItems.push_back(new TabItem());
@@ -237,7 +239,7 @@ void Viewer::aboutApp()
 {
 	//Display about box
 	QMessageBox::about(this, tr("About QPDFViewer"),
-		tr("<b>QPDFViewer 1.52</b><br>Written by David Badiei, 2025<br>Licensed under GNU General Public License v3 (GPL-3)"));
+		tr("<b>QPDFViewer 1.6</b><br>Written by David Badiei, 2025<br>Licensed under GNU General Public License v3 (GPL-3)"));
 }
 
 void Viewer::setAndUpdatePage() { setAndUpdatePageKey(); }
@@ -322,10 +324,21 @@ void Viewer::showNavBar()
 			navBar = NULL;
 		}
 		navBar = new NavigationBar(this);
-		layout->insertWidget(0,navBar);
+		hSplitter->insertWidget(0,navBar);
+		hSplitter->setSizes({ 200, INT_MAX-500 });
+		for (int i = 0; i < hSplitter->count(); i++)
+			hSplitter->setCollapsible(i, false);
 		tabItems.at(currentTab)->getEngine()->addNavOutline(navBar);
+		if (tabItems.at(currentTab)->getSplitterData().size() == 1 && tabItems.at(currentTab)->getSplitterData()[0] == '\0')
+			tabItems.at(currentTab)->setSplitterData(hSplitter->saveState());
+		hSplitter->restoreState(tabItems.at(currentTab)->getSplitterData());
 		connect(navBar, &NavigationBar::itemClicked, this, &Viewer::updatePageNavBar);
 		tabItems.at(currentTab)->setUseNavBar(true);
+		QObject::connect(hSplitter, &QSplitter::splitterMoved,
+			[=](int pos, int index) {
+				Q_UNUSED(index);
+				tabItems.at(currentTab)->setSplitterData(hSplitter->saveState());
+			});
 	}
 	else {
 		delete navBar;
