@@ -96,6 +96,8 @@ Viewer::Viewer(QWidget* parent)
 	this->addToolBar(toolBar);
 	toolBar->setMovable(false);
 	toolBar->setFixedHeight(30);
+	toolBar->toggleViewAction()->setEnabled(false);
+	toolBar->toggleViewAction()->setVisible(false);
 	QLabel* pageLbl = new QLabel(this);
 	pageLbl->setText("Page: ");
 	toolBar->addWidget(pageLbl);
