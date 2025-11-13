@@ -178,7 +178,21 @@ void PDFEngine::displayTextBox(QRectF dim)
 {
 	//Grab text from selection then display it in a dialog
 	poppler::page* page = doc->create_page(currentPage - 1);
-	std::string foundText = fromPopplerStringStdString(page->text(poppler::rectf(dim.x() / scaleValue * 75, dim.y() / scaleValue * 75, dim.width() / scaleValue * 75, dim.height() / scaleValue * 75)));
+
+	double rectX = dim.x(), rectY = dim.y(), rectWidth = dim.width(), rectHeight = dim.height();
+	
+	//Check if selected text rectangle has a negative width or height, if so make it positive and update X and Y accordingly
+	if (rectWidth < 0) {
+		rectWidth = -rectWidth;
+		rectX = rectX - rectWidth;
+	}
+
+	if (rectHeight < 0) {
+		rectHeight = -rectHeight;
+		rectY = rectY - rectHeight;
+	}
+
+	std::string foundText = fromPopplerStringStdString(page->text(poppler::rectf(rectX / scaleValue * 75, rectY / scaleValue * 75, rectWidth / scaleValue * 75, rectHeight / scaleValue * 75)));
 	delete page;
 	TextBoxDialog* dialog = new TextBoxDialog(this->parentWindow, &foundText);
 	dialog->show();
