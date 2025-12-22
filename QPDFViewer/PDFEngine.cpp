@@ -52,6 +52,8 @@ PDFEngine::PDFEngine(std::string fileName, QWidget *parentWindow)
 
 	pdfRotation = poppler::rotate_0;
 
+	previousPages;
+
 	for (int i = 0; i < getTotalNumberOfPages(); i++) {
 		poppler::page* page = doc->create_page(i);
 		QRectF pt(page->page_rect().x(),page->page_rect().y(),page->page_rect().width(),page->page_rect().height());
@@ -279,7 +281,16 @@ QVector<Page*> PDFEngine::getVisiblePages()
 	int l = 0;
 	while ((i <= maxHeight || l <= 4) && j <= getTotalNumberOfPages()) {
 		setCurrentPage(j);
-		Page* page = returnImage();
+		bool foundInPrevious = false;
+		Page* page = NULL;
+		for (int m = 0; m < previousPages.length(); m++) {
+			if (previousPages.at(m)->getPageNumber() == getCurrentPage() && previousPages.at(m)->getParent() == this) {
+				page = previousPages.at(m);
+				foundInPrevious = true;
+			}
+		}
+		if (page == NULL)
+			page = returnImage();
 		visiblePages.push_back(page);
 		i += page->height();
 		j++;
@@ -288,6 +299,8 @@ QVector<Page*> PDFEngine::getVisiblePages()
 	}
 	setCurrentPage(k);
 	
+	previousPages = visiblePages;
+
 	return visiblePages;
 }
 

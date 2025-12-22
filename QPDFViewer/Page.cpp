@@ -28,6 +28,7 @@ Page::Page(QWidget* parent, PDFEngine* pdfParent, QImage *img)
 	this->parent = pdfParent;
 	dragging = false;
 	isDragging = false;
+	pageNumber = this->parent->getCurrentPage();
 
 	setFixedWidth(pagePixmap.width());
 	setFixedHeight(pagePixmap.height());
@@ -36,6 +37,16 @@ Page::Page(QWidget* parent, PDFEngine* pdfParent, QImage *img)
 QPixmap Page::getPagePixmap()
 {
 	return pagePixmap;
+}
+
+int Page::getPageNumber()
+{
+	return pageNumber;
+}
+
+PDFEngine* Page::getParent()
+{
+	return parent;
 }
 
 void Page::mousePressEvent(QMouseEvent* event)

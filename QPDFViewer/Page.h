@@ -33,6 +33,8 @@ class Page : public QLabel
 public:
 	Page(QWidget* parent = 0, PDFEngine *pdfParent = 0, QImage *img = 0);
 	QPixmap getPagePixmap();
+	int getPageNumber();
+	PDFEngine* getParent();
 	void mousePressEvent(QMouseEvent* event);
 	void mouseMoveEvent(QMouseEvent* event);
 	void mouseReleaseEvent(QMouseEvent* event);
@@ -43,6 +45,7 @@ private:
 	QPixmap pagePixmap;
 	QPointF firstPoint, currentPoint;
 	PDFEngine* parent;
+	int pageNumber;
 };
 
 #endif

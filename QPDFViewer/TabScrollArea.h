@@ -36,8 +36,10 @@ protected:
 	void wheelEvent(QWheelEvent* event) override;
 private:
 	bool topOrBottom;
-	unsigned long documentHeight;
-	unsigned long viewportHeight;
+	long documentHeight;
+	long viewportHeight;
+	long goToNextPageHeight;
+	Page* firstPageHeight;
 	QVector <Page*> currentPages;
 signals:
 	void hitExtremity();

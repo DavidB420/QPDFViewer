@@ -60,6 +60,7 @@ private:
 	int scaleValue;
 	unsigned long documentHeight;
 	void recursivelyFillModel(poppler::toc_item* currentItem, QStandardItem* rootItem, NavigationBar *navBar);
+	QVector <Page*> previousPages;
 };
 
 #endif
