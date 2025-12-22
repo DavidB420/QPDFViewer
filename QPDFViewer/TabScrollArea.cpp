@@ -27,6 +27,7 @@ TabScrollArea::TabScrollArea(QWidget* parent)
     documentHeight = 0;
     viewportHeight = 20, goToNextPageHeight = viewportHeight;
     firstPageHeight = NULL;
+    fromScrolling = false;
 
     //verticalScrollBar()->setRange()
 }
@@ -34,19 +35,17 @@ TabScrollArea::TabScrollArea(QWidget* parent)
 void TabScrollArea::updateScrollArea(QVector <Page*> *pages)
 {
     if (currentPages.size() > 0 && pages != &currentPages) {
-        int j = 0;
         for (int i = 0; i < currentPages.size(); i++) {
             if (!pages->contains(currentPages.at(i))) {
                 delete currentPages.at(i);
                 currentPages.removeAt(i);
                 i--;
-                j++;
             }
         }
-        j = j;
-        //viewportHeight = 20;
-        //if (dontRunAgain < 1) //seems to run twice???
-        //    firstPageHeight = NULL;
+        if (!fromScrolling) {
+            viewportHeight = 20;
+            firstPageHeight = NULL;
+        }
     }
 
     currentPages = *pages;
@@ -54,10 +53,17 @@ void TabScrollArea::updateScrollArea(QVector <Page*> *pages)
     for (int i = 0, j = viewportHeight; i < currentPages.length(); i++) {
          if (currentPages.at(i) == firstPageHeight && j + (currentPages.at(i)->height()/2) + 20 < 0 && firstPageHeight != currentPages.at(currentPages.length()-1)) {
              topOrBottom = false;
-             viewportHeight = currentPages.at(1)->getPageNumber() > 1 ? viewportHeight += currentPages.at(i)->height() + 20 : viewportHeight;
+             viewportHeight = currentPages.at(0)->getPageNumber() > 1 ? viewportHeight += currentPages.at(0)->height() + 20 : viewportHeight;
              firstPageHeight = currentPages.at(i+1);
              emit hitExtremity();
-             break;
+             return;
+         }
+         else if (i > 0 && currentPages.at(i) == firstPageHeight && j - ((currentPages.at(i - 1)->height()) + 20) > 0) {
+             topOrBottom = true;
+             viewportHeight = currentPages.at(0)->getPageNumber() > 1 ? viewportHeight -= currentPages.at(i-1)->height() + 20 : viewportHeight;
+             firstPageHeight = currentPages.at(i - 1);
+             emit hitExtremity();
+             return;
          }
 
         currentPages.at(i)->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
@@ -92,16 +98,13 @@ void TabScrollArea::wheelEvent(QWheelEvent* event)
 
     int delta = event->angleDelta().y();
 
-    if (delta < 0 && viewportHeight > -documentHeight) {
+    if ((delta < 0 && viewportHeight > -documentHeight) || (delta > 0 && viewportHeight < 20)) {
         viewportHeight += delta;
+        fromScrolling = true;
         updateScrollArea(&currentPages);
+        fromScrolling = false;
     }
     
-    /*else if (delta > 0 && viewportHeight < 20) {
-        viewportHeight += delta;
-        updateScrollArea(&currentPages);
-    }*/
-
     // Check if scrolling is enabled, if so just use delta values, otherwise check if we hit an extremity
     /*QScrollBar* vScrollBar = verticalScrollBar();
     if (!vScrollBar || vScrollBar->maximum() == 0) {

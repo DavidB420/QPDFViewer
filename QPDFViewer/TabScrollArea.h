@@ -39,6 +39,7 @@ private:
 	long documentHeight;
 	long viewportHeight;
 	long goToNextPageHeight;
+	bool fromScrolling;
 	Page* firstPageHeight;
 	QVector <Page*> currentPages;
 signals:
