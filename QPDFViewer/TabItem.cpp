@@ -30,11 +30,19 @@ TabItem::TabItem()
 
 	scrollArea = new TabScrollArea(this);
 	scrollArea->setBackgroundRole(QPalette::Mid);
-	scrollArea->setAlignment(Qt::AlignCenter);
+	scrollArea->viewport()->setBackgroundRole(QPalette::Mid);
+	//scrollArea->setAlignment(Qt::AlignCenter);
 
 	QHBoxLayout* layout = new QHBoxLayout;
 	layout->addWidget(scrollArea);
 	layout->setContentsMargins(0, 0, 0, 0);
+
+	/*QWidget* scrollContent = new QWidget(scrollArea->viewport());
+	scrollLayout = new QVBoxLayout(scrollContent);
+	scrollLayout->setAlignment(Qt::AlignCenter);*/
+
+	/*scrollArea->setWidgetResizable(true);
+	scrollArea->setWidget(scrollContent);*/
 
 	setLayout(layout);
 }
@@ -72,6 +80,7 @@ void TabItem::setSplitterData(QByteArray data)
 void TabItem::setPDFEngine(std::string fileName, QWidget* parentWindow)
 {
 	engine = new PDFEngine(fileName, parentWindow);
+	scrollArea->setDocumentHeight(engine->getDocumentHeight());
 }
 
 void TabItem::setFilePath(QString filePath)
@@ -81,7 +90,10 @@ void TabItem::setFilePath(QString filePath)
 
 void TabItem::updateScrollArea()
 {
-	scrollArea->setWidget(engine->returnImage());
+	QVector <Page*> pagesVector = engine->getVisiblePages();
+	scrollArea->updateScrollArea(&pagesVector);
+
+	//scrollArea->setWidget(engine->returnImage());
 }
 
 void TabItem::setUseNavBar(bool enabled)

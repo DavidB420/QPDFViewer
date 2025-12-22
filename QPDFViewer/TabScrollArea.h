@@ -21,18 +21,24 @@
 #define TABSCROLLAREA_H
 
 #include "qscrollarea.h"
+#include "Page.h"
 #include <QScrollBar>
 
-class TabScrollArea : public QScrollArea
+class TabScrollArea : public QAbstractScrollArea
 {
 	Q_OBJECT
 public:
 	TabScrollArea(QWidget* parent = nullptr);
+	void updateScrollArea(QVector <Page*> *pages);
+	void setDocumentHeight(unsigned long documentHeight);
 	bool returnTopOrBottom();
 protected:
 	void wheelEvent(QWheelEvent* event) override;
 private:
 	bool topOrBottom;
+	unsigned long documentHeight;
+	unsigned long viewportHeight;
+	QVector <Page*> currentPages;
 signals:
 	void hitExtremity();
 };

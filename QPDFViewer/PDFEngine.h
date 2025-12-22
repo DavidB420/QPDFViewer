@@ -47,6 +47,8 @@ public:
 	void displayAllText();
 	void addNavOutline(NavigationBar* tView);
 	void rotatePDF(bool plus90);
+	unsigned long getDocumentHeight();
+	QVector <Page*> getVisiblePages();
 private:
 	QWidget *parentWindow;
 	Page* outputLabel;
@@ -56,6 +58,7 @@ private:
 	poppler::rotation_enum pdfRotation;
 	int currentPage;
 	int scaleValue;
+	unsigned long documentHeight;
 	void recursivelyFillModel(poppler::toc_item* currentItem, QStandardItem* rootItem, NavigationBar *navBar);
 };
 

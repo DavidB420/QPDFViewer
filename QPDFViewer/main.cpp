@@ -27,9 +27,9 @@ int main(int argc, char *argv[])
     QApplication a(argc, argv);
     
     //Set core app params
-    QCoreApplication::setApplicationName("QPDFVIewer");
+    QCoreApplication::setApplicationName("QPDFViewer");
     QCoreApplication::setOrganizationName("David Badiei");
-    QCoreApplication::setApplicationVersion("1.51");
+    QCoreApplication::setApplicationVersion("2.0");
 
     //Create cmd parser
     QCommandLineParser parser;

@@ -28,6 +28,9 @@ Page::Page(QWidget* parent, PDFEngine* pdfParent, QImage *img)
 	this->parent = pdfParent;
 	dragging = false;
 	isDragging = false;
+
+	setFixedWidth(pagePixmap.width());
+	setFixedHeight(pagePixmap.height());
 }
 
 QPixmap Page::getPagePixmap()

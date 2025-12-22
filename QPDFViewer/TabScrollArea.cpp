@@ -23,6 +23,40 @@
 TabScrollArea::TabScrollArea(QWidget* parent)
 {
 	topOrBottom = false;
+
+    documentHeight = 0;
+    viewportHeight = 20;
+
+    //verticalScrollBar()->setRange()
+}
+
+void TabScrollArea::updateScrollArea(QVector <Page*> *pages)
+{
+    if (currentPages.size() > 0 && pages != &currentPages) {
+        for (int i = 0; i < currentPages.size(); i++) {
+            delete currentPages.at(i);
+        }
+    }
+
+    currentPages = *pages;
+
+    for (int i = 0, j = viewportHeight; i < currentPages.length(); i++) {
+
+        currentPages.at(i)->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+        currentPages.at(i)->setParent(viewport());
+
+        currentPages.at(i)->setGeometry(qMax(0,viewport()->width() - currentPages.at(i)->width()) / 2, j, currentPages.at(i)->width(), currentPages.at(i)->height());
+        currentPages.at(i)->show();
+
+        j += currentPages.at(i)->height() + 20;
+    }
+}
+
+void TabScrollArea::setDocumentHeight(unsigned long documentHeight)
+{
+    this->documentHeight = documentHeight;
+    verticalScrollBar()->setRange(0,this->documentHeight);
+    verticalScrollBar()->setPageStep(viewport()->height());
 }
 
 bool TabScrollArea::returnTopOrBottom()
@@ -33,10 +67,18 @@ bool TabScrollArea::returnTopOrBottom()
 void TabScrollArea::wheelEvent(QWheelEvent* event)
 {
 	//run normal qscrollarea wheel code
-	QScrollArea::wheelEvent(event);
+	QAbstractScrollArea::wheelEvent(event);
+
+    viewportHeight += event->angleDelta().y();
+    /*if (event->angleDelta().y() < 0)
+        viewportHeight;
+    else if (event->angleDelta().y() > 0)
+        viewportHeight+=10;*/
+
+    updateScrollArea(&currentPages);
 
     // Check if scrolling is enabled, if so just use delta values, otherwise check if we hit an extremity
-    QScrollBar* vScrollBar = verticalScrollBar();
+    /*QScrollBar* vScrollBar = verticalScrollBar();
     if (!vScrollBar || vScrollBar->maximum() == 0) {
         
         if (event->angleDelta().y() < 0)
@@ -56,5 +98,5 @@ void TabScrollArea::wheelEvent(QWheelEvent* event)
             topOrBottom = true;
             emit hitExtremity();
         }
-    }
+    }*/
 }
