@@ -52,15 +52,18 @@ PDFEngine::PDFEngine(std::string fileName, QWidget *parentWindow)
 
 	pdfRotation = poppler::rotate_0;
 
-	previousPages;
-
+	documentHeight = 0;
 	for (int i = 0; i < getTotalNumberOfPages(); i++) {
 		poppler::page* page = doc->create_page(i);
 		QRectF pt(page->page_rect().x(),page->page_rect().y(),page->page_rect().width(),page->page_rect().height());
 
-		int h = int(pt.height() * int((72.0f * scaleValue / 75.0f)/72.0f));
+		int h = int((pt.height()/72.0f) * (72.0f * scaleValue / 75.0f));
+
+		allPageHeights.push_back(h);
 
 		documentHeight += h + 20;
+
+		delete page;
 	}
 }
 
@@ -302,6 +305,11 @@ QVector<Page*> PDFEngine::getVisiblePages()
 	previousPages = visiblePages;
 
 	return visiblePages;
+}
+
+QVector<int> PDFEngine::getPageHeights()
+{
+	return allPageHeights;
 }
 
 void PDFEngine::recursivelyFillModel(poppler::toc_item* currentItem, QStandardItem* rootItem, NavigationBar* navBar)

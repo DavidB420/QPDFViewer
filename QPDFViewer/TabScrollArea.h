@@ -29,21 +29,31 @@ class TabScrollArea : public QAbstractScrollArea
 	Q_OBJECT
 public:
 	TabScrollArea(QWidget* parent = nullptr);
-	void updateScrollArea(QVector <Page*> *pages);
+	void updateScrollArea(QVector <Page*> *pages, bool runItself=false);
 	void setDocumentHeight(unsigned long documentHeight);
+	void setCurrentPages(QVector <Page*> *pages);
+	void setPageHeights(QVector <int> heights);
 	bool returnTopOrBottom();
+	int setBufferLock;
+	int pageToLoad;
 protected:
 	void wheelEvent(QWheelEvent* event) override;
 private:
 	bool topOrBottom;
 	long documentHeight;
+	long currentDocumentHeight;
 	long viewportHeight;
-	long goToNextPageHeight;
+	long verticalScrollValue;
 	bool fromScrolling;
+	int verticalScrollLock;
 	Page* firstPageHeight;
 	QVector <Page*> currentPages;
+	QVector <int> allPageHeights;
+	void findPageToLoad(long pageToLoad);
 signals:
 	void hitExtremity();
+private slots:
+	void onVerticalScrollChanged(int value);
 };
 
 #endif

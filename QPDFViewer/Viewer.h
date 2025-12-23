@@ -48,6 +48,7 @@ public:
 	~Viewer();
 	void keyPressEvent(QKeyEvent* event);
 	void openFile(QString fileName);
+	void setPageKey(int key = -1);
 	void setAndUpdatePageKey(int key = -1);
 private:
 	QLabel* totalPage;
@@ -73,6 +74,7 @@ private slots:
 	void openFileDialog();
 	void exitApp();
 	void aboutApp();
+	void setPage();
 	void setAndUpdatePage();
 	void setAndUpdateScale();
 	void findPhrase();

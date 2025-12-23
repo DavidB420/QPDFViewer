@@ -161,7 +161,7 @@ Viewer::Viewer(QWidget* parent)
 	tWidget->addTab(tabItems.at(currentTab), "No PDF loaded");
 	tWidget->addTab(new QWidget(), tr("+"));
 	tWidget->tabBar()->setTabButton(tWidget->count() - 1, QTabBar::RightSide, nullptr);
-	connect(tabItems.at(currentTab)->getScrollArea(), &TabScrollArea::hitExtremity, this, &Viewer::setAndUpdatePage);
+	connect(tabItems.at(currentTab)->getScrollArea(), &TabScrollArea::hitExtremity, this, &Viewer::setPage);
 	connect(tWidget, &QTabWidget::tabBarClicked, this, &Viewer::onTabClicked);
 	connect(tWidget->tabBar(), &QTabBar::tabMoved, this, &Viewer::onTabMoved);
 	connect(tWidget, &QTabWidget::tabCloseRequested, this, &Viewer::onTabCloseRequested);
@@ -184,6 +184,7 @@ void Viewer::keyPressEvent(QKeyEvent* event)
 	case Qt::Key_F1:
 	case Qt::Key_F2:
 		setAndUpdatePageKey(event->key());
+
 		break;
 	}
 }
@@ -244,9 +245,13 @@ void Viewer::aboutApp()
 		tr("<b>QPDFViewer 2.0 BETA</b><br>Written by David Badiei, 2025<br>Licensed under GNU General Public License v3 (GPL-3)"));
 }
 
-void Viewer::setAndUpdatePage() { setAndUpdatePageKey(); }
+void Viewer::setPage() { setPageKey(); tabItems.at(currentTab)->rerenderUpdateScrollArea();}
 
-void Viewer::setAndUpdatePageKey(int key)
+void Viewer::setAndUpdatePage() { setPage(); tabItems.at(currentTab)->updateScrollArea();}
+
+void Viewer::setAndUpdatePageKey(int key) { setPageKey(key); tabItems.at(currentTab)->updateScrollArea(); }
+
+void Viewer::setPageKey(int key)
 {
 	//Updates page number either when function keys or arrow buttons are pressed
 	if (tabItems.at(currentTab)->getEngine() != NULL) {
@@ -269,8 +274,6 @@ void Viewer::setAndUpdatePageKey(int key)
 				pageNumber->setText(QString::number(tabItems.at(currentTab)->getEngine()->getCurrentPage()));
 		}
 		
-		//Refresh page
-		tabItems.at(currentTab)->updateScrollArea();
 	}
 }
 

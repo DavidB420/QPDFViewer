@@ -41,6 +41,7 @@ public:
 	void updateScrollArea();
 	void setUseNavBar(bool enabled);
 	std::string getFileName();
+	void rerenderUpdateScrollArea();
 private:
 	PDFEngine* engine;
 	QString title;

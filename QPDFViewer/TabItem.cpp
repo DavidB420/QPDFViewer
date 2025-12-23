@@ -81,6 +81,7 @@ void TabItem::setPDFEngine(std::string fileName, QWidget* parentWindow)
 {
 	engine = new PDFEngine(fileName, parentWindow);
 	scrollArea->setDocumentHeight(engine->getDocumentHeight());
+	scrollArea->setPageHeights(engine->getPageHeights());
 }
 
 void TabItem::setFilePath(QString filePath)
@@ -116,5 +117,12 @@ std::string TabItem::getFileName()
 	}
 
 	return filePathStd.substr(startFN,filePathStd.length());
+}
+
+void TabItem::rerenderUpdateScrollArea()
+{
+	QVector <Page*> pagesVector = engine->getVisiblePages();
+	scrollArea->setCurrentPages(&pagesVector);
+	scrollArea->setBufferLock = 0;
 }
 
