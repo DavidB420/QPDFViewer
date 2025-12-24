@@ -44,17 +44,21 @@ private:
 	bool topOrBottom;
 	long documentHeight;
 	long verticalScrollValue;
+	long horizontalScrollValue;
 	bool fromScrolling;
+	bool horizontalEnabled;
 	int pageToLoad;
 	Page* firstPageHeight;
 	QVector <Page*> currentPages;
 	QVector <int> allPageHeights;
 	void findPageToLoad(long pageToLoad);
 	Page* findPage(int pageNum);
+	bool checkIfHorizontalScrollRequired();
 signals:
 	void hitExtremity();
 private slots:
 	void onVerticalScrollChanged(int value);
+	void onHorizontalScrollChanged(int value);
 };
 
 #endif

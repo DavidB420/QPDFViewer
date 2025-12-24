@@ -27,6 +27,14 @@ TabScrollArea::TabScrollArea(QWidget* parent)
     fromScrolling = false;
     verticalScrollValue = 0;
     bufferLock = 0;
+    horizontalEnabled = false;
+    horizontalScrollValue = -1;
+
+    horizontalScrollBar()->setEnabled(horizontalEnabled);
+    horizontalScrollBar()->setValue(horizontalScrollValue);
+
+    connect(horizontalScrollBar(), &QScrollBar::valueChanged,
+        this, &TabScrollArea::onHorizontalScrollChanged);
 }
 
 TabScrollArea::~TabScrollArea()
@@ -47,16 +55,17 @@ void TabScrollArea::updateScrollArea(QVector <Page*> *pages, bool runItself)
                  emit hitExtremity();
                  while (bufferLock > 0);
                  firstPageHeight = findPage(pageToLoad);
+                 horizontalEnabled = checkIfHorizontalScrollRequired();
                  updateScrollArea(&currentPages, false);
                  return;
              }
              else if (runItself && k > 0 && currentPages.at(k) == firstPageHeight && j - ((currentPages.at(k - 1)->height()) + 20) > 0) {
-                 firstPageHeight = currentPages.at(k - 1);
                  bufferLock = 1;
                  findPageToLoad(verticalScrollValue);
                  emit hitExtremity();
                  while (bufferLock > 0);
                  firstPageHeight = findPage(pageToLoad);
+                 horizontalEnabled = checkIfHorizontalScrollRequired();
                  updateScrollArea(&currentPages, false);
                  return;
              }
@@ -64,7 +73,7 @@ void TabScrollArea::updateScrollArea(QVector <Page*> *pages, bool runItself)
              currentPages.at(k)->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
              currentPages.at(k)->setParent(viewport());
 
-             currentPages.at(k)->setGeometry(qMax(0, viewport()->width() - currentPages.at(k)->width()) / 2, j, currentPages.at(k)->width(), currentPages.at(k)->height());
+             currentPages.at(k)->setGeometry(horizontalEnabled ? -horizontalScrollValue : ((viewport()->width() - currentPages.at(k)->width()) / 2), j, currentPages.at(k)->width(), currentPages.at(k)->height());
              currentPages.at(k)->show();
 
              j += currentPages.at(k)->height() + 20;
@@ -83,7 +92,7 @@ void TabScrollArea::setDocumentHeight(unsigned long documentHeight)
 {
     this->documentHeight = documentHeight;
     int x = this->documentHeight - viewport()->height();
-    verticalScrollBar()->setRange(0,(this->documentHeight- viewport()->height())+20);
+    verticalScrollBar()->setRange(0,(this->documentHeight- viewport()->height())+40); //+40 to compensate for starting spacing + horizontal scroll bar
     verticalScrollBar()->setPageStep(viewport()->height());
     verticalScrollBar()->setValue(0);
     verticalScrollValue = verticalScrollBar()->value();
@@ -110,6 +119,43 @@ Page* TabScrollArea::findPage(int pageNum)
     }
 
     return NULL;
+}
+
+bool TabScrollArea::checkIfHorizontalScrollRequired()
+{
+    bool needed = false;
+    int maxWidth = 0;
+
+    for (int i = 0; i < currentPages.length(); i++) {
+        maxWidth = currentPages.at(i)->width() > maxWidth ? currentPages.at(i)->width() : maxWidth;
+        
+        if (maxWidth > viewport()->width()) {
+            horizontalScrollBar()->setEnabled(true);
+            needed = true;
+        }
+    }
+    
+    if (needed) {
+        if (horizontalScrollValue > maxWidth || horizontalScrollValue < 0) {
+            horizontalScrollValue = viewport()->width() - maxWidth / 2;
+            horizontalScrollBar()->setValue(horizontalScrollValue);
+        }
+        horizontalScrollBar()->setRange(0, maxWidth);
+        horizontalScrollBar()->setPageStep(viewport()->width());
+    }
+
+    return needed;
+}
+
+void TabScrollArea::onHorizontalScrollChanged(int value)
+{
+    QSignalBlocker blocker(horizontalScrollBar());
+
+    horizontalScrollValue = value;
+
+    updateScrollArea(&currentPages, false);
+
+    horizontalScrollBar()->setValue(horizontalScrollValue);
 }
 
 void TabScrollArea::setCurrentPages(QVector<Page*> *pages)
@@ -190,6 +236,11 @@ void TabScrollArea::wheelEvent(QWheelEvent* event)
 void TabScrollArea::resizeEvent(QResizeEvent* event)
 {
     QAbstractScrollArea::resizeEvent(event);
+
+    //Assume we dont need a scroll bar, will be enabled if required
+    horizontalScrollBar()->setEnabled(false);
+
+    horizontalEnabled = checkIfHorizontalScrollRequired();
 
     updateScrollArea(&currentPages, false);
 }
