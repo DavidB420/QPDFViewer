@@ -39,6 +39,7 @@ public:
 	int bufferLock;
 protected:
 	void wheelEvent(QWheelEvent* event) override;
+	void resizeEvent(QResizeEvent* event) override;
 private:
 	bool topOrBottom;
 	long documentHeight;

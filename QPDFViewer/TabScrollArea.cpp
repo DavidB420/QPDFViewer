@@ -47,9 +47,6 @@ void TabScrollArea::updateScrollArea(QVector <Page*> *pages, bool runItself)
                  emit hitExtremity();
                  while (bufferLock > 0);
                  firstPageHeight = findPage(pageToLoad);
-                 k = 0;
-                 i = 0;
-                 j = -verticalScrollValue;
                  updateScrollArea(&currentPages, false);
                  return;
              }
@@ -60,9 +57,6 @@ void TabScrollArea::updateScrollArea(QVector <Page*> *pages, bool runItself)
                  emit hitExtremity();
                  while (bufferLock > 0);
                  firstPageHeight = findPage(pageToLoad);
-                 k = 0;
-                 i = 0;
-                 j = -verticalScrollValue;
                  updateScrollArea(&currentPages, false);
                  return;
              }
@@ -191,6 +185,13 @@ void TabScrollArea::wheelEvent(QWheelEvent* event)
     bar->setValue(bar->value() - delta * speedMultiplier / 120);
 
     event->accept();
+}
+
+void TabScrollArea::resizeEvent(QResizeEvent* event)
+{
+    QAbstractScrollArea::resizeEvent(event);
+
+    updateScrollArea(&currentPages, false);
 }
 
 
