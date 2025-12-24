@@ -33,23 +33,27 @@ TabScrollArea::TabScrollArea(QWidget* parent)
     verticalScrollLock = 0;
     setBufferLock = 0;
 
-    //verticalScrollBar()->setRange()
+}
+
+TabScrollArea::~TabScrollArea()
+{
+    for (int i = 0; i < currentPages.length(); i++)
+        delete currentPages.at(i);
 }
 
 void TabScrollArea::updateScrollArea(QVector <Page*> *pages, bool runItself)
 {
     setCurrentPages(pages);
 
-    for (int i = 0, k = 0, j = -verticalScrollValue; i < allPageHeights.length(); i++) {
+    for (int i = 0, k = 0, j = (- verticalScrollValue)+20; i < allPageHeights.length(); i++) {
          if (i + 1 >= currentPages.at(0)->getPageNumber() && i+1 <= currentPages.at(currentPages.length() - 1)->getPageNumber()) {
              if (runItself && currentPages.at(k) == firstPageHeight && j + (currentPages.at(k)->height() / 2) + 20 < 0 && firstPageHeight != currentPages.at(currentPages.length() - 1)) {
                  topOrBottom = false;
-                 firstPageHeight = currentPages.at(k + 1);
                  setBufferLock = 1;
                  findPageToLoad(verticalScrollValue);
-                 pageToLoad;
                  emit hitExtremity();
                  while (setBufferLock > 0);
+                 firstPageHeight = findPage(pageToLoad);
                  k = 0;
                  i = 0;
                  j = -verticalScrollValue;
@@ -60,8 +64,10 @@ void TabScrollArea::updateScrollArea(QVector <Page*> *pages, bool runItself)
                  topOrBottom = true;
                  firstPageHeight = currentPages.at(k - 1);
                  setBufferLock = 1;
+                 findPageToLoad(verticalScrollValue);
                  emit hitExtremity();
                  while (setBufferLock > 0);
+                 firstPageHeight = findPage(pageToLoad);
                  k = 0;
                  i = 0;
                  j = -verticalScrollValue;
@@ -91,7 +97,7 @@ void TabScrollArea::setDocumentHeight(unsigned long documentHeight)
 {
     this->documentHeight = documentHeight;
     int x = this->documentHeight - viewport()->height();
-    verticalScrollBar()->setRange(0,this->documentHeight- viewport()->height());
+    verticalScrollBar()->setRange(0,(this->documentHeight- viewport()->height())+20);
     verticalScrollBar()->setPageStep(viewport()->height());
     verticalScrollBar()->setValue(0);
     verticalScrollValue = verticalScrollBar()->value();
@@ -101,8 +107,8 @@ void TabScrollArea::setDocumentHeight(unsigned long documentHeight)
 
 void TabScrollArea::findPageToLoad(long verticalScrollValue)
 {
-    for (int i = 0 , j =0; i < allPageHeights.length(); i++){
-        if (verticalScrollValue >= j && verticalScrollValue <= allPageHeights.at(i) + 20) {
+    for (int i = 0 , j = -verticalScrollValue; i < allPageHeights.length(); i++){
+        if (j >= 0) {
             pageToLoad = i + 1;
             break;
         }
@@ -110,11 +116,21 @@ void TabScrollArea::findPageToLoad(long verticalScrollValue)
     }
 }
 
+Page* TabScrollArea::findPage(int pageNum)
+{
+    for (int i = 0; i < currentPages.length(); i++) {
+        if (currentPages.at(i)->getPageNumber() == pageNum)
+            return currentPages.at(i);
+    }
+
+    return NULL;
+}
+
 void TabScrollArea::setCurrentPages(QVector<Page*> *pages)
 {
     if (currentPages.size() > 0 && pages != &currentPages) {
         for (int i = 0; i < currentPages.size(); i++) {
-            if (!pages->contains(currentPages.at(i))) {
+            if (!pages->contains(currentPages.at(i)) || currentPages.at(i)->getParent() != pages->at(0)->getParent()) {
                 delete currentPages.at(i);
                 currentPages.removeAt(i);
                 i--;
@@ -122,7 +138,7 @@ void TabScrollArea::setCurrentPages(QVector<Page*> *pages)
         }
         if (!fromScrolling) {
             viewportHeight = 20;
-            verticalScrollValue = 20;
+            verticalScrollValue = 0;
             firstPageHeight = NULL;
         }
     }
@@ -164,7 +180,7 @@ bool TabScrollArea::returnTopOrBottom()
 void TabScrollArea::wheelEvent(QWheelEvent* event)
 {
     //run normal qscrollarea wheel code
-    constexpr int speedMultiplier = 100; // try 2–5
+    constexpr int speedMultiplier = 100;
 
     int delta = event->angleDelta().y();
 

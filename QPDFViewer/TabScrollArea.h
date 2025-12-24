@@ -29,6 +29,7 @@ class TabScrollArea : public QAbstractScrollArea
 	Q_OBJECT
 public:
 	TabScrollArea(QWidget* parent = nullptr);
+	~TabScrollArea();
 	void updateScrollArea(QVector <Page*> *pages, bool runItself=false);
 	void setDocumentHeight(unsigned long documentHeight);
 	void setCurrentPages(QVector <Page*> *pages);
@@ -50,6 +51,7 @@ private:
 	QVector <Page*> currentPages;
 	QVector <int> allPageHeights;
 	void findPageToLoad(long pageToLoad);
+	Page* findPage(int pageNum);
 signals:
 	void hitExtremity();
 private slots:

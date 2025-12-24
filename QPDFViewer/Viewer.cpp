@@ -263,10 +263,13 @@ void Viewer::setPageKey(int key)
 		}
 		else {
 			bool result = false;
-			if (upButton == sender() || key == Qt::Key_F2 || (sender() == tabItems.at(currentTab)->getScrollArea() && !tabItems.at(currentTab)->getScrollArea()->returnTopOrBottom()))
+			if (upButton == sender() || key == Qt::Key_F2)
 				result = tabItems.at(currentTab)->getEngine()->setCurrentPage(tabItems.at(currentTab)->getEngine()->getCurrentPage() + 1);
-			else if (downButton == sender() || key == Qt::Key_F1 || (sender() == tabItems.at(currentTab)->getScrollArea() && tabItems.at(currentTab)->getScrollArea()->returnTopOrBottom()))
+			else if (downButton == sender() || key == Qt::Key_F1)
 				result = tabItems.at(currentTab)->getEngine()->setCurrentPage(tabItems.at(currentTab)->getEngine()->getCurrentPage() - 1);
+
+			if (sender() == tabItems.at(currentTab)->getScrollArea())
+				result = tabItems.at(currentTab)->getEngine()->setCurrentPage(tabItems.at(currentTab)->getScrollArea()->pageToLoad);
 
 			if (!result)
 				return;
@@ -451,6 +454,7 @@ void Viewer::onTabCloseRequested(int index)
 	//Check if this isnt the plus tab, otherwise do the remove
 	if (index < tWidget->count() - 1) {
 		tWidget->removeTab(index);
+		delete tabItems.at(index);
 		tabItems.erase(tabItems.begin()+index);
 		if (currentTab > 0)
 			currentTab--;
