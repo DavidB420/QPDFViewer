@@ -123,6 +123,6 @@ void TabItem::rerenderUpdateScrollArea()
 {
 	QVector <Page*> pagesVector = engine->getVisiblePages();
 	scrollArea->setCurrentPages(&pagesVector);
-	scrollArea->setBufferLock = 0;
+	scrollArea->setBufferLock(0);
 }
 

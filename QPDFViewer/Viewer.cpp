@@ -269,7 +269,7 @@ void Viewer::setPageKey(int key)
 				result = tabItems.at(currentTab)->getEngine()->setCurrentPage(tabItems.at(currentTab)->getEngine()->getCurrentPage() - 1);
 
 			if (sender() == tabItems.at(currentTab)->getScrollArea())
-				result = tabItems.at(currentTab)->getEngine()->setCurrentPage(tabItems.at(currentTab)->getScrollArea()->pageToLoad);
+				result = tabItems.at(currentTab)->getEngine()->setCurrentPage(tabItems.at(currentTab)->getScrollArea()->getPageToLoad());
 
 			if (!result)
 				return;

@@ -34,19 +34,17 @@ public:
 	void setDocumentHeight(unsigned long documentHeight);
 	void setCurrentPages(QVector <Page*> *pages);
 	void setPageHeights(QVector <int> heights);
-	bool returnTopOrBottom();
-	int setBufferLock;
-	int pageToLoad;
+	int getPageToLoad();
+	void setBufferLock(int value);
+	int bufferLock;
 protected:
 	void wheelEvent(QWheelEvent* event) override;
 private:
 	bool topOrBottom;
 	long documentHeight;
-	long currentDocumentHeight;
-	long viewportHeight;
 	long verticalScrollValue;
 	bool fromScrolling;
-	int verticalScrollLock;
+	int pageToLoad;
 	Page* firstPageHeight;
 	QVector <Page*> currentPages;
 	QVector <int> allPageHeights;

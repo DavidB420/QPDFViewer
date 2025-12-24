@@ -22,17 +22,11 @@
 
 TabScrollArea::TabScrollArea(QWidget* parent)
 {
-	topOrBottom = false;
-
     documentHeight = 0;
-    currentDocumentHeight = 20;
-    viewportHeight = 0;
     firstPageHeight = NULL;
     fromScrolling = false;
     verticalScrollValue = 0;
-    verticalScrollLock = 0;
-    setBufferLock = 0;
-
+    bufferLock = 0;
 }
 
 TabScrollArea::~TabScrollArea()
@@ -48,11 +42,10 @@ void TabScrollArea::updateScrollArea(QVector <Page*> *pages, bool runItself)
     for (int i = 0, k = 0, j = (- verticalScrollValue)+20; i < allPageHeights.length(); i++) {
          if (i + 1 >= currentPages.at(0)->getPageNumber() && i+1 <= currentPages.at(currentPages.length() - 1)->getPageNumber()) {
              if (runItself && currentPages.at(k) == firstPageHeight && j + (currentPages.at(k)->height() / 2) + 20 < 0 && firstPageHeight != currentPages.at(currentPages.length() - 1)) {
-                 topOrBottom = false;
-                 setBufferLock = 1;
+                 bufferLock = 1;
                  findPageToLoad(verticalScrollValue);
                  emit hitExtremity();
-                 while (setBufferLock > 0);
+                 while (bufferLock > 0);
                  firstPageHeight = findPage(pageToLoad);
                  k = 0;
                  i = 0;
@@ -61,12 +54,11 @@ void TabScrollArea::updateScrollArea(QVector <Page*> *pages, bool runItself)
                  return;
              }
              else if (runItself && k > 0 && currentPages.at(k) == firstPageHeight && j - ((currentPages.at(k - 1)->height()) + 20) > 0) {
-                 topOrBottom = true;
                  firstPageHeight = currentPages.at(k - 1);
-                 setBufferLock = 1;
+                 bufferLock = 1;
                  findPageToLoad(verticalScrollValue);
                  emit hitExtremity();
-                 while (setBufferLock > 0);
+                 while (bufferLock > 0);
                  firstPageHeight = findPage(pageToLoad);
                  k = 0;
                  i = 0;
@@ -137,7 +129,6 @@ void TabScrollArea::setCurrentPages(QVector<Page*> *pages)
             }
         }
         if (!fromScrolling) {
-            viewportHeight = 20;
             verticalScrollValue = 0;
             firstPageHeight = NULL;
         }
@@ -149,6 +140,17 @@ void TabScrollArea::setCurrentPages(QVector<Page*> *pages)
 void TabScrollArea::setPageHeights(QVector<int> heights)
 {
     allPageHeights = heights;
+}
+
+int TabScrollArea::getPageToLoad()
+{
+    return pageToLoad;
+}
+
+void TabScrollArea::setBufferLock(int value)
+{
+    if (value <= 0)
+        bufferLock = 0;
 }
 
 void TabScrollArea::onVerticalScrollChanged(int value)
@@ -170,11 +172,6 @@ void TabScrollArea::onVerticalScrollChanged(int value)
 
     fromScrolling = false;
     inHandler = false;
-}
-
-bool TabScrollArea::returnTopOrBottom()
-{
-	return topOrBottom;
 }
 
 void TabScrollArea::wheelEvent(QWheelEvent* event)
