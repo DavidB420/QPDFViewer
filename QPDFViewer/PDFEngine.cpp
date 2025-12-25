@@ -194,7 +194,31 @@ void PDFEngine::displayTextBox(QRectF dim)
 		rectY = rectY - rectHeight;
 	}
 
-	std::string foundText = fromPopplerStringStdString(page->text(poppler::rectf(rectX / scaleValue * 75, rectY / scaleValue * 75, rectWidth / scaleValue * 75, rectHeight / scaleValue * 75)));
+	poppler::rectf grabRect;
+
+	double x = rectX / scaleValue * 75;
+	double y = rectY / scaleValue * 75;
+	double width = rectWidth / scaleValue * 75;
+	double height = rectHeight / scaleValue * 75;
+
+	//Transform rectangle back to original unrotated version
+	switch (pdfRotation) {
+	case 1:
+		grabRect = poppler::rectf(y, page->page_rect().height() - x - width, height, width);
+		break;
+	case 2:
+		grabRect = poppler::rectf(page->page_rect().width() - x - width, page->page_rect().height() - y - height, width, height);
+		break;
+	case 3:
+		grabRect = poppler::rectf(page->page_rect().width() - y - height, x, height, width);
+		break;
+	case 0:
+	default:
+		grabRect = poppler::rectf(x, y, width, height);
+		break;
+	}
+
+	std::string foundText = fromPopplerStringStdString(page->text(grabRect));
 	delete page;
 	TextBoxDialog* dialog = new TextBoxDialog(this->parentWindow, &foundText);
 	dialog->show();
