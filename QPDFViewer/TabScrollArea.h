@@ -34,6 +34,7 @@ public:
 	void setDocumentHeight(unsigned long documentHeight, bool recalculateVerticalValue=false, int pageNum=-1);
 	void setCurrentPages(QVector <Page*> *pages);
 	void setPageHeights(QVector <int> heights);
+	void updateVerticalScrollBar(int pageNum);
 	int getPageToLoad();
 	void setBufferLock(int value);
 	int bufferLock;

@@ -52,6 +52,16 @@ int Page::getScale()
 	return scale;
 }
 
+QPointF Page::getFirstPoint()
+{
+	return firstPoint;
+}
+
+QPointF Page::getCurrentPoint()
+{
+	return currentPoint;
+}
+
 poppler::rotation_enum Page::getRotation()
 {
 	return rotation;

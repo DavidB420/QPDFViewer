@@ -184,7 +184,6 @@ void Viewer::keyPressEvent(QKeyEvent* event)
 	case Qt::Key_F1:
 	case Qt::Key_F2:
 		setAndUpdatePageKey(event->key());
-
 		break;
 	}
 }
@@ -248,9 +247,9 @@ void Viewer::aboutApp()
 
 void Viewer::setPage() { setPageKey(); tabItems.at(currentTab)->rerenderUpdateScrollArea();}
 
-void Viewer::setAndUpdatePage() { setPage(); tabItems.at(currentTab)->updateScrollArea();}
+void Viewer::setAndUpdatePage() { setPage(); tabItems.at(currentTab)->updateScrollArea(true);}
 
-void Viewer::setAndUpdatePageKey(int key) { setPageKey(key); tabItems.at(currentTab)->updateScrollArea(); }
+void Viewer::setAndUpdatePageKey(int key) { setPageKey(key); tabItems.at(currentTab)->updateScrollArea(true); }
 
 void Viewer::setPageKey(int key)
 {
@@ -311,7 +310,7 @@ void Viewer::findPhrase()
 		result = tabItems.at(currentTab)->getEngine()->findPhraseInDocument(searchBox->text().toStdString(),poppler::page::search_previous_result);
 
 	if (result) {
-		tabItems.at(currentTab)->updateScrollArea();
+		tabItems.at(currentTab)->updateScrollArea(true);
 		pageNumber->setText(QString::number(tabItems.at(currentTab)->getEngine()->getCurrentPage()));
 	}
 	else
@@ -368,7 +367,7 @@ void Viewer::updatePageNavBar(const int pNum)
 {
 	//Update the page based on button clicked in nav bar
 	tabItems.at(currentTab)->getEngine()->setCurrentPage(pNum);
-	tabItems.at(currentTab)->updateScrollArea();
+	tabItems.at(currentTab)->updateScrollArea(true);
 	pageNumber->setText(QString::number(pNum));
 }
 
@@ -556,7 +555,7 @@ void Viewer::getPrintDialog()
 					for (int i = 0; i < copies; i++) {
 						for (int j = min; j <= max; j++) {
 							tabItems.at(currentTab)->getEngine()->setCurrentPage(j);
-							tabItems.at(currentTab)->updateScrollArea();
+							tabItems.at(currentTab)->updateScrollArea(true);
 							Page* printPage = tabItems.at(currentTab)->getEngine()->returnImage();
 							QPixmap pMap = printPage->getPagePixmap();
 							delete printPage;
@@ -576,7 +575,7 @@ void Viewer::getPrintDialog()
 
 					//Reset page as it was taken over by the print operation
 					tabItems.at(currentTab)->getEngine()->setCurrentPage(tmp);
-					tabItems.at(currentTab)->updateScrollArea();
+					tabItems.at(currentTab)->updateScrollArea(true);
 				}
 				else
 					QMessageBox::critical(this, "Page range out of bounds", "Entered page range ( " + QString::number(min) + " , " + QString::number(max) + " ) out of bounds!");

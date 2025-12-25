@@ -199,6 +199,17 @@ void TabScrollArea::setPageHeights(QVector<int> heights)
     allPageHeights = heights;
 }
 
+void TabScrollArea::updateVerticalScrollBar(int pageNum)
+{
+    verticalScrollBar()->blockSignals(true);
+    verticalScrollValue = findPageOffset(pageNum);
+    verticalScrollBar()->setValue(verticalScrollValue);
+    fromScrolling = true;
+    triggerEventAndUpdateArea();
+    fromScrolling = false;
+    verticalScrollBar()->blockSignals(false);
+}
+
 int TabScrollArea::getPageToLoad()
 {
     return pageToLoad;

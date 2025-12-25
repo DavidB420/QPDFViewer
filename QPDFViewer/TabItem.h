@@ -38,7 +38,7 @@ public:
 	void setSplitterData(QByteArray data);
 	void setPDFEngine(std::string fileName, QWidget* parentWindow);
 	void setFilePath(QString filePath);
-	void updateScrollArea();
+	void updateScrollArea(bool dontRefresh=false);
 	void setUseNavBar(bool enabled);
 	std::string getFileName();
 	void rerenderUpdateScrollArea();

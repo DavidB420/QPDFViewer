@@ -79,13 +79,15 @@ void TabItem::setFilePath(QString filePath)
 	this->filePath = filePath;
 }
 
-void TabItem::updateScrollArea()
+void TabItem::updateScrollArea(bool dontRefresh)
 {
-	QVector <Page*> pagesVector = engine->getVisiblePages();
-	scrollArea->updateScrollArea(&pagesVector);
-
-	scrollArea->setPageHeights(engine->getPageHeights());
-	scrollArea->setDocumentHeight(engine->getDocumentHeight(),true,engine->getCurrentPage());
+	if (!dontRefresh) {
+		scrollArea->setPageHeights(engine->getPageHeights());
+		scrollArea->setDocumentHeight(engine->getDocumentHeight(), true, engine->getCurrentPage());
+	}
+	else {
+		scrollArea->updateVerticalScrollBar(engine->getCurrentPage());
+	}
 }
 
 void TabItem::setUseNavBar(bool enabled)

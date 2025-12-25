@@ -62,6 +62,7 @@ private:
 	poppler::rotation_enum pdfRotation;
 	int currentPage;
 	int scaleValue;
+	int foundPageNum;
 	unsigned long documentHeight;
 	void recursivelyFillModel(poppler::toc_item* currentItem, QStandardItem* rootItem, NavigationBar *navBar);
 	QVector <Page*> previousPages;

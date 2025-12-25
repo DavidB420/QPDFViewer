@@ -53,6 +53,8 @@ PDFEngine::PDFEngine(std::string fileName, QWidget *parentWindow)
 	pdfRotation = poppler::rotate_0;
 
 	documentHeight = 0;
+
+	foundPageNum = -1;
 }
 
 Page *PDFEngine::returnImage()
@@ -74,10 +76,11 @@ Page *PDFEngine::returnImage()
 	outputLabel->resize(img.width(), img.height());
 	
 	//If there has been a selection from searching in the past, be sure to show it
-	if (selectedRect.x() != 0 && selectedRect.y() != 0 && selectedRect.width() != 0 && selectedRect.height() != 0) {
+	if (selectedRect.x() != 0 && selectedRect.y() != 0 && selectedRect.width() != 0 && selectedRect.height() != 0 && getCurrentPage() == foundPageNum) {
 		QRectF rect(selectedRect.x() * scaleValue / 75, selectedRect.y() * scaleValue / 75, selectedRect.width() * scaleValue / 75, selectedRect.height() * scaleValue / 75);
 		outputLabel->drawSelection(rect);
 		selectedRect = poppler::rectf(0, 0, 0, 0);
+		foundPageNum == -1;
 	}
 
 	//Delete poppler page
@@ -156,6 +159,7 @@ bool PDFEngine::findPhraseInDocument(std::string phrase, poppler::page::search_d
 		if (result) {
 			selectedRect = poppler::rectf(foundRect.x(), foundRect.y(), foundRect.width(), foundRect.height());
 			currentPage = currentSearch;
+			foundPageNum = currentSearch;
 			currentSearch = -1;
 		}
 
@@ -274,7 +278,8 @@ QVector<Page*> PDFEngine::getVisiblePages()
 		setCurrentPage(j);
 		Page* page = NULL;
 		for (int m = 0; m < previousPages.length(); m++) {
-			if (previousPages.at(m)->getPageNumber() == getCurrentPage() && previousPages.at(m)->getParent() == this && previousPages.at(m)->getScale() == scaleValue && previousPages.at(m)->getRotation() == pdfRotation)
+			if (previousPages.at(m)->getPageNumber() == getCurrentPage() && previousPages.at(m)->getParent() == this && previousPages.at(m)->getScale() == scaleValue && previousPages.at(m)->getRotation() == pdfRotation && 
+				previousPages.at(m)->getCurrentPoint().x() == 0 && previousPages.at(m)->getCurrentPoint().y() == 0 && previousPages.at(m)->getFirstPoint().x() == 0 && previousPages.at(m)->getFirstPoint().y() == 0 && foundPageNum != getCurrentPage())
 				page = previousPages.at(m);
 		}
 		if (page == NULL)
@@ -309,6 +314,13 @@ poppler::rotation_enum PDFEngine::getCurrentRotation()
 bool PDFEngine::setCurrentPageSignal(int page)
 {
 	bool result = setCurrentPage(page);
+
+	for (int i = 0; i < previousPages.length(); i++) {
+		if (previousPages.at(i)->getPageNumber() != page) {
+			QRectF rect(0, 0, 0, 0);
+			previousPages.at(i)->drawSelection(rect);
+		}
+	}
 
 	if (result)
 		emit pageChanged();

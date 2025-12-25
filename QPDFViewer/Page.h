@@ -36,6 +36,8 @@ public:
 	QPixmap getPagePixmap();
 	int getPageNumber();
 	int getScale();
+	QPointF getFirstPoint();
+	QPointF getCurrentPoint();
 	poppler::rotation_enum getRotation();
 	PDFEngine* getParent();
 	void mousePressEvent(QMouseEvent* event);
