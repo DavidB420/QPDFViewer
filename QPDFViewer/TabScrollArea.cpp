@@ -51,11 +51,7 @@ void TabScrollArea::updateScrollArea(QVector <Page*> *pages, bool runItself)
 
     for (int i = 0, k = 0, j = (- verticalScrollValue)+20; i < allPageHeights.length(); i++) {
          if (i + 1 >= currentPages.at(0)->getPageNumber() && i+1 <= currentPages.at(currentPages.length() - 1)->getPageNumber()) {
-             if (runItself && currentPages.at(k) == firstPageHeight && j + (currentPages.at(k)->height() / 2) + 20 < 0 && firstPageHeight != currentPages.at(currentPages.length() - 1)) {
-                 triggerEventAndUpdateArea();
-                 return;
-             }
-             else if (runItself && k > 0 && currentPages.at(k) == firstPageHeight && j - ((currentPages.at(k - 1)->height()) + 20) > 0) {
+             if ((runItself && currentPages.at(k) == firstPageHeight && j + (currentPages.at(k)->height() / 2) + 20 < 0 && firstPageHeight != currentPages.at(currentPages.length() - 1)) || (runItself && k > 0 && currentPages.at(k) == firstPageHeight && j - ((currentPages.at(k - 1)->height()) + 20) > 0)) {
                  triggerEventAndUpdateArea();
                  return;
              }
@@ -89,7 +85,9 @@ void TabScrollArea::setDocumentHeight(unsigned long documentHeight, bool recalcu
     else {
         verticalScrollValue = findPageOffset(pageNum);
         verticalScrollBar()->setValue(verticalScrollValue);
+        fromScrolling = true;
         triggerEventAndUpdateArea();
+        fromScrolling = false;
     }
     verticalScrollValue = verticalScrollBar()->value();
     connect(verticalScrollBar(), &QScrollBar::valueChanged,
@@ -104,6 +102,7 @@ void TabScrollArea::triggerEventAndUpdateArea()
     emit hitExtremity();
     while (bufferLock > 0);
     firstPageHeight = findPage(pageToLoad);
+    horizontalScrollBar()->setEnabled(false);
     horizontalEnabled = checkIfHorizontalScrollRequired();
     updateScrollArea(&currentPages, false);
 }
@@ -159,10 +158,10 @@ long TabScrollArea::findPageOffset(int pageNum)
 {
     long offset = 0;
 
-    for (int i = 0; i < pageNum; i++)
+    for (int i = 0; i < pageNum-1; i++)
         offset += allPageHeights.at(i) + 20;
     
-    return pageNum;
+    return offset;
 }
 
 void TabScrollArea::onHorizontalScrollChanged(int value)

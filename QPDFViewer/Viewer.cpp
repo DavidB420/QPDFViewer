@@ -293,7 +293,7 @@ void Viewer::setAndUpdateScale()
 		}
 
 		//Refresh page then update scale box
-		tabItems.at(currentTab)->updateScrollArea(true);
+		tabItems.at(currentTab)->updateScrollArea();
 
 		scaleBox->setCurrentText(scaleBox->currentText() + "%");
 	}
@@ -367,7 +367,7 @@ void Viewer::updatePageNavBar(const int pNum)
 {
 	//Update the page based on button clicked in nav bar
 	tabItems.at(currentTab)->getEngine()->setCurrentPage(pNum);
-	tabItems.at(currentTab)->updateScrollArea(true);
+	tabItems.at(currentTab)->updateScrollArea();
 	pageNumber->setText(QString::number(pNum));
 }
 
@@ -379,7 +379,7 @@ void Viewer::rotatePage()
 	else if (rotate90CCWAct == sender())
 		tabItems.at(currentTab)->getEngine()->rotatePDF(false);
 
-	tabItems.at(currentTab)->updateScrollArea(true);
+	tabItems.at(currentTab)->updateScrollArea();
 }
 
 void Viewer::onTabClicked(int index)
@@ -556,7 +556,9 @@ void Viewer::getPrintDialog()
 						for (int j = min; j <= max; j++) {
 							tabItems.at(currentTab)->getEngine()->setCurrentPage(j);
 							tabItems.at(currentTab)->updateScrollArea();
-							QPixmap pMap = tabItems.at(currentTab)->getEngine()->returnImage()->getPagePixmap();
+							Page* printPage = tabItems.at(currentTab)->getEngine()->returnImage();
+							QPixmap pMap = printPage->getPagePixmap();
+							delete printPage;
 							QSize size = pMap.size();
 							size.scale(rect.size(), Qt::KeepAspectRatio);
 							painter.setViewport(rect.x(), rect.y(), size.width(), size.height());

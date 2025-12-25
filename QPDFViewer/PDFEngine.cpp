@@ -347,7 +347,7 @@ void PDFEngine::updateHeightValues(bool total)
 		poppler::page* page = doc->create_page(i);
 		QRectF pt(page->page_rect().x(), page->page_rect().y(), page->page_rect().width(), page->page_rect().height());
 
-		int h = int((pt.height() / 72.0f) * (72.0f * scaleValue / 75.0f));
+		int h = int((((pdfRotation == poppler::rotate_0 || pdfRotation == poppler::rotate_180) ? pt.height() : pt.width()) / 72.0f) * (72.0f * scaleValue / 75.0f));
 
 		if (total)
 			documentHeight += h + 20;
