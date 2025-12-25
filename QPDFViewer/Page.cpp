@@ -30,6 +30,9 @@ Page::Page(QWidget* parent, PDFEngine* pdfParent, QImage *img)
 	isDragging = false;
 	pageNumber = this->parent->getCurrentPage();
 
+	scale = this->parent->getScaleValue();
+	rotation = this->parent->getCurrentRotation();
+
 	setFixedWidth(pagePixmap.width());
 	setFixedHeight(pagePixmap.height());
 }
@@ -42,6 +45,16 @@ QPixmap Page::getPagePixmap()
 int Page::getPageNumber()
 {
 	return pageNumber;
+}
+
+int Page::getScale()
+{
+	return scale;
+}
+
+poppler::rotation_enum Page::getRotation()
+{
+	return rotation;
 }
 
 PDFEngine* Page::getParent()

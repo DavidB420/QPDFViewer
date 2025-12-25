@@ -29,6 +29,8 @@ TabScrollArea::TabScrollArea(QWidget* parent)
     bufferLock = 0;
     horizontalEnabled = false;
     horizontalScrollValue = -1;
+    pageToLoad = 0;
+
 
     horizontalScrollBar()->setEnabled(horizontalEnabled);
     horizontalScrollBar()->setValue(horizontalScrollValue);
@@ -50,23 +52,11 @@ void TabScrollArea::updateScrollArea(QVector <Page*> *pages, bool runItself)
     for (int i = 0, k = 0, j = (- verticalScrollValue)+20; i < allPageHeights.length(); i++) {
          if (i + 1 >= currentPages.at(0)->getPageNumber() && i+1 <= currentPages.at(currentPages.length() - 1)->getPageNumber()) {
              if (runItself && currentPages.at(k) == firstPageHeight && j + (currentPages.at(k)->height() / 2) + 20 < 0 && firstPageHeight != currentPages.at(currentPages.length() - 1)) {
-                 bufferLock = 1;
-                 findPageToLoad(verticalScrollValue);
-                 emit hitExtremity();
-                 while (bufferLock > 0);
-                 firstPageHeight = findPage(pageToLoad);
-                 horizontalEnabled = checkIfHorizontalScrollRequired();
-                 updateScrollArea(&currentPages, false);
+                 triggerEventAndUpdateArea();
                  return;
              }
              else if (runItself && k > 0 && currentPages.at(k) == firstPageHeight && j - ((currentPages.at(k - 1)->height()) + 20) > 0) {
-                 bufferLock = 1;
-                 findPageToLoad(verticalScrollValue);
-                 emit hitExtremity();
-                 while (bufferLock > 0);
-                 firstPageHeight = findPage(pageToLoad);
-                 horizontalEnabled = checkIfHorizontalScrollRequired();
-                 updateScrollArea(&currentPages, false);
+                 triggerEventAndUpdateArea();
                  return;
              }
 
@@ -88,16 +78,34 @@ void TabScrollArea::updateScrollArea(QVector <Page*> *pages, bool runItself)
     }
 }
 
-void TabScrollArea::setDocumentHeight(unsigned long documentHeight)
+void TabScrollArea::setDocumentHeight(unsigned long documentHeight, bool recalculateVerticalValue, int pageNum)
 {
     this->documentHeight = documentHeight;
     int x = this->documentHeight - viewport()->height();
     verticalScrollBar()->setRange(0,(this->documentHeight- viewport()->height())+40); //+40 to compensate for starting spacing + horizontal scroll bar
     verticalScrollBar()->setPageStep(viewport()->height());
-    verticalScrollBar()->setValue(0);
+    if (!recalculateVerticalValue)
+        verticalScrollBar()->setValue(0);
+    else {
+        verticalScrollValue = findPageOffset(pageNum);
+        verticalScrollBar()->setValue(verticalScrollValue);
+        triggerEventAndUpdateArea();
+    }
     verticalScrollValue = verticalScrollBar()->value();
     connect(verticalScrollBar(), &QScrollBar::valueChanged,
         this, &TabScrollArea::onVerticalScrollChanged);
+}
+
+
+void TabScrollArea::triggerEventAndUpdateArea()
+{
+    bufferLock = 1;
+    findPageToLoad(verticalScrollValue);
+    emit hitExtremity();
+    while (bufferLock > 0);
+    firstPageHeight = findPage(pageToLoad);
+    horizontalEnabled = checkIfHorizontalScrollRequired();
+    updateScrollArea(&currentPages, false);
 }
 
 void TabScrollArea::findPageToLoad(long verticalScrollValue)
@@ -147,6 +155,16 @@ bool TabScrollArea::checkIfHorizontalScrollRequired()
     return needed;
 }
 
+long TabScrollArea::findPageOffset(int pageNum)
+{
+    long offset = 0;
+
+    for (int i = 0; i < pageNum; i++)
+        offset += allPageHeights.at(i) + 20;
+    
+    return pageNum;
+}
+
 void TabScrollArea::onHorizontalScrollChanged(int value)
 {
     QSignalBlocker blocker(horizontalScrollBar());
@@ -162,7 +180,7 @@ void TabScrollArea::setCurrentPages(QVector<Page*> *pages)
 {
     if (currentPages.size() > 0 && pages != &currentPages) {
         for (int i = 0; i < currentPages.size(); i++) {
-            if (!pages->contains(currentPages.at(i)) || currentPages.at(i)->getParent() != pages->at(0)->getParent()) {
+            if (!pages->contains(currentPages.at(i)) || currentPages.at(i)->getParent() != pages->at(0)->getParent() || currentPages.at(i)->getScale() != pages->at(0)->getScale() || currentPages.at(i)->getRotation() != pages->at(0)->getRotation()){
                 delete currentPages.at(i);
                 currentPages.removeAt(i);
                 i--;

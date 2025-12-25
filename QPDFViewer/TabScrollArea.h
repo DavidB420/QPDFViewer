@@ -31,7 +31,7 @@ public:
 	TabScrollArea(QWidget* parent = nullptr);
 	~TabScrollArea();
 	void updateScrollArea(QVector <Page*> *pages, bool runItself=false);
-	void setDocumentHeight(unsigned long documentHeight);
+	void setDocumentHeight(unsigned long documentHeight, bool recalculateVerticalValue=false, int pageNum=-1);
 	void setCurrentPages(QVector <Page*> *pages);
 	void setPageHeights(QVector <int> heights);
 	int getPageToLoad();
@@ -41,7 +41,6 @@ protected:
 	void wheelEvent(QWheelEvent* event) override;
 	void resizeEvent(QResizeEvent* event) override;
 private:
-	bool topOrBottom;
 	long documentHeight;
 	long verticalScrollValue;
 	long horizontalScrollValue;
@@ -54,6 +53,8 @@ private:
 	void findPageToLoad(long pageToLoad);
 	Page* findPage(int pageNum);
 	bool checkIfHorizontalScrollRequired();
+	long findPageOffset(int pageNum);
+	void triggerEventAndUpdateArea();
 signals:
 	void hitExtremity();
 private slots:

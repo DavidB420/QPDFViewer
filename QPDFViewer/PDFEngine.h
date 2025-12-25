@@ -50,6 +50,7 @@ public:
 	unsigned long getDocumentHeight();
 	QVector <Page*> getVisiblePages();
 	QVector <int> getPageHeights();
+	poppler::rotation_enum getCurrentRotation();
 private:
 	QWidget *parentWindow;
 	Page* outputLabel;
@@ -63,6 +64,7 @@ private:
 	void recursivelyFillModel(poppler::toc_item* currentItem, QStandardItem* rootItem, NavigationBar *navBar);
 	QVector <Page*> previousPages;
 	QVector <int> allPageHeights;
+	void updateHeightValues(bool total);
 
 };
 

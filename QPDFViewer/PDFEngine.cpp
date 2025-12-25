@@ -270,6 +270,10 @@ void PDFEngine::rotatePDF(bool plus90)
 
 unsigned long PDFEngine::getDocumentHeight()
 {
+	documentHeight = 0;
+	
+	updateHeightValues(true);
+	
 	return documentHeight;
 }
 
@@ -284,13 +288,10 @@ QVector<Page*> PDFEngine::getVisiblePages()
 	int l = 0;
 	while ((i <= maxHeight || l <= 4) && j <= getTotalNumberOfPages()) {
 		setCurrentPage(j);
-		bool foundInPrevious = false;
 		Page* page = NULL;
 		for (int m = 0; m < previousPages.length(); m++) {
-			if (previousPages.at(m)->getPageNumber() == getCurrentPage() && previousPages.at(m)->getParent() == this) {
+			if (previousPages.at(m)->getPageNumber() == getCurrentPage() && previousPages.at(m)->getParent() == this && previousPages.at(m)->getScale() == scaleValue && previousPages.at(m)->getRotation() == pdfRotation)
 				page = previousPages.at(m);
-				foundInPrevious = true;
-			}
 		}
 		if (page == NULL)
 			page = returnImage();
@@ -309,7 +310,16 @@ QVector<Page*> PDFEngine::getVisiblePages()
 
 QVector<int> PDFEngine::getPageHeights()
 {
+	allPageHeights.clear();
+
+	updateHeightValues(false);
+	
 	return allPageHeights;
+}
+
+poppler::rotation_enum PDFEngine::getCurrentRotation()
+{
+	return pdfRotation;
 }
 
 void PDFEngine::recursivelyFillModel(poppler::toc_item* currentItem, QStandardItem* rootItem, NavigationBar* navBar)
@@ -328,6 +338,23 @@ void PDFEngine::recursivelyFillModel(poppler::toc_item* currentItem, QStandardIt
 
 		if (newItem->children().size() > 0)
 			recursivelyFillModel(newItem, newModelItem, navBar);
+	}
+}
+
+void PDFEngine::updateHeightValues(bool total)
+{
+	for (int i = 0; i < getTotalNumberOfPages(); i++) {
+		poppler::page* page = doc->create_page(i);
+		QRectF pt(page->page_rect().x(), page->page_rect().y(), page->page_rect().width(), page->page_rect().height());
+
+		int h = int((pt.height() / 72.0f) * (72.0f * scaleValue / 75.0f));
+
+		if (total)
+			documentHeight += h + 20;
+		else
+			allPageHeights.push_back(h);
+
+		delete page;
 	}
 }
 

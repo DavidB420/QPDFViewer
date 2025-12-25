@@ -293,7 +293,7 @@ void Viewer::setAndUpdateScale()
 		}
 
 		//Refresh page then update scale box
-		tabItems.at(currentTab)->updateScrollArea();
+		tabItems.at(currentTab)->updateScrollArea(true);
 
 		scaleBox->setCurrentText(scaleBox->currentText() + "%");
 	}
@@ -367,7 +367,7 @@ void Viewer::updatePageNavBar(const int pNum)
 {
 	//Update the page based on button clicked in nav bar
 	tabItems.at(currentTab)->getEngine()->setCurrentPage(pNum);
-	tabItems.at(currentTab)->updateScrollArea();
+	tabItems.at(currentTab)->updateScrollArea(true);
 	pageNumber->setText(QString::number(pNum));
 }
 
@@ -379,7 +379,7 @@ void Viewer::rotatePage()
 	else if (rotate90CCWAct == sender())
 		tabItems.at(currentTab)->getEngine()->rotatePDF(false);
 
-	tabItems.at(currentTab)->updateScrollArea();
+	tabItems.at(currentTab)->updateScrollArea(true);
 }
 
 void Viewer::onTabClicked(int index)
