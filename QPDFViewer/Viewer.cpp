@@ -268,6 +268,7 @@ void Viewer::setPageKey(int key)
 			else if (downButton == sender() || key == Qt::Key_F1)
 				result = tabItems.at(currentTab)->getEngine()->setCurrentPage(tabItems.at(currentTab)->getEngine()->getCurrentPage() - 1);
 
+			//Scroll area should calculate the page to load based on their heights
 			if (sender() == tabItems.at(currentTab)->getScrollArea())
 				result = tabItems.at(currentTab)->getEngine()->setCurrentPage(tabItems.at(currentTab)->getScrollArea()->getPageToLoad());
 
@@ -396,7 +397,7 @@ void Viewer::onTabClicked(int index)
 		currentTab = tWidget->count() - 1;
 		int currentIndex = tWidget->insertTab(currentTab, tabItems.at(currentTab), "No PDF loaded");
 		tWidget->setCurrentIndex(currentIndex);
-		connect(tabItems.at(currentTab)->getScrollArea(), &TabScrollArea::hitExtremity, this, &Viewer::setAndUpdatePage);
+		connect(tabItems.at(currentTab)->getScrollArea(), &TabScrollArea::hitExtremity, this, &Viewer::setPage);
 	}
 
 	//Update current tab if we are not pressing the the plus buttton

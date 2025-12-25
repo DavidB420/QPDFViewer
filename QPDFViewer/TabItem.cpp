@@ -81,6 +81,7 @@ void TabItem::setFilePath(QString filePath)
 
 void TabItem::updateScrollArea(bool dontRefresh)
 {
+	//Refresh page and document heights when scaling or rotating
 	if (!dontRefresh) {
 		scrollArea->setPageHeights(engine->getPageHeights());
 		scrollArea->setDocumentHeight(engine->getDocumentHeight(), true, engine->getCurrentPage());
@@ -114,8 +115,11 @@ std::string TabItem::getFileName()
 
 void TabItem::rerenderUpdateScrollArea()
 {
+	//Get updated visible pages from engine and pass it to the scroll area
 	QVector <Page*> pagesVector = engine->getVisiblePages();
 	scrollArea->setCurrentPages(&pagesVector);
+
+	//Release lock
 	scrollArea->setBufferLock(0);
 }
 

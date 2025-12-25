@@ -74,7 +74,7 @@ PDFEngine* Page::getParent()
 
 void Page::mousePressEvent(QMouseEvent* event)
 {
-	//Save first point when lmb is first pressed
+	//Save first point when lmb is first pressed and change page number
 	if (event->button() == Qt::LeftButton) {
 		this->parent->setCurrentPageSignal(this->getPageNumber());
 		dragging = true;

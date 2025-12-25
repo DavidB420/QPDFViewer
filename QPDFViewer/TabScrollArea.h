@@ -45,7 +45,6 @@ private:
 	long documentHeight;
 	long verticalScrollValue;
 	long horizontalScrollValue;
-	bool fromScrolling;
 	bool horizontalEnabled;
 	int pageToLoad;
 	Page* firstPageHeight;

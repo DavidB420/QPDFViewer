@@ -258,6 +258,7 @@ void PDFEngine::rotatePDF(bool plus90)
 
 unsigned long PDFEngine::getDocumentHeight()
 {
+	//Get total document height with spacing
 	documentHeight = 0;
 	
 	updateHeightValues(true);
@@ -269,13 +270,18 @@ QVector<Page*> PDFEngine::getVisiblePages()
 {
 	QVector <Page*> visiblePages;
 	
-	int maxHeight = parentWindow->height();
-	int i = 0;
-	int k = getCurrentPage();
-	int j = k <= 3 ? 1 : k - 2;
-	int l = 0;
-	while ((i <= maxHeight || l <= 4) && j <= getTotalNumberOfPages()) {
+	int maxHeight = parentWindow->height(); //Use max height as upper limit, after tha
+	int i = 0; //stores current height of the pages
+	int k = getCurrentPage(); //stores current page for restore later
+	int j = k <= 3 ? 1 : k - 2; //Page counter, starts two pages before the current page
+	int l = 0; //stores number of pages allowed after the max height limit
+	
+	//Run until offset limit is reached or we hit the end of the document
+	while ((l <= 4) && j <= getTotalNumberOfPages()) {
+		//Switch to page to be rendered
 		setCurrentPage(j);
+
+		//Only render page if necessary, otherwise keep existing page
 		Page* page = NULL;
 		for (int m = 0; m < previousPages.length(); m++) {
 			if (previousPages.at(m)->getPageNumber() == getCurrentPage() && previousPages.at(m)->getParent() == this && previousPages.at(m)->getScale() == scaleValue && previousPages.at(m)->getRotation() == pdfRotation && 
@@ -285,13 +291,20 @@ QVector<Page*> PDFEngine::getVisiblePages()
 		if (page == NULL)
 			page = returnImage();
 		visiblePages.push_back(page);
+
+		//Update current height and page counter
 		i += page->height();
 		j++;
+
+		//If current height has exceeded max height, we have reached the offset pages
 		if (i > maxHeight)
 			l++;
 	}
+
+	//Restore current page
 	setCurrentPage(k);
 	
+	//Save page list for next run
 	previousPages = visiblePages;
 
 	return visiblePages;
@@ -299,6 +312,7 @@ QVector<Page*> PDFEngine::getVisiblePages()
 
 QVector<int> PDFEngine::getPageHeights()
 {
+	//Get the heights of all the pages
 	allPageHeights.clear();
 
 	updateHeightValues(false);
@@ -313,17 +327,19 @@ poppler::rotation_enum PDFEngine::getCurrentRotation()
 
 bool PDFEngine::setCurrentPageSignal(int page)
 {
+	//Set current page using normal function
 	bool result = setCurrentPage(page);
 
-	for (int i = 0; i < previousPages.length(); i++) {
-		if (previousPages.at(i)->getPageNumber() != page) {
-			QRectF rect(0, 0, 0, 0);
-			previousPages.at(i)->drawSelection(rect);
+	//If successful, clear all other pages of selections and notify viewer of page change
+	if (result) {
+		for (int i = 0; i < previousPages.length(); i++) {
+			if (previousPages.at(i)->getPageNumber() != page) {
+				QRectF rect(0, 0, 0, 0);
+				previousPages.at(i)->drawSelection(rect);
+			}
 		}
-	}
-
-	if (result)
 		emit pageChanged();
+	}
 
 	return result;
 }
@@ -349,10 +365,12 @@ void PDFEngine::recursivelyFillModel(poppler::toc_item* currentItem, QStandardIt
 
 void PDFEngine::updateHeightValues(bool total)
 {
+	//Either calculate the total document height with spacing or get all the page heights
 	for (int i = 0; i < getTotalNumberOfPages(); i++) {
 		poppler::page* page = doc->create_page(i);
 		QRectF pt(page->page_rect().x(), page->page_rect().y(), page->page_rect().width(), page->page_rect().height());
 
+		//If page is rotated 90 or 270, use width instead of height
 		int h = int((((pdfRotation == poppler::rotate_0 || pdfRotation == poppler::rotate_180) ? pt.height() : pt.width()) / 72.0f) * (72.0f * scaleValue / 75.0f));
 
 		if (total)
