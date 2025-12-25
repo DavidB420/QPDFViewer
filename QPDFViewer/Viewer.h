@@ -66,7 +66,7 @@ private:
 	QAction* rotate90CWAct, *rotate90CCWAct;
 	QAction* pageTextAct;
 	QAction* printAct;
-
+	QWidget* wdgt;
 	QTabWidget* tWidget;
 	std::vector <TabItem*> tabItems;
 	int currentTab;

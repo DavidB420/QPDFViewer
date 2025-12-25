@@ -168,6 +168,7 @@ Viewer::Viewer(QWidget* parent)
 	QWidget* layoutWidget = new QWidget(this);
 	layoutWidget->setLayout(layout);
 	setCentralWidget(layoutWidget);
+	wdgt = new QWidget();
 
 	//Disable pdf control buttons
 	checkIfPDFLoaded();
@@ -190,6 +191,10 @@ void Viewer::keyPressEvent(QKeyEvent* event)
 
 void Viewer::openFile(QString fileName)
 {
+	//Create new tab if none are open
+	if (tWidget->count() == 2 && tWidget->widget(0)->isEnabled() == false)
+		onTabClicked(tWidget->count() - 1);
+	
 	if (fileName != NULL) {
 		//Create and setup pdf engine and other controls based on file
 		if (tabItems.at(currentTab)->getEngine() != NULL)
@@ -455,6 +460,7 @@ void Viewer::onTabCloseRequested(int index)
 	//Check if this isnt the plus tab, otherwise do the remove
 	if (index < tWidget->count() - 1) {
 		tWidget->removeTab(index);
+		delete tabItems.at(index)->getEngine();
 		delete tabItems.at(index);
 		tabItems.erase(tabItems.begin()+index);
 		if (currentTab > 0)
@@ -470,11 +476,11 @@ void Viewer::onTabCloseRequested(int index)
 
 	//If we have no tabs left, create an invisible one so the plus button isnt in focus, otherwise update pdf controls
 	if (tWidget->count() == 1) {
-		QWidget* wdgt = new QWidget();
 		wdgt->setEnabled(false);
 		tWidget->insertTab(0, wdgt, "");
 		tWidget->setTabVisible(0,false);
 		tWidget->setCurrentIndex(0);
+		checkIfPDFLoaded();
 	}
 	else {
 		onTabClicked(currentTab);
@@ -587,10 +593,10 @@ void Viewer::getPrintDialog()
 
 void Viewer::checkIfPDFLoaded()
 {
-	//Turn controls on or off depending if we have the engine loaded
+	//Turn controls on or off depending if we have the engine loaded or we are on the invisible tab
 	bool toggle;
 
-	if (tabItems.at(currentTab)->getEngine() == NULL)
+	if ((tWidget->count() == 2 && tWidget->widget(0)->isEnabled() == false) || tabItems.at(currentTab)->getEngine() == NULL)
 		toggle = false;
 	else
 		toggle = true;
