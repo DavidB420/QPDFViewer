@@ -53,18 +53,6 @@ PDFEngine::PDFEngine(std::string fileName, QWidget *parentWindow)
 	pdfRotation = poppler::rotate_0;
 
 	documentHeight = 0;
-	for (int i = 0; i < getTotalNumberOfPages(); i++) {
-		poppler::page* page = doc->create_page(i);
-		QRectF pt(page->page_rect().x(),page->page_rect().y(),page->page_rect().width(),page->page_rect().height());
-
-		int h = int((pt.height()/72.0f) * (72.0f * scaleValue / 75.0f));
-
-		allPageHeights.push_back(h);
-
-		documentHeight += h + 20;
-
-		delete page;
-	}
 }
 
 Page *PDFEngine::returnImage()
@@ -80,10 +68,6 @@ Page *PDFEngine::returnImage()
 
 	//Convert the poppler into QImage
 	QImage image((uchar*)img.data(), img.width(), img.height(), img.bytes_per_row(), QImage::Format_ARGB32);
-	
-	//If a page has already been loaded in the past be sure to delete it
-	/*if (outputLabel != NULL)
-		delete outputLabel;*/
 
 	//Create page object based on QImage
 	outputLabel = new Page(this->parentWindow, this, &image);
@@ -320,6 +304,16 @@ QVector<int> PDFEngine::getPageHeights()
 poppler::rotation_enum PDFEngine::getCurrentRotation()
 {
 	return pdfRotation;
+}
+
+bool PDFEngine::setCurrentPageSignal(int page)
+{
+	bool result = setCurrentPage(page);
+
+	if (result)
+		emit pageChanged();
+
+	return result;
 }
 
 void PDFEngine::recursivelyFillModel(poppler::toc_item* currentItem, QStandardItem* rootItem, NavigationBar* navBar)

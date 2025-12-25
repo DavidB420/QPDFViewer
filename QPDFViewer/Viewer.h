@@ -87,6 +87,7 @@ private slots:
 	void onTabCloseRequested(int index);
 	void getPrintDialog();
 	void checkIfPDFLoaded();
+	void updatePageNumber();
 };
 
 #endif

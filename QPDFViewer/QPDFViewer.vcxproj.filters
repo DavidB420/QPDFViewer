@@ -75,11 +75,11 @@
     <QtMoc Include="TabScrollArea.h">
       <Filter>Header Files</Filter>
     </QtMoc>
+    <QtMoc Include="PDFEngine.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="PDFEngine.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Page.h">
       <Filter>Header Files</Filter>
     </ClInclude>

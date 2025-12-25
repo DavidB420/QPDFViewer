@@ -32,8 +32,9 @@
 #include "Page.h"
 #include "NavigationBar.h"
 
-class PDFEngine
+class PDFEngine: public QObject
 {
+	Q_OBJECT
 public:
 	PDFEngine(std::string fileName,QWidget *parentWindow);
 	Page* returnImage();
@@ -41,6 +42,7 @@ public:
 	int getCurrentPage();
 	int getScaleValue();
 	bool setCurrentPage(int page);
+	bool setCurrentPageSignal(int page);
 	bool setCurrentScale(int scale);
 	bool findPhraseInDocument(std::string phrase, poppler::page::search_direction_enum direction);
 	void displayTextBox(QRectF dim);
@@ -65,7 +67,8 @@ private:
 	QVector <Page*> previousPages;
 	QVector <int> allPageHeights;
 	void updateHeightValues(bool total);
-
+signals:
+	void pageChanged();
 };
 
 #endif

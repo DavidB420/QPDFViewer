@@ -66,6 +66,7 @@ void Page::mousePressEvent(QMouseEvent* event)
 {
 	//Save first point when lmb is first pressed
 	if (event->button() == Qt::LeftButton) {
+		this->parent->setCurrentPageSignal(this->getPageNumber());
 		dragging = true;
 		firstPoint = event->pos();
 	}

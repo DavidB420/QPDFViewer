@@ -127,7 +127,7 @@
   <ItemGroup>
     <QtMoc Include="NavigationBar.h" />
     <ClInclude Include="Page.h" />
-    <ClInclude Include="PDFEngine.h" />
+    <QtMoc Include="PDFEngine.h" />
     <QtMoc Include="PrintDialog.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="StringConv.h" />

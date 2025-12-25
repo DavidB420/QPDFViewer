@@ -196,6 +196,7 @@ void Viewer::openFile(QString fileName)
 		if (tabItems.at(currentTab)->getEngine() != NULL)
 			delete tabItems.at(currentTab)->getEngine();
 		tabItems.at(currentTab)->setPDFEngine(fileName.toStdString(), this);
+		connect(tabItems.at(currentTab)->getEngine(), &PDFEngine::pageChanged, this, &Viewer::updatePageNumber);
 		tabItems.at(currentTab)->setFilePath(fileName);
 		tabItems.at(currentTab)->updateScrollArea();
 		tWidget->setTabText(currentTab, QString::fromStdString(tabItems.at(currentTab)->getFileName()));
@@ -607,6 +608,11 @@ void Viewer::checkIfPDFLoaded()
 	downButton->setEnabled(toggle);
 	backwardsSearch->setEnabled(toggle);
 	forwardsSearch->setEnabled(toggle);
+}
+
+void Viewer::updatePageNumber()
+{
+	pageNumber->setText(QString::number(tabItems.at(currentTab)->getEngine()->getCurrentPage()));
 }
 
 
