@@ -21,11 +21,7 @@
 #define PDFENGINE_H
 
 #include <memory>
-#include <poppler/cpp/poppler-document.h>
-#include <poppler/cpp/poppler-page.h>
-#include <poppler/cpp/poppler-image.h>
-#include <poppler/cpp/poppler-page-renderer.h>
-#include <poppler/cpp/poppler-toc.h>
+#include <poppler-qt5.h>
 #include <string>
 #include <qtreeview.h>
 #include <qstandarditemmodel.h>
@@ -44,7 +40,7 @@ public:
 	bool setCurrentPage(int page);
 	bool setCurrentPageSignal(int page);
 	bool setCurrentScale(int scale);
-	bool findPhraseInDocument(std::string phrase, poppler::page::search_direction_enum direction);
+	bool findPhraseInDocument(std::string phrase, Poppler::Page::SearchDirection direction);
 	void displayTextBox(QRectF dim);
 	void displayAllText();
 	void addNavOutline(NavigationBar* tView);
@@ -52,22 +48,24 @@ public:
 	unsigned long getDocumentHeight();
 	QVector <Page*> getVisiblePages();
 	QVector <int> getPageHeights();
-	poppler::rotation_enum getCurrentRotation();
+	Poppler::Page::Rotation getCurrentRotation();
 private:
 	QWidget *parentWindow;
 	Page* outputLabel;
-	poppler::document* doc;
-	poppler::rectf selectedRect;
-	poppler::rectf foundRect;
-	poppler::rotation_enum pdfRotation;
+	Poppler::Document* doc;
+	QRectF selectedRect;
+	QRectF foundRect;
+	Poppler::Page::Rotation pdfRotation;
 	int currentPage;
 	int scaleValue;
 	int foundPageNum;
+	int searchPos;
 	unsigned long documentHeight;
-	void recursivelyFillModel(poppler::toc_item* currentItem, QStandardItem* rootItem, NavigationBar *navBar);
+	void recursivelyFillModel(QVector<Poppler::OutlineItem> currentItem, QStandardItem* rootItem, NavigationBar *navBar);
 	QVector <Page*> previousPages;
 	QVector <int> allPageHeights;
 	void updateHeightValues(bool total);
+	bool documentSearch(Poppler::Page *page, int pageNum, std::string phrase, QRectF* foundRect, Poppler::Page::SearchDirection direction, Poppler::Page::Rotation rotation);
 signals:
 	void pageChanged();
 };

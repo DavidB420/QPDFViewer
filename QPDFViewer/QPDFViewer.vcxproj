@@ -69,11 +69,17 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(ProjectDir);$(Qt_INCLUDEPATH_)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(POPPLER_ROOT)qt5\src;%(AdditionalIncludeDirectories);$(ProjectDir);$(Qt_INCLUDEPATH_)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>QT_NO_DEPRECATED_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>%(AdditionalDependencies);$(Qt_LIBS_);</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies);$(Qt_LIBS_);$(POPPLER_ROOT)qt5\src\Release\poppler-qt5.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(POPPLER_ROOT);$(POPPLER_ROOT)\qt5\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /Y /D "$(POPPLER_ROOT)Debug\poppler.dll" "$(TargetDir)"
+</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" Label="Configuration">
     <ClCompile>
@@ -113,7 +119,6 @@
       <DynamicSource Condition="'$(Configuration)|$(Platform)'=='Release|x64'">input</DynamicSource>
       <QtMocFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(Filename).moc</QtMocFileName>
     </ClCompile>
-    <ClCompile Include="StringConv.cpp" />
     <ClCompile Include="TabItem.cpp" />
     <ClCompile Include="TabScrollArea.cpp" />
     <ClCompile Include="TextBoxDialog.cpp" />
@@ -130,7 +135,6 @@
     <QtMoc Include="PDFEngine.h" />
     <QtMoc Include="PrintDialog.h" />
     <ClInclude Include="resource.h" />
-    <ClInclude Include="StringConv.h" />
     <ClInclude Include="TabItem.h" />
     <QtMoc Include="TabScrollArea.h" />
     <ClInclude Include="TextBoxDialog.h" />

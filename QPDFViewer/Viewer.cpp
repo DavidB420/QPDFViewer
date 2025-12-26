@@ -311,9 +311,9 @@ void Viewer::findPhrase()
 	bool result = false;
 
 	if (forwardsSearch == sender())
-		result = tabItems.at(currentTab)->getEngine()->findPhraseInDocument(searchBox->text().toStdString(), poppler::page::search_next_result);
+		result = tabItems.at(currentTab)->getEngine()->findPhraseInDocument(searchBox->text().toStdString(), Poppler::Page::SearchDirection::NextResult);
 	else if (backwardsSearch == sender())
-		result = tabItems.at(currentTab)->getEngine()->findPhraseInDocument(searchBox->text().toStdString(),poppler::page::search_previous_result);
+		result = tabItems.at(currentTab)->getEngine()->findPhraseInDocument(searchBox->text().toStdString(), Poppler::Page::SearchDirection::PreviousResult);
 
 	if (result) {
 		tabItems.at(currentTab)->updateScrollArea(true);

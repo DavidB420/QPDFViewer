@@ -26,12 +26,9 @@
 #include <qtreeview.h>
 #include <qstandarditemmodel.h>
 #include <string>
-#include <poppler/cpp/poppler-global.h>
-#include <poppler/cpp/poppler-toc.h>
-#include <poppler/cpp/poppler-destination.h>
+#include <poppler-qt5.h>
 #include "Page.h"
 #include "TextBoxDialog.h"
-#include "StringConv.h"
 #include "NavigationBar.h"
 
 PDFEngine::PDFEngine(std::string fileName, QWidget *parentWindow)
@@ -40,7 +37,7 @@ PDFEngine::PDFEngine(std::string fileName, QWidget *parentWindow)
 	this->parentWindow = parentWindow;
 	
 	//Load pdf doc
-	doc = poppler::document::load_from_file(fileName);
+	doc = Poppler::Document::load(QString::fromStdString(fileName));
 
 	//Initialize variables to defaults
 	outputLabel = NULL;
@@ -48,38 +45,38 @@ PDFEngine::PDFEngine(std::string fileName, QWidget *parentWindow)
 	currentPage = 1;
 	scaleValue = 100;
 
-	selectedRect = poppler::rectf(0, 0, 0, 0);
+	selectedRect = QRectF(0, 0, 0, 0);
 
-	pdfRotation = poppler::rotate_0;
+	pdfRotation = Poppler::Page::Rotate0;
 
 	documentHeight = 0;
 
 	foundPageNum = -1;
+
+	searchPos = 0;
 }
 
 Page *PDFEngine::returnImage()
 {
 	//Create poppler image based on current page, rotation and scale values
-	poppler::page* page = doc->create_page(currentPage-1);
-	poppler::page_renderer pr;
-	pr.set_render_hint(poppler::page_renderer::antialiasing, true);
-	pr.set_render_hint(poppler::page_renderer::text_antialiasing, true);
-	poppler::image img = pr.render_page(page,
-		(float)72 * scaleValue / 75, (float)72 * scaleValue / 75,
-		-1, -1, -1, -1, pdfRotation);
+	Poppler::Page* page = doc->page(currentPage-1);
+
+	doc->setRenderHint(Poppler::Document::Antialiasing, true);
+	doc->setRenderHint(Poppler::Document::TextAntialiasing, true);
 
 	//Convert the poppler into QImage
-	QImage image((uchar*)img.data(), img.width(), img.height(), img.bytes_per_row(), QImage::Format_ARGB32);
+	QImage image = page->renderToImage((float)72 * scaleValue / 75, (float)72 * scaleValue / 75,
+		-1, -1, -1, -1, pdfRotation);
 
 	//Create page object based on QImage
 	outputLabel = new Page(this->parentWindow, this, &image);
-	outputLabel->resize(img.width(), img.height());
+	outputLabel->resize(image.width(), image.height());
 	
 	//If there has been a selection from searching in the past, be sure to show it
 	if (selectedRect.x() != 0 && selectedRect.y() != 0 && selectedRect.width() != 0 && selectedRect.height() != 0 && getCurrentPage() == foundPageNum) {
 		QRectF rect(selectedRect.x() * scaleValue / 75, selectedRect.y() * scaleValue / 75, selectedRect.width() * scaleValue / 75, selectedRect.height() * scaleValue / 75);
 		outputLabel->drawSelection(rect);
-		selectedRect = poppler::rectf(0, 0, 0, 0);
+		selectedRect = QRectF(0, 0, 0, 0);
 		foundPageNum == -1;
 	}
 
@@ -91,7 +88,7 @@ Page *PDFEngine::returnImage()
 
 int PDFEngine::getTotalNumberOfPages()
 {
-	return doc->pages();
+	return doc->numPages();
 }
 
 int PDFEngine::getCurrentPage()
@@ -124,26 +121,26 @@ bool PDFEngine::setCurrentScale(int scale)
 	return true;
 }
 
-bool PDFEngine::findPhraseInDocument(std::string phrase, poppler::page::search_direction_enum direction)
+bool PDFEngine::findPhraseInDocument(std::string phrase, Poppler::Page::SearchDirection direction)
 {
 	//Start with defaults
 	int currentSearch = currentPage;
 	bool result = false;
-	selectedRect = poppler::rectf(0, 0, 0, 0);
+	selectedRect = QRectF(0, 0, 0, 0);
 
 	while (currentSearch >= 1 && currentSearch <= getTotalNumberOfPages()) {
-		poppler::page* page = doc->create_page(currentSearch - 1);
+		Poppler::Page* page = doc->page(currentSearch - 1);
 
 		//If its a new page reset the page rect, otherwise do not so the search picks more than just the first item on the page
 		if (currentPage != currentSearch)
-			foundRect = page->page_rect();
+			foundRect = QRectF(0.0, 0.0, page->pageSizeF().width(), page->pageSizeF().height());
 
 		//If we are searching backwards and are on a new page we have search all the way forward on that page to search backwards
-		if (direction == poppler::page::search_previous_result && currentPage != currentSearch) {
+		if (direction == Poppler::Page::SearchDirection::PreviousResult && currentPage != currentSearch) {
 			result = true;
 			int iter = 0;
 			while (result) {
-				result = page->search(fromStdStringToPopplerString(phrase), foundRect, poppler::page::search_next_result, poppler::case_insensitive, pdfRotation);
+				result = documentSearch(page, currentSearch, phrase, &foundRect, Poppler::Page::NextResult, pdfRotation);
 				iter++;
 			}
 			//If there is one result on the page, just say we found a result
@@ -153,20 +150,20 @@ bool PDFEngine::findPhraseInDocument(std::string phrase, poppler::page::search_d
 		
 		//If result is still false, try to do a search in the right direction
 		if (!result)
-			result = page->search(fromStdStringToPopplerString(phrase), foundRect, direction, poppler::case_insensitive, pdfRotation);
+			result = documentSearch(page, currentSearch, phrase, &foundRect, direction, pdfRotation);
 
 		//If a result has been found, select it, then break out of the loop
 		if (result) {
-			selectedRect = poppler::rectf(foundRect.x(), foundRect.y(), foundRect.width(), foundRect.height());
+			selectedRect = QRectF(foundRect.x(), foundRect.y(), foundRect.width(), foundRect.height());
 			currentPage = currentSearch;
 			foundPageNum = currentSearch;
 			currentSearch = -1;
 		}
 
 		//Bidirectionally update page if nothing was found on the current page
-		if (direction == poppler::page::search_next_result)
+		if (direction == Poppler::Page::SearchDirection::NextResult)
 			currentSearch++;
-		else if (direction == poppler::page::search_previous_result)
+		else if (direction == Poppler::Page::SearchDirection::PreviousResult)
 			currentSearch--;
 
 		//Delete poppler page when done
@@ -179,7 +176,7 @@ bool PDFEngine::findPhraseInDocument(std::string phrase, poppler::page::search_d
 void PDFEngine::displayTextBox(QRectF dim)
 {
 	//Grab text from selection then display it in a dialog
-	poppler::page* page = doc->create_page(currentPage - 1);
+	Poppler::Page* page = doc->page(currentPage - 1);
 
 	double rectX = dim.x(), rectY = dim.y(), rectWidth = dim.width(), rectHeight = dim.height();
 	
@@ -194,7 +191,9 @@ void PDFEngine::displayTextBox(QRectF dim)
 		rectY = rectY - rectHeight;
 	}
 
-	poppler::rectf grabRect;
+	QRectF grabRect;
+
+	QRectF pt(0.0, 0.0, page->pageSizeF().width(), page->pageSizeF().height());
 
 	double x = rectX / scaleValue * 75;
 	double y = rectY / scaleValue * 75;
@@ -204,21 +203,21 @@ void PDFEngine::displayTextBox(QRectF dim)
 	//Transform rectangle back to original unrotated version
 	switch (pdfRotation) {
 	case 1:
-		grabRect = poppler::rectf(y, page->page_rect().height() - x - width, height, width);
+		grabRect = QRectF(y, pt.height() - x - width, height, width);
 		break;
 	case 2:
-		grabRect = poppler::rectf(page->page_rect().width() - x - width, page->page_rect().height() - y - height, width, height);
+		grabRect = QRectF(pt.width() - x - width, pt.height() - y - height, width, height);
 		break;
 	case 3:
-		grabRect = poppler::rectf(page->page_rect().width() - y - height, x, height, width);
+		grabRect = QRectF(pt.width() - y - height, x, height, width);
 		break;
 	case 0:
 	default:
-		grabRect = poppler::rectf(x, y, width, height);
+		grabRect = QRectF(x, y, width, height);
 		break;
 	}
 
-	std::string foundText = fromPopplerStringStdString(page->text(grabRect));
+	std::string foundText = page->text(grabRect).toStdString();
 	delete page;
 	TextBoxDialog* dialog = new TextBoxDialog(this->parentWindow, &foundText);
 	dialog->show();
@@ -234,15 +233,15 @@ void PDFEngine::displayAllText()
 void PDFEngine::addNavOutline(NavigationBar* navBar)
 {
 	//Add toc to navigation bar if it exists
-	poppler::toc *docToc = doc->create_toc();
+	QVector<Poppler::OutlineItem> outline = doc->outline();
 
-	if (docToc != NULL) {
+	if (!outline.isEmpty()) {
 		QStandardItemModel* model = new QStandardItemModel;
 		
-		poppler::toc_item *currentItem  = docToc->root();
+		//QDomElement currentItem  = docToc->documentElement();
 		QStandardItem* rootItem = model->invisibleRootItem();
 
-		recursivelyFillModel(currentItem, rootItem, navBar);
+		recursivelyFillModel(outline, rootItem, navBar);
 
 		navBar->returnTree()->setModel(model);
 	}
@@ -266,16 +265,16 @@ void PDFEngine::rotatePDF(bool plus90)
 
 	switch (x) {
 	case 0:
-		pdfRotation = poppler::rotate_0;
+		pdfRotation = Poppler::Page::Rotate0;
 		break;
 	case 1:
-		pdfRotation = poppler::rotate_90;
+		pdfRotation = Poppler::Page::Rotate90;
 		break;
 	case 2:
-		pdfRotation = poppler::rotate_180;
+		pdfRotation = Poppler::Page::Rotate180;
 		break;
 	case 3:
-		pdfRotation = poppler::rotate_270;
+		pdfRotation = Poppler::Page::Rotate270;
 		break;
 	}
 }
@@ -344,7 +343,7 @@ QVector<int> PDFEngine::getPageHeights()
 	return allPageHeights;
 }
 
-poppler::rotation_enum PDFEngine::getCurrentRotation()
+Poppler::Page::Rotation PDFEngine::getCurrentRotation()
 {
 	return pdfRotation;
 }
@@ -368,22 +367,22 @@ bool PDFEngine::setCurrentPageSignal(int page)
 	return result;
 }
 
-void PDFEngine::recursivelyFillModel(poppler::toc_item* currentItem, QStandardItem* rootItem, NavigationBar* navBar)
+void PDFEngine::recursivelyFillModel(QVector<Poppler::OutlineItem> currentItem, QStandardItem* rootItem, NavigationBar* navBar)
 {
 	//Add all the children recursively to the model, in addition saving the page number in a tuple with the item pointer
-	for (int i = 0; i < currentItem->children().size(); i++) {
-		poppler::toc_item* newItem = currentItem->children().at(i);
-		QStandardItem *newModelItem = new QStandardItem(QString::fromStdString(fromPopplerStringStdString(newItem->title())));
+	for (int i = 0; i < currentItem.size(); i++) {
+		Poppler::OutlineItem newItem = currentItem.at(i);
+		QStandardItem *newModelItem = new QStandardItem(newItem.name());
 		newModelItem->setEditable(false);
 		rootItem->appendRow(newModelItem);
 
 		NavTuple nTuple;
-		nTuple.pageNum = newItem->destPageNum();
+		nTuple.pageNum = newItem.destination()->pageNumber();
 		nTuple.sItem = newModelItem;
 		navBar->navItems.push_back(nTuple);
 
-		if (newItem->children().size() > 0)
-			recursivelyFillModel(newItem, newModelItem, navBar);
+		if (newItem.hasChildren())
+			recursivelyFillModel(newItem.children(), newModelItem, navBar);
 	}
 }
 
@@ -391,11 +390,12 @@ void PDFEngine::updateHeightValues(bool total)
 {
 	//Either calculate the total document height with spacing or get all the page heights
 	for (int i = 0; i < getTotalNumberOfPages(); i++) {
-		poppler::page* page = doc->create_page(i);
-		QRectF pt(page->page_rect().x(), page->page_rect().y(), page->page_rect().width(), page->page_rect().height());
+		Poppler::Page* page = doc->page(i);
+		QSizeF size = page->pageSizeF();
+		QRectF pt(0.0, 0.0, size.width(), size.height());
 
 		//If page is rotated 90 or 270, use width instead of height
-		int h = int((((pdfRotation == poppler::rotate_0 || pdfRotation == poppler::rotate_180) ? pt.height() : pt.width()) / 72.0f) * (72.0f * scaleValue / 75.0f));
+		int h = int((((pdfRotation == Poppler::Page::Rotate0 || pdfRotation == Poppler::Page::Rotate180) ? pt.height() : pt.width()) / 72.0f) * (72.0f * scaleValue / 75.0f));
 
 		if (total)
 			documentHeight += h + 20;
@@ -404,5 +404,32 @@ void PDFEngine::updateHeightValues(bool total)
 
 		delete page;
 	}
+}
+
+bool PDFEngine::documentSearch(Poppler::Page* page, int pageNum, std::string phrase, QRectF* foundRect, Poppler::Page::SearchDirection direction, Poppler::Page::Rotation rotation)
+{
+	//Index is saved throughout runs
+	static int vectorIndex = -1;
+	
+	bool result = false;
+
+	//Returns list of all results found for the page
+	QList<QRectF> pageResults = page->search(QString::fromStdString(phrase), Poppler::Page::IgnoreCase, rotation);
+	
+	//If we are on a new page or the index fell outside of the bounds reset it back to default
+	if (pageNum != searchPos || vectorIndex < -1)
+		vectorIndex = -1;
+
+	//Increment index depending on direction
+	vectorIndex += direction == Poppler::Page::PreviousResult ? -1 : 1;
+
+	//Return the result at the current index
+	if ((direction == Poppler::Page::PreviousResult && vectorIndex >= 0) || (direction == Poppler::Page::NextResult && vectorIndex < pageResults.length())) {
+		result = true;
+		*foundRect = pageResults.at(vectorIndex);
+		searchPos = pageNum;
+	}
+	
+	return result;
 }
 

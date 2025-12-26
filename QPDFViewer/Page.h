@@ -25,7 +25,7 @@
 #include <qpixmap.h>
 #include <QMouseEvent>
 #include <QPaintEvent>
-#include <poppler/cpp/poppler-page.h>
+#include <poppler-qt5.h>
 
 class PDFEngine;
 
@@ -38,7 +38,7 @@ public:
 	int getScale();
 	QPointF getFirstPoint();
 	QPointF getCurrentPoint();
-	poppler::rotation_enum getRotation();
+	Poppler::Page::Rotation getRotation();
 	PDFEngine* getParent();
 	void mousePressEvent(QMouseEvent* event);
 	void mouseMoveEvent(QMouseEvent* event);
@@ -51,7 +51,7 @@ private:
 	QPointF firstPoint, currentPoint;
 	PDFEngine* parent;
 	int pageNumber, scale;
-	poppler::rotation_enum rotation;
+	Poppler::Page::Rotation rotation;
 };
 
 #endif

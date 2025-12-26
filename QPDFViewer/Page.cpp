@@ -62,7 +62,7 @@ QPointF Page::getCurrentPoint()
 	return currentPoint;
 }
 
-poppler::rotation_enum Page::getRotation()
+Poppler::Page::Rotation Page::getRotation()
 {
 	return rotation;
 }
