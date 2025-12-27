@@ -37,7 +37,6 @@ public:
 	void updateVerticalScrollBar(int pageNum);
 	int getPageToLoad();
 	void setBufferLock(int value);
-	int bufferLock;
 protected:
 	void wheelEvent(QWheelEvent* event) override;
 	void resizeEvent(QResizeEvent* event) override;
@@ -47,6 +46,7 @@ private:
 	long horizontalScrollValue;
 	bool horizontalEnabled;
 	int pageToLoad;
+	int bufferLock;
 	Page* firstPageHeight;
 	QVector <Page*> currentPages;
 	QVector <int> allPageHeights;

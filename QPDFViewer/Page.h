@@ -27,6 +27,8 @@
 #include <QPaintEvent>
 #include <poppler-qt5.h>
 
+#include "HyperlinkObject.h"
+
 class PDFEngine;
 
 class Page : public QLabel
@@ -45,6 +47,7 @@ public:
 	void mouseReleaseEvent(QMouseEvent* event);
 	void paintEvent(QPaintEvent* event);
 	void drawSelection(QRectF rect);
+	void addHyperlink(HyperlinkObject* obj);
 private:
 	bool dragging, isDragging;
 	QPixmap pagePixmap;
@@ -52,6 +55,7 @@ private:
 	PDFEngine* parent;
 	int pageNumber, scale;
 	Poppler::Page::Rotation rotation;
+	QVector <HyperlinkObject*> hyperlinks;
 };
 
 #endif

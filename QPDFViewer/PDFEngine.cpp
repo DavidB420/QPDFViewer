@@ -30,6 +30,7 @@
 #include "Page.h"
 #include "TextBoxDialog.h"
 #include "NavigationBar.h"
+#include "HyperlinkObject.h"
 
 PDFEngine::PDFEngine(std::string fileName, QWidget *parentWindow)
 {
@@ -71,6 +72,8 @@ Page *PDFEngine::returnImage()
 	//Create page object based on QImage
 	outputLabel = new Page(this->parentWindow, this, &image);
 	outputLabel->resize(image.width(), image.height());
+
+	addHyperlinksToPage(outputLabel, page, image);
 	
 	//If there has been a selection from searching in the past, be sure to show it
 	if (selectedRect.x() != 0 && selectedRect.y() != 0 && selectedRect.width() != 0 && selectedRect.height() != 0 && getCurrentPage() == foundPageNum) {
@@ -431,5 +434,47 @@ bool PDFEngine::documentSearch(Poppler::Page* page, int pageNum, std::string phr
 	}
 	
 	return result;
+}
+
+void PDFEngine::addHyperlinksToPage(Page* page, Poppler::Page* popplerPage, QImage image)
+{
+	QList<Poppler::Link*> links = popplerPage->links();
+
+	//Add all necessary web hyperlink objects
+	for (int i = 0; i < links.length(); i++) {
+		if (links.at(i)->linkType() == Poppler::Link::Browse) {
+			double linkScale = 72 * scaleValue / 75.0;
+			Poppler::LinkBrowse* link = static_cast<Poppler::LinkBrowse*>(links.at(i));
+			double x, y, width, height = link->linkArea().height() * -1;
+			switch (pdfRotation) {
+			case Poppler::Page::Rotate0:
+			default:
+				x = link->linkArea().x() * image.width();
+				y = (link->linkArea().y() + link->linkArea().height()) * image.height();
+				width = link->linkArea().width() * image.width();
+				height = height * image.height();
+				break;
+			case Poppler::Page::Rotate90:
+				x = (1.0 - link->linkArea().y()) * image.width();
+				y = (link->linkArea().x()) * image.height();
+				width = height * image.width();
+				height = link->linkArea().width() * image.height();
+				break;
+			case Poppler::Page::Rotate180:
+				x = (1.0 - link->linkArea().x() - link->linkArea().width()) * image.width();
+				y = (1.0 - link->linkArea().y()) * image.height();
+				width = link->linkArea().width() * image.width();
+				height = height * image.height();
+				break;
+			case Poppler::Page::Rotate270:
+				x = (link->linkArea().y() - height) * image.width();
+				y = (1.0 - link->linkArea().x() - link->linkArea().width()) * image.height();
+				width = height * image.width();
+				height = link->linkArea().width() * image.height();
+				break;
+			}
+			outputLabel->addHyperlink(new HyperlinkObject(outputLabel, QRectF(x, y, width, height), link->url()));
+		}
+	}
 }
 

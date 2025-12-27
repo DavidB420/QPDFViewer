@@ -133,4 +133,7 @@ void Page::drawSelection(QRectF rect)
 	update();
 }
 
-
+void Page::addHyperlink(HyperlinkObject* obj)
+{
+	hyperlinks.push_back(obj);
+}

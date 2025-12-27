@@ -66,6 +66,7 @@ private:
 	QVector <int> allPageHeights;
 	void updateHeightValues(bool total);
 	bool documentSearch(Poppler::Page *page, int pageNum, std::string phrase, QRectF* foundRect, Poppler::Page::SearchDirection direction, Poppler::Page::Rotation rotation);
+	void addHyperlinksToPage(Page* page, Poppler::Page* popplerPage, QImage image);
 signals:
 	void pageChanged();
 };
