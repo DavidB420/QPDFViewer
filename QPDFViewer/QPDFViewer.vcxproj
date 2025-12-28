@@ -113,6 +113,7 @@
     <ClCompile Include="HyperlinkObject.cpp" />
     <ClCompile Include="NavigationBar.cpp" />
     <ClCompile Include="Page.cpp" />
+    <ClCompile Include="PasswordBoxDialog.cpp" />
     <ClCompile Include="PDFEngine.cpp" />
     <ClCompile Include="PrintDialog.cpp">
       <DynamicSource Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">input</DynamicSource>
@@ -136,6 +137,7 @@
     <ClInclude Include="Page.h" />
     <QtMoc Include="PDFEngine.h" />
     <QtMoc Include="PrintDialog.h" />
+    <ClInclude Include="PasswordBoxDialog.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="TabItem.h" />
     <QtMoc Include="TabScrollArea.h" />
@@ -149,6 +151,7 @@
     <Image Include="assets\backwardsIcon.png" />
     <Image Include="assets\closeIcon.png" />
     <Image Include="assets\downIcon.png" />
+    <Image Include="assets\encrypted.png" />
     <Image Include="assets\icon.ico" />
     <Image Include="assets\icon.png" />
     <Image Include="assets\openIcon.png" />

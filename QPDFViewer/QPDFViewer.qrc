@@ -13,5 +13,6 @@
         <file>assets/backwardsIcon.png</file>
         <file>assets/forwardsIcon.png</file>
         <file>assets/icon.png</file>
+        <file>assets/encrypted.png</file>
     </qresource>
 </RCC>

@@ -197,34 +197,36 @@ void Viewer::openFile(QString fileName)
 	
 	if (fileName != NULL) {
 		//Create and setup pdf engine and other controls based on file
-		if (tabItems.at(currentTab)->getEngine() != NULL)
-			delete tabItems.at(currentTab)->getEngine();
-		tabItems.at(currentTab)->setPDFEngine(fileName.toStdString(), this);
-		connect(tabItems.at(currentTab)->getEngine(), &PDFEngine::pageChanged, this, &Viewer::updatePageNumber);
-		tabItems.at(currentTab)->setFilePath(fileName);
-		tabItems.at(currentTab)->updateScrollArea();
-		tWidget->setTabText(currentTab, QString::fromStdString(tabItems.at(currentTab)->getFileName()));
-		totalPage->setText(" of " + QString::number(tabItems.at(currentTab)->getEngine()->getTotalNumberOfPages()) + " ");
-		pageNumber->setText(QString::number(tabItems.at(currentTab)->getEngine()->getCurrentPage()));
-		this->setWindowTitle("QPDFViewer - " + fileName);
-		scaleBox->setCurrentIndex(3);
+		PDFEngine* tmp = tabItems.at(currentTab)->getEngine();
+		if (tabItems.at(currentTab)->setPDFEngine(fileName.toStdString(), this)) {
+			if (tmp != NULL)
+				delete tmp;
+			connect(tabItems.at(currentTab)->getEngine(), &PDFEngine::pageChanged, this, &Viewer::updatePageNumber);
+			tabItems.at(currentTab)->setFilePath(fileName);
+			tabItems.at(currentTab)->updateScrollArea();
+			tWidget->setTabText(currentTab, QString::fromStdString(tabItems.at(currentTab)->getFileName()));
+			totalPage->setText(" of " + QString::number(tabItems.at(currentTab)->getEngine()->getTotalNumberOfPages()) + " ");
+			pageNumber->setText(QString::number(tabItems.at(currentTab)->getEngine()->getCurrentPage()));
+			this->setWindowTitle("QPDFViewer - " + fileName);
+			scaleBox->setCurrentIndex(3);
 
-		//Enable all buttons now that pdf engine object exits
-		checkIfPDFLoaded();
+			//Enable all buttons now that pdf engine object exits
+			checkIfPDFLoaded();
 
-		//Check if we have data in the nav bar, if so make sure to show it when the file is loaded
-		if (navBar != NULL) {
+			//Check if we have data in the nav bar, if so make sure to show it when the file is loaded
+			if (navBar != NULL) {
+				delete navBar;
+				navBar = NULL;
+			}
+			navBar = new NavigationBar(this);
+			tabItems.at(currentTab)->getEngine()->addNavOutline(navBar);
+			int tmp = navBar->returnNumOfItems();
 			delete navBar;
 			navBar = NULL;
-		}
-		navBar = new NavigationBar(this);
-		tabItems.at(currentTab)->getEngine()->addNavOutline(navBar);
-		int tmp = navBar->returnNumOfItems();
-		delete navBar;
-		navBar = NULL;
-		if (tmp > 0) {
-			navBarShowAct->setChecked(true);
-			showNavBar();
+			if (tmp > 0) {
+				navBarShowAct->setChecked(true);
+				showNavBar();
+			}
 		}
 	}
 }

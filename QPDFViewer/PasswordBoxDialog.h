@@ -17,38 +17,26 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TABITEM_H
-#define TABITEM_H
+#ifndef PASSWORDBOXDIALOG_H
+#define PASSWORDBOXDIALOG_H
 
-#include <qwidget.h>
-#include <qscrollarea.h>
-#include <QScrollBar>
-#include "PDFEngine.h"
-#include "TabScrollArea.h"
+#include <qdialog.h>
+#include <qlineedit.h>
+#include <qpushbutton.h>
 
-class TabItem : public QWidget
+class PasswordBoxDialog : public QDialog
 {
 public:
-	TabItem();
-	PDFEngine* getEngine();
-	QString getFilePath();
-	TabScrollArea* getScrollArea();
-	bool getUseNavBar();
-	QByteArray getSplitterData();
-	void setSplitterData(QByteArray data);
-	bool setPDFEngine(std::string fileName, QWidget* parentWindow);
-	void setFilePath(QString filePath);
-	void updateScrollArea(bool dontRefresh=false);
-	void setUseNavBar(bool enabled);
-	std::string getFileName();
-	void rerenderUpdateScrollArea();
+	PasswordBoxDialog(QWidget* parent = 0);
+	QString getPassword();
 private:
-	PDFEngine* engine;
-	QString title;
-	QString filePath;
-	TabScrollArea* scrollArea;
-	bool useNavBar;
-	QByteArray splitterData;
+	QLineEdit* editBox;
+	QPushButton* okButton;
+	QPushButton* cancelButton;
+private slots:
+	void passwordEntered();
+	void cancelled();
 };
 
 #endif
+

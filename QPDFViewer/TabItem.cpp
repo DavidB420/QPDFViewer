@@ -69,9 +69,11 @@ void TabItem::setSplitterData(QByteArray data)
 	splitterData = data;
 }
 
-void TabItem::setPDFEngine(std::string fileName, QWidget* parentWindow)
+bool TabItem::setPDFEngine(std::string fileName, QWidget* parentWindow)
 {
 	engine = new PDFEngine(fileName, parentWindow);
+
+	return engine->getSuccess();
 }
 
 void TabItem::setFilePath(QString filePath)

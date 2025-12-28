@@ -26,19 +26,27 @@
 #include <qtreeview.h>
 #include <qstandarditemmodel.h>
 #include <string>
+#include <qmessagebox.h>
 #include <poppler-qt5.h>
 #include "Page.h"
 #include "TextBoxDialog.h"
 #include "NavigationBar.h"
 #include "HyperlinkObject.h"
+#include "PasswordBoxDialog.h"
 
 PDFEngine::PDFEngine(std::string fileName, QWidget *parentWindow)
 {
 	//Save parent window from viewer
 	this->parentWindow = parentWindow;
 	
+	//Before loading document, set success to true
+	success = true;
+
 	//Load pdf doc
 	doc = Poppler::Document::load(QString::fromStdString(fileName));
+
+	//Unlock document if necessary
+	unlockDocument();
 
 	//Initialize variables to defaults
 	outputLabel = NULL;
@@ -351,6 +359,11 @@ Poppler::Page::Rotation PDFEngine::getCurrentRotation()
 	return pdfRotation;
 }
 
+bool PDFEngine::getSuccess()
+{
+	return success;
+}
+
 bool PDFEngine::setCurrentPageSignal(int page)
 {
 	//Set current page using normal function
@@ -477,4 +490,23 @@ void PDFEngine::addHyperlinksToPage(Page* page, Poppler::Page* popplerPage, QIma
 		}
 	}
 }
+
+void PDFEngine::unlockDocument()
+{
+	while (doc->isLocked()) {
+		PasswordBoxDialog* dialog = new PasswordBoxDialog();
+		
+		//If user rejects dialog, document will fail to load
+		if (dialog->exec() == QDialog::Rejected) {
+			failedToLoad();
+			return;
+		}
+
+		//Attempt unlock, output error message if incorrect password was entered
+		if (doc->unlock(dialog->getPassword().toLatin1(), dialog->getPassword().toLatin1()) != 0)
+			QMessageBox::warning(NULL, "Incorrect Password", "Incorrect password!\nPlease try again.");
+	}
+}
+
+void PDFEngine::failedToLoad(){	success = false;}
 
