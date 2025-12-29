@@ -110,6 +110,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="DetachableTab.cpp" />
     <ClCompile Include="HyperlinkObject.cpp" />
     <ClCompile Include="NavigationBar.cpp" />
     <ClCompile Include="Page.cpp" />
@@ -133,6 +134,7 @@
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="NavigationBar.h" />
+    <QtMoc Include="DetachableTab.h" />
     <ClInclude Include="HyperlinkObject.h" />
     <ClInclude Include="Page.h" />
     <QtMoc Include="PDFEngine.h" />

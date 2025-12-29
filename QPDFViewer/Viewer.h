@@ -33,6 +33,7 @@
 #include "PDFEngine.h"
 #include "NavigationBar.h"
 #include "TabItem.h"
+#include "DetachableTab.h"
 
 struct MinMaxTuple {
 	int min = 0, max = 0;
@@ -50,6 +51,7 @@ public:
 	void openFile(QString fileName);
 	void setPageKey(int key = -1);
 	void setAndUpdatePageKey(int key = -1);
+	void addTab(TabItem* item);
 private:
 	QLabel* totalPage;
 	QLineEdit* pageNumber;
@@ -67,7 +69,8 @@ private:
 	QAction* pageTextAct;
 	QAction* printAct;
 	QWidget* wdgt;
-	QTabWidget* tWidget;
+	DetachableTabWidget* tWidget;
+	DetachableTabBar* tabBar;
 	std::vector <TabItem*> tabItems;
 	int currentTab;
 private slots:
@@ -88,6 +91,7 @@ private slots:
 	void getPrintDialog();
 	void checkIfPDFLoaded();
 	void updatePageNumber();
+	void openNewWindow(int index, const QPoint& windowPos);
 };
 
 #endif

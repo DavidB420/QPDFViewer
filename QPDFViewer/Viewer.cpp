@@ -150,7 +150,8 @@ Viewer::Viewer(QWidget* parent)
 	//Initialize tabs and layout
 	layout = new QHBoxLayout;
 	hSplitter = new QSplitter(Qt::Horizontal);
-	tWidget = new QTabWidget(this);
+	tabBar = new DetachableTabBar(this);
+	tWidget = new DetachableTabWidget(this,tabBar);
 	tWidget->setMovable(true);
 	tWidget->setTabsClosable(true);
 	hSplitter->addWidget(tWidget);
@@ -165,6 +166,7 @@ Viewer::Viewer(QWidget* parent)
 	connect(tWidget, &QTabWidget::tabBarClicked, this, &Viewer::onTabClicked);
 	connect(tWidget->tabBar(), &QTabBar::tabMoved, this, &Viewer::onTabMoved);
 	connect(tWidget, &QTabWidget::tabCloseRequested, this, &Viewer::onTabCloseRequested);
+	connect(tabBar, &DetachableTabBar::detachTab, this, &Viewer::openNewWindow);
 	QWidget* layoutWidget = new QWidget(this);
 	layoutWidget->setLayout(layout);
 	setCentralWidget(layoutWidget);
@@ -257,6 +259,15 @@ void Viewer::setPage() { setPageKey(); tabItems.at(currentTab)->rerenderUpdateSc
 void Viewer::setAndUpdatePage() { setPage(); tabItems.at(currentTab)->updateScrollArea(true);}
 
 void Viewer::setAndUpdatePageKey(int key) { setPageKey(key); tabItems.at(currentTab)->updateScrollArea(true); }
+
+void Viewer::addTab(TabItem* item)
+{
+	openFile(item->getFilePath());
+	
+	tabItems.at(currentTab)->getEngine()->setCurrentPage(item->getEngine()->getCurrentPage());
+
+	tabItems.at(currentTab)->updateScrollArea();
+}
 
 void Viewer::setPageKey(int key)
 {
@@ -623,4 +634,15 @@ void Viewer::updatePageNumber()
 	pageNumber->setText(QString::number(tabItems.at(currentTab)->getEngine()->getCurrentPage()));
 }
 
+void Viewer::openNewWindow(int index, const QPoint& windowPos)
+{
+	if (index < tabItems.size()) {
+		Viewer* newWindow = new Viewer();
+		newWindow->addTab(tabItems.at(index));
+
+		onTabCloseRequested(index);
+
+		newWindow->show();
+	}
+}
 
