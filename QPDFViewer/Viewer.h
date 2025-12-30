@@ -71,10 +71,12 @@ private:
 	QAction* pageTextAct;
 	QAction* printAct;
 	QWidget* wdgt;
+	QWidget* plusWdgt;
 	DetachableTabWidget* tWidget;
 	DetachableTabBar* tabBar;
 	std::vector <TabItem*> tabItems;
 	int currentTab;
+	void setupBaseTabs();
 public slots:
 	void onTabCloseRequested(int index);
 private slots:

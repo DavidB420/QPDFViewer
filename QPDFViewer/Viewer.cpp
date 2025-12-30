@@ -159,7 +159,7 @@ Viewer::Viewer(QWidget* parent)
 	currentTab = 0;
 	tabItems.push_back(new TabItem());
 	tWidget->addTab(tabItems.at(currentTab), "No PDF loaded");
-	tWidget->addTab(new QWidget(), tr("+"));
+	setupBaseTabs();
 	tWidget->tabBar()->setTabButton(tWidget->count() - 1, QTabBar::RightSide, nullptr);
 	connect(tabItems.at(currentTab)->getScrollArea(), &TabScrollArea::hitExtremity, this, &Viewer::setPage);
 	connect(tWidget, &QTabWidget::tabBarClicked, this, &Viewer::onTabClicked);
@@ -241,6 +241,19 @@ void Viewer::openFileDialog()
 		tr("Open PDF file"), NULL, tr("PDF Files (*.pdf)"));
 
 	openFile(fileName);
+}
+
+void Viewer::setupBaseTabs()
+{
+	//If the plus tab doesnt exist, create it
+	if (tabBar->count() == 0 || plusWdgt == NULL) {
+		if (plusWdgt != NULL) {
+			delete plusWdgt;
+		}
+		plusWdgt = new QWidget();
+		tWidget->addTab(new QWidget(), tr("+"));
+		tWidget->tabBar()->setTabButton(tWidget->count() - 1, QTabBar::RightSide, nullptr);
+	}
 }
 
 void Viewer::exitApp()
@@ -409,6 +422,9 @@ void Viewer::rotatePage()
 
 void Viewer::onTabClicked(int index)
 {
+	//qt for some reason likes to delete the plus button in some scenarios
+	setupBaseTabs();
+	
 	//If plus button has been pressed
 	if (index == tWidget->count() - 1) {
 		//Delete invisible tab if there are now pdf tabs open beforehand
