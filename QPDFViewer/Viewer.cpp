@@ -152,7 +152,6 @@ Viewer::Viewer(QWidget* parent)
 	hSplitter = new QSplitter(Qt::Horizontal);
 	tabBar = new DetachableTabBar(this);
 	tWidget = new DetachableTabWidget(this,tabBar);
-	tWidget->setMovable(true);
 	tWidget->setTabsClosable(true);
 	hSplitter->addWidget(tWidget);
 	layout->addWidget(hSplitter);
@@ -167,6 +166,8 @@ Viewer::Viewer(QWidget* parent)
 	connect(tWidget->tabBar(), &QTabBar::tabMoved, this, &Viewer::onTabMoved);
 	connect(tWidget, &QTabWidget::tabCloseRequested, this, &Viewer::onTabCloseRequested);
 	connect(tabBar, &DetachableTabBar::detachTab, this, &Viewer::openNewWindow);
+	connect(tabBar, &DetachableTabBar::tabMerged, this, &Viewer::mergeTabs);
+	connect(tWidget, &DetachableTabWidget::tabMerged, this, &Viewer::mergeTabs);
 	QWidget* layoutWidget = new QWidget(this);
 	layoutWidget->setLayout(layout);
 	setCentralWidget(layoutWidget);
@@ -267,6 +268,11 @@ void Viewer::addTab(TabItem* item)
 	tabItems.at(currentTab)->getEngine()->setCurrentPage(item->getEngine()->getCurrentPage());
 
 	tabItems.at(currentTab)->updateScrollArea();
+}
+
+TabItem* Viewer::getTab(int index)
+{
+	return tabItems.at(index);
 }
 
 void Viewer::setPageKey(int key)
@@ -493,6 +499,7 @@ void Viewer::onTabCloseRequested(int index)
 		tWidget->insertTab(0, wdgt, "");
 		tWidget->setTabVisible(0,false);
 		tWidget->setCurrentIndex(0);
+		this->setWindowTitle("QPDFViewer");
 		checkIfPDFLoaded();
 	}
 	else {
@@ -644,5 +651,17 @@ void Viewer::openNewWindow(int index, const QPoint& windowPos)
 
 		newWindow->show();
 	}
+}
+
+void Viewer::mergeTabs(int index, QObject* srcViewer)
+{
+	Viewer* vwr = reinterpret_cast<Viewer*>(srcViewer);
+
+	if (tabItems.size() < 2)
+		onTabClicked(tWidget->count() - 1);
+
+	this->addTab(vwr->getTab(index));
+
+	vwr->onTabCloseRequested(index);
 }
 

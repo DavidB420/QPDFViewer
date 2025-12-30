@@ -28,22 +28,22 @@ class DetachableTabBar : public QTabBar
 	Q_OBJECT
 public:
 	DetachableTabBar(QWidget* parent = 0);
+	QString getTabMime();
 signals:
 	void detachTab(int index, const QPoint& windowPos);
+	void tabMerged(int index, QObject* srcViewer);
 protected:
 	void mousePressEvent(QMouseEvent* event) override;
 	void mouseMoveEvent(QMouseEvent* event) override;
 	void mouseReleaseEvent(QMouseEvent* event) override;
+	void dragEnterEvent(QDragEnterEvent* event) override;
+	void dropEvent(QDropEvent* event) override;
+	void dragMoveEvent(QDragMoveEvent* event) override;
 private:
 	int detachIndex;
 	QPoint detachStartPos;
-};
-
-class DetachableTabWidget : public QTabWidget
-{
-	Q_OBJECT
-public:
-	DetachableTabWidget(QWidget* parent = 0, DetachableTabBar* tBar = 0) { setTabBar(tBar); }
+	void* viewerPtr;
+	QString TAB_MIME;
 };
 
 #endif

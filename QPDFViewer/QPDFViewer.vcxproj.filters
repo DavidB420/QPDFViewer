@@ -64,7 +64,10 @@
     <ClCompile Include="PasswordBoxDialog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DetachableTab.cpp">
+    <ClCompile Include="DetachableTabBar.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DetachableTabWidget.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -84,7 +87,10 @@
     <QtMoc Include="PDFEngine.h">
       <Filter>Header Files</Filter>
     </QtMoc>
-    <QtMoc Include="DetachableTab.h">
+    <QtMoc Include="DetachableTabBar.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="DetachableTabWidget.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>
