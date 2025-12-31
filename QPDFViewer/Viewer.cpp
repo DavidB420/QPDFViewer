@@ -157,9 +157,11 @@ Viewer::Viewer(QWidget* parent)
 	layout->addWidget(hSplitter);
 	layout->setContentsMargins(0, 0, 0, 0);
 	currentTab = 0;
+	deleteTab = true;
 	tabItems.push_back(new TabItem());
 	tWidget->addTab(tabItems.at(currentTab), "No PDF loaded");
-	setupBaseTabs();
+	plusWdgt = new QWidget();
+	tWidget->addTab(plusWdgt, tr("+"));
 	tWidget->tabBar()->setTabButton(tWidget->count() - 1, QTabBar::RightSide, nullptr);
 	connect(tabItems.at(currentTab)->getScrollArea(), &TabScrollArea::hitExtremity, this, &Viewer::setPage);
 	connect(tWidget, &QTabWidget::tabBarClicked, this, &Viewer::onTabClicked);
@@ -243,19 +245,6 @@ void Viewer::openFileDialog()
 	openFile(fileName);
 }
 
-void Viewer::setupBaseTabs()
-{
-	//If the plus tab doesnt exist, create it
-	if (tabBar->count() == 0 || plusWdgt == NULL) {
-		if (plusWdgt != NULL) {
-			delete plusWdgt;
-		}
-		plusWdgt = new QWidget();
-		tWidget->addTab(new QWidget(), tr("+"));
-		tWidget->tabBar()->setTabButton(tWidget->count() - 1, QTabBar::RightSide, nullptr);
-	}
-}
-
 void Viewer::exitApp()
 {
 	QApplication::exit();
@@ -276,11 +265,29 @@ void Viewer::setAndUpdatePageKey(int key) { setPageKey(key); tabItems.at(current
 
 void Viewer::addTab(TabItem* item)
 {
-	openFile(item->getFilePath());
-	
-	tabItems.at(currentTab)->getEngine()->setCurrentPage(item->getEngine()->getCurrentPage());
+	tabItems.push_back(item);
 
-	tabItems.at(currentTab)->updateScrollArea();
+	int x = tWidget->count();
+
+	if (tWidget->count() == 2 && tabItems.at(0)->getEngine() == NULL) {
+		delete tWidget->widget(0);
+		tabItems.erase(tabItems.begin());
+	}
+
+	currentTab = tWidget->count() - 1;
+	QString tabTitle = QString::fromStdString(tabItems.at(currentTab)->getFileName());
+	int currentIndex = tWidget->insertTab(currentTab, tabItems.at(currentTab), tabTitle != "" ? tabTitle : "No PDF loaded");
+	tWidget->setCurrentIndex(currentIndex);
+	connect(tabItems.at(currentTab)->getScrollArea(), &TabScrollArea::hitExtremity, this, &Viewer::setPage);
+	connect(tabItems.at(currentTab)->getEngine(), &PDFEngine::pageChanged, this, &Viewer::updatePageNumber);
+
+	onTabClicked(currentIndex);
+}
+
+bool Viewer::toggleDeleteTab()
+{
+	deleteTab = !deleteTab;
+	return deleteTab;
 }
 
 TabItem* Viewer::getTab(int index)
@@ -321,7 +328,7 @@ void Viewer::setPageKey(int key)
 void Viewer::setAndUpdateScale()
 {
 	//Update scale if valid
-	if (tabItems.at(currentTab)->getEngine() != NULL) {
+	if (tabItems.size() > 0 && tabItems.at(currentTab)->getEngine() != NULL) {
 		if (scaleBox->currentText().endsWith("%"))
 			scaleBox->setCurrentText(scaleBox->currentText().mid(0, scaleBox->currentText().length() - 1));
 
@@ -421,10 +428,7 @@ void Viewer::rotatePage()
 }
 
 void Viewer::onTabClicked(int index)
-{
-	//qt for some reason likes to delete the plus button in some scenarios
-	setupBaseTabs();
-	
+{	
 	//If plus button has been pressed
 	if (index == tWidget->count() - 1) {
 		//Delete invisible tab if there are now pdf tabs open beforehand
@@ -485,10 +489,12 @@ void Viewer::onTabMoved(int from, int to)
 void Viewer::onTabCloseRequested(int index)
 {
 	//Check if this isnt the plus tab, otherwise do the remove
-	if (index < tWidget->count() - 1) {
+	if (index < tWidget->count() - 1 && tWidget->widget(index) != plusWdgt) {
 		tWidget->removeTab(index);
-		delete tabItems.at(index)->getEngine();
-		delete tabItems.at(index);
+		if (deleteTab) {
+			delete tabItems.at(index)->getEngine();
+			delete tabItems.at(index);
+		}
 		tabItems.erase(tabItems.begin()+index);
 		if (currentTab > 0)
 			currentTab--;
@@ -652,10 +658,16 @@ void Viewer::updatePageNumber()
 void Viewer::openNewWindow(int index, const QPoint& windowPos)
 {
 	if (index < tabItems.size()) {
-		Viewer* newWindow = new Viewer();
-		newWindow->addTab(tabItems.at(index));
-
+		disconnect(tabItems.at(index)->getScrollArea(), &TabScrollArea::hitExtremity, this, &Viewer::setPage);
+		disconnect(tabItems.at(index)->getEngine(), &PDFEngine::pageChanged, this, &Viewer::updatePageNumber);
+		TabItem* item = tabItems.at(index);
+		
+		deleteTab = false;
 		onTabCloseRequested(index);
+		deleteTab = true;
+		
+		Viewer* newWindow = new Viewer();
+		newWindow->addTab(item);
 
 		newWindow->show();
 	}
@@ -664,12 +676,19 @@ void Viewer::openNewWindow(int index, const QPoint& windowPos)
 void Viewer::mergeTabs(int index, QObject* srcViewer)
 {
 	Viewer* vwr = reinterpret_cast<Viewer*>(srcViewer);
+	TabItem* item = vwr->getTab(index);
 
-	if (tabItems.size() < 2)
+	disconnect(item->getScrollArea(), &TabScrollArea::hitExtremity, vwr, &Viewer::setPage);
+	disconnect(item->getEngine(), &PDFEngine::pageChanged, vwr, &Viewer::updatePageNumber);
+	
+	vwr->toggleDeleteTab();
+	vwr->onTabCloseRequested(index);
+	vwr->toggleDeleteTab();
+
+
+	if (tabItems.size() < 1)
 		onTabClicked(tWidget->count() - 1);
 
-	this->addTab(vwr->getTab(index));
-
-	vwr->onTabCloseRequested(index);
+	this->addTab(item);
 }
 

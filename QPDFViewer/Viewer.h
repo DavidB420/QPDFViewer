@@ -53,6 +53,7 @@ public:
 	void setPageKey(int key = -1);
 	void setAndUpdatePageKey(int key = -1);
 	void addTab(TabItem* item);
+	bool toggleDeleteTab();
 	TabItem* getTab(int index);
 private:
 	QLabel* totalPage;
@@ -76,7 +77,7 @@ private:
 	DetachableTabBar* tabBar;
 	std::vector <TabItem*> tabItems;
 	int currentTab;
-	void setupBaseTabs();
+	bool deleteTab;
 public slots:
 	void onTabCloseRequested(int index);
 private slots:
