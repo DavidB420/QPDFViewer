@@ -265,15 +265,16 @@ void Viewer::setAndUpdatePageKey(int key) { setPageKey(key); tabItems.at(current
 
 void Viewer::addTab(TabItem* item)
 {
+	//Add tab to tab items list
 	tabItems.push_back(item);
 
-	int x = tWidget->count();
-
+	//Delete extra tab if necessary
 	if (tWidget->count() == 2 && tabItems.at(0)->getEngine() == NULL) {
 		delete tWidget->widget(0);
 		tabItems.erase(tabItems.begin());
 	}
 
+	//Load tab into this window
 	currentTab = tWidget->count() - 1;
 	QString tabTitle = QString::fromStdString(tabItems.at(currentTab)->getFileName());
 	int currentIndex = tWidget->insertTab(currentTab, tabItems.at(currentTab), tabTitle != "" ? tabTitle : "No PDF loaded");
@@ -648,6 +649,12 @@ void Viewer::checkIfPDFLoaded()
 	downButton->setEnabled(toggle);
 	backwardsSearch->setEnabled(toggle);
 	forwardsSearch->setEnabled(toggle);
+
+	if (!toggle) {
+		totalPage->setText(" out of ");
+		pageNumber->setText("");
+		scaleBox->setCurrentIndex(0);
+	}
 }
 
 void Viewer::updatePageNumber()
@@ -657,15 +664,21 @@ void Viewer::updatePageNumber()
 
 void Viewer::openNewWindow(int index, const QPoint& windowPos)
 {
+	//Check if the index matches a tab (not plus tab)
 	if (index < tabItems.size()) {
+		//Disconnect current signals
 		disconnect(tabItems.at(index)->getScrollArea(), &TabScrollArea::hitExtremity, this, &Viewer::setPage);
 		disconnect(tabItems.at(index)->getEngine(), &PDFEngine::pageChanged, this, &Viewer::updatePageNumber);
+
+		//Save tab pointer
 		TabItem* item = tabItems.at(index);
 		
-		deleteTab = false;
+		//Remove tab from current window without deleting tab object itself
+		toggleDeleteTab();
 		onTabCloseRequested(index);
-		deleteTab = true;
+		toggleDeleteTab();
 		
+		//Create new window and add tab to it
 		Viewer* newWindow = new Viewer();
 		newWindow->addTab(item);
 
@@ -675,20 +688,24 @@ void Viewer::openNewWindow(int index, const QPoint& windowPos)
 
 void Viewer::mergeTabs(int index, QObject* srcViewer)
 {
+	//Get source window and its tab object
 	Viewer* vwr = reinterpret_cast<Viewer*>(srcViewer);
 	TabItem* item = vwr->getTab(index);
 
+	//Disconnect current signals
 	disconnect(item->getScrollArea(), &TabScrollArea::hitExtremity, vwr, &Viewer::setPage);
 	disconnect(item->getEngine(), &PDFEngine::pageChanged, vwr, &Viewer::updatePageNumber);
 	
+	//Remove tab from source window without deleting tab object itself
 	vwr->toggleDeleteTab();
 	vwr->onTabCloseRequested(index);
 	vwr->toggleDeleteTab();
 
-
+	//Create new tab if necessary
 	if (tabItems.size() < 1)
 		onTabClicked(tWidget->count() - 1);
 
+	//add tab object to this window
 	this->addTab(item);
 }
 

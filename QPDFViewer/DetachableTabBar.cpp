@@ -28,6 +28,7 @@
 
 DetachableTabBar::DetachableTabBar(QWidget* parent)
 {
+	//Set default values
 	this->setMovable(true);
 	this->setTabsClosable(true);
 	this->setAcceptDrops(true);
@@ -39,7 +40,7 @@ DetachableTabBar::DetachableTabBar(QWidget* parent)
 
 	detachIndex = -1;
 
-	TAB_MIME = "application/x-detachable-tab";
+	TAB_MIME = "qpdfviewer/x-detachable-tab";
 }
 
 QString DetachableTabBar::getTabMime()
@@ -49,6 +50,7 @@ QString DetachableTabBar::getTabMime()
 
 void DetachableTabBar::mousePressEvent(QMouseEvent* event)
 {
+	//Save detach index (except for the plus button)
 	detachIndex = tabAt(event->pos());
 
 	if (detachIndex == count() - 1)
@@ -61,8 +63,11 @@ void DetachableTabBar::mousePressEvent(QMouseEvent* event)
 
 void DetachableTabBar::mouseMoveEvent(QMouseEvent* event)
 {
+	//Check if user started dragging a tab outside the the tab bar
 	if ((event->pos() - detachStartPos).manhattanLength() > QApplication::startDragDistance()) {
-		if (!rect().contains(event->pos()) && detachIndex >= 0) {  // Remove the rect().contains() check
+		if (!rect().contains(event->pos()) && detachIndex >= 0) {
+
+			//Start a drag operation, saving both the pointer of its viewer and the index of the tab
 			QDrag* drag = new QDrag(this);
 			QMimeData* mimeData = new QMimeData;
 			QByteArray data;
@@ -73,8 +78,9 @@ void DetachableTabBar::mouseMoveEvent(QMouseEvent* event)
 			drag->setMimeData(mimeData);
 			Qt::DropAction result = drag->exec(Qt::MoveAction);
 
+			//If the user doesnt drag it to another window, create a new one
 			if (result == Qt::IgnoreAction)
-				emit detachTab(detachIndex, event->globalPos());  // Use globalPos for consistency
+				emit detachTab(detachIndex, event->globalPos());
 			detachIndex = -1;
 			return;
 		}
@@ -84,12 +90,14 @@ void DetachableTabBar::mouseMoveEvent(QMouseEvent* event)
 
 void DetachableTabBar::mouseReleaseEvent(QMouseEvent* event)
 {
+	//If mouse is released, reset the index
 	detachIndex = -1;
 	QTabBar::mouseReleaseEvent(event);
 }
 
 void DetachableTabBar::dragEnterEvent(QDragEnterEvent* event)
 {
+	//Check if mime matches before accepting
 	if (event->mimeData()->hasFormat(TAB_MIME)) {
 		event->setDropAction(Qt::MoveAction);
 		event->accept();
@@ -98,6 +106,7 @@ void DetachableTabBar::dragEnterEvent(QDragEnterEvent* event)
 
 void DetachableTabBar::dropEvent(QDropEvent* event)
 {
+	//Read data returned from drop
 	QByteArray data = event->mimeData()->data(TAB_MIME);
 	QDataStream in(&data, QIODevice::ReadOnly);
 
@@ -107,17 +116,35 @@ void DetachableTabBar::dropEvent(QDropEvent* event)
 
 	QObject* srcViewer = reinterpret_cast<QObject*>(srcPtr);
 
+	//If this tab came from another window, merge it
 	if (srcViewer != viewerPtr)
 		emit tabMerged(index, srcViewer);
 
+	//Drop was successful
 	event->acceptProposedAction();
 	event->setDropAction(Qt::MoveAction);
 }
 
 void DetachableTabBar::dragMoveEvent(QDragMoveEvent* event)
 {
+	//Check if mime matches
 	if (event->mimeData()->hasFormat(TAB_MIME)){
 		event->setDropAction(Qt::MoveAction);
 		event->accept();
 	}
+}
+
+void DetachableTabBar::tabLayoutChange()
+{
+	int plusIndex = count() - 1;
+
+	//If Qt moved a real tab past the plus tab, snap it back
+	for (int i = 0; i < count() - 1; ++i) {
+		if (tabText(i) == "+") {
+			moveTab(i, plusIndex);
+			break;
+		}
+	}
+
+	QTabBar::tabLayoutChange();
 }
