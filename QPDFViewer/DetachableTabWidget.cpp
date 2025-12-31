@@ -52,3 +52,18 @@ void DetachableTabWidget::dragEnterEvent(QDragEnterEvent* event)
 		event->accept();
 	}
 }
+
+void DetachableTabBar::tabLayoutChange()
+{
+	int plusIndex = count() - 1;
+
+	//If Qt moved a real tab past the plus tab, snap it back
+	for (int i = 0; i < count() - 1; ++i) {
+		if (tabText(i) == "+") {
+			moveTab(i, plusIndex);
+			break;
+		}
+	}
+
+	QTabBar::tabLayoutChange();
+}

@@ -51,6 +51,9 @@ void DetachableTabBar::mousePressEvent(QMouseEvent* event)
 {
 	detachIndex = tabAt(event->pos());
 
+	if (detachIndex == count() - 1)
+		detachIndex = -1;
+
 	detachStartPos = event->pos();
 
 	QTabBar::mousePressEvent(event);

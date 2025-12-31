@@ -39,6 +39,7 @@ protected:
 	void dragEnterEvent(QDragEnterEvent* event) override;
 	void dropEvent(QDropEvent* event) override;
 	void dragMoveEvent(QDragMoveEvent* event) override;
+	void tabLayoutChange() override;
 private:
 	int detachIndex;
 	QPoint detachStartPos;

@@ -475,16 +475,8 @@ void Viewer::onTabClicked(int index)
 
 void Viewer::onTabMoved(int from, int to)
 {
-	//If user moved a tab onto the plus tab
-	if (from == tWidget->count() - 1 || to == tWidget->count() - 1) {
-		//Move it back
-		tWidget->tabBar()->blockSignals(true);
-		tWidget->tabBar()->moveTab(to, from);
-		tWidget->tabBar()->blockSignals(false);
-		tWidget->setCurrentIndex(currentTab);
-	}
-	else {
-		//Otherwise do the move
+	//Do the move
+	if (from < tWidget->count() - 1 && to < tWidget->count() - 1) {
 		std::swap(tabItems[from], tabItems[to]);
 		currentTab = from;
 	}
