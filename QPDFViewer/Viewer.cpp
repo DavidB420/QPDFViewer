@@ -1,5 +1,5 @@
 ﻿/**
- * Copyright 2025 David Badiei
+ * Copyright 2026 David Badiei
  *
  * This file is part of QPDFViewer, hereafter referred to as the program.
  *
@@ -263,7 +263,7 @@ void Viewer::aboutApp()
 {
 	//Display about box
 	QMessageBox::about(this, tr("About QPDFViewer"),
-		tr("<b>QPDFViewer 2.0 BETA</b><br>Written by David Badiei, 2025<br>Licensed under GNU General Public License v3 (GPL-3)"));
+		tr("<b>QPDFViewer 2.0 BETA</b><br>Written by David Badiei, 2026<br>Licensed under GNU General Public License v3 (GPL-3)"));
 }
 
 void Viewer::setPage() { setPageKey(); tabItems.at(currentTab)->rerenderUpdateScrollArea();}

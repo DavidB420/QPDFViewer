@@ -1,5 +1,5 @@
 /**
- * Copyright 2025 David Badiei
+ * Copyright 2026 David Badiei
  *
  * This file is part of QPDFViewer, hereafter referred to as the program.
  *
@@ -25,7 +25,7 @@
 class FindAllBox : public QDialog
 {
 public:
-	FindAllBox(QWidget* parent = 0, int direction); //0 - bidirectional, 1 - forward, 2 - backward
+	FindAllBox(QWidget* parent = 0, int direction=0); //0 - bidirectional, 1 - forward, 2 - backward
 };
 
 #endif
