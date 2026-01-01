@@ -85,6 +85,15 @@ Viewer::Viewer(QWidget* parent)
 	navBarShowAct = new QAction(tr("&Show Navigation Bar"), this);
 	navBarShowAct->setCheckable(true);
 	navMenu->addAction(navBarShowAct);
+	QAction* findAllForward = new QAction(tr("&Find all forward"));
+	findAllForward->setIcon(QIcon(":/images/assets/forwardsIcon.png"));
+	navMenu->addAction(findAllForward);
+	QAction* findAllBackward = new QAction(tr("&Find all backward"));
+	findAllBackward->setIcon(QIcon(":/images/assets/backwardsIcon.png"));
+	navMenu->addAction(findAllBackward);
+	QAction* findAllBidirect = new QAction(tr("&Find all"));
+	findAllBidirect->setIcon(QIcon(":/images/assets/bidirectIcon.png"));
+	navMenu->addAction(findAllBidirect);
 	connect(navBarShowAct, &QAction::triggered, this, &Viewer::showNavBar);
 	QAction* aboutAct = new QAction(tr("&About"), this);
 	aboutmenu->addAction(aboutAct);

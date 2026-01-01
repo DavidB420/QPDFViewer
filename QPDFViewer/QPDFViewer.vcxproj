@@ -67,6 +67,9 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
   </PropertyGroup>
+  <PropertyGroup Label="Vcpkg">
+    <VcpkgApplocalDeps>true</VcpkgApplocalDeps>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <AdditionalIncludeDirectories>$(POPPLER_ROOT)qt5\src;%(AdditionalIncludeDirectories);$(ProjectDir);$(Qt_INCLUDEPATH_)</AdditionalIncludeDirectories>
@@ -78,6 +81,7 @@
     </Link>
     <PostBuildEvent>
       <Command>xcopy /Y /D "$(POPPLER_ROOT)Debug\poppler.dll" "$(TargetDir)"
+
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -112,6 +116,7 @@
   <ItemGroup>
     <ClCompile Include="DetachableTabBar.cpp" />
     <ClCompile Include="DetachableTabWidget.cpp" />
+    <ClCompile Include="FindAllBox.cpp" />
     <ClCompile Include="HyperlinkObject.cpp" />
     <ClCompile Include="NavigationBar.cpp" />
     <ClCompile Include="Page.cpp" />
@@ -137,6 +142,7 @@
     <QtMoc Include="NavigationBar.h" />
     <QtMoc Include="DetachableTabBar.h" />
     <QtMoc Include="DetachableTabWidget.h" />
+    <ClInclude Include="FindAllBox.h" />
     <ClInclude Include="HyperlinkObject.h" />
     <ClInclude Include="Page.h" />
     <QtMoc Include="PDFEngine.h" />
@@ -153,9 +159,11 @@
   <ItemGroup>
     <Image Include="assets\aboutIcon.png" />
     <Image Include="assets\backwardsIcon.png" />
+    <Image Include="assets\bidirectIcon.png" />
     <Image Include="assets\closeIcon.png" />
     <Image Include="assets\downIcon.png" />
     <Image Include="assets\encrypted.png" />
+    <Image Include="assets\forwardsIcon.png" />
     <Image Include="assets\icon.ico" />
     <Image Include="assets\icon.png" />
     <Image Include="assets\openIcon.png" />
@@ -169,6 +177,15 @@
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">
     <Import Project="$(QtMsBuild)\qt.targets" />
   </ImportGroup>
+  <!-- FIX vcpkg OpenSSL wildcard DLL names -->
+  <Target Name="FixOpenSslDllNames" AfterTargets="VcpkgAppLocalDeploy">
+    <ItemGroup>
+      <VcpkgAppLocalDependencies Remove="libcrypto-*-x64.dll" />
+      <VcpkgAppLocalDependencies Remove="libssl-*-x64.dll" />
+      <VcpkgAppLocalDependencies Include="libcrypto-3-x64.dll" />
+      <VcpkgAppLocalDependencies Include="libssl-3-x64.dll" />
+    </ItemGroup>
+  </Target>
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
 </Project>

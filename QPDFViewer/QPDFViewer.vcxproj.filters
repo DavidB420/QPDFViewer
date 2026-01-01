@@ -70,6 +70,9 @@
     <ClCompile Include="DetachableTabWidget.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="FindAllBox.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="Viewer.h">
@@ -111,6 +114,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PasswordBoxDialog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FindAllBox.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -157,6 +163,12 @@
       <Filter>Resource Files\assets</Filter>
     </Image>
     <Image Include="assets\encrypted.png">
+      <Filter>Resource Files\assets</Filter>
+    </Image>
+    <Image Include="assets\forwardsIcon.png">
+      <Filter>Resource Files\assets</Filter>
+    </Image>
+    <Image Include="assets\bidirectIcon.png">
       <Filter>Resource Files\assets</Filter>
     </Image>
   </ItemGroup>
