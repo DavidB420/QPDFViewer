@@ -1,5 +1,5 @@
 /**
- * Copyright 2025 David Badiei
+ * Copyright 2026 David Badiei
  *
  * This file is part of QPDFViewer, hereafter referred to as the program.
  *
@@ -21,42 +21,70 @@
 #define PDFENGINE_H
 
 #include <memory>
-#include <poppler/cpp/poppler-document.h>
-#include <poppler/cpp/poppler-page.h>
-#include <poppler/cpp/poppler-image.h>
-#include <poppler/cpp/poppler-page-renderer.h>
-#include <poppler/cpp/poppler-toc.h>
+#include <poppler-qt5.h>
 #include <string>
 #include <qtreeview.h>
 #include <qstandarditemmodel.h>
 #include "Page.h"
 #include "NavigationBar.h"
+#include "FindAllWorker.h"
 
-class PDFEngine
+class PDFEngine: public QObject
 {
+	Q_OBJECT
 public:
 	PDFEngine(std::string fileName,QWidget *parentWindow);
+	~PDFEngine();
 	Page* returnImage();
 	int getTotalNumberOfPages();
 	int getCurrentPage();
 	int getScaleValue();
 	bool setCurrentPage(int page);
+	bool setCurrentPageSignal(int page);
 	bool setCurrentScale(int scale);
-	bool findPhraseInDocument(std::string phrase, poppler::page::search_direction_enum direction);
+	bool findPhraseInDocument(std::string phrase, Poppler::Page::SearchDirection direction);
 	void displayTextBox(QRectF dim);
 	void displayAllText();
 	void addNavOutline(NavigationBar* tView);
 	void rotatePDF(bool plus90);
+	unsigned long getDocumentHeight();
+	QVector <Page*> getVisiblePages();
+	QVector <int> getPageHeights();
+	Poppler::Page::Rotation getCurrentRotation();
+	bool getSuccess();
+	void getAllSearchResults(int direction, std::string phrase);
 private:
 	QWidget *parentWindow;
 	Page* outputLabel;
-	poppler::document* doc;
-	poppler::rectf selectedRect;
-	poppler::rectf foundRect;
-	poppler::rotation_enum pdfRotation;
+	Poppler::Document* doc;
+	QRectF selectedRect;
+	QRectF foundRect;
+	Poppler::Page::Rotation pdfRotation;
 	int currentPage;
 	int scaleValue;
-	void recursivelyFillModel(poppler::toc_item* currentItem, QStandardItem* rootItem, NavigationBar *navBar);
+	int foundPageNum;
+	int searchPos;
+	bool success;
+	unsigned long documentHeight;
+	void recursivelyFillModel(QVector<Poppler::OutlineItem> currentItem, QStandardItem* rootItem, NavigationBar *navBar);
+	QVector <Page*> previousPages;
+	QVector <int> allPageHeights;
+	std::string fileName;
+	FindAllWorker* currentFindAllWorker;
+	QThread* currentFindAllThread;
+	void updateHeightValues(bool total);
+	bool documentSearch(Poppler::Page *page, int pageNum, std::string phrase, QRectF* foundRect, Poppler::Page::SearchDirection direction, Poppler::Page::Rotation rotation);
+	void addHyperlinksToPage(Page* page, Poppler::Page* popplerPage, QImage image);
+	void unlockDocument();
+	void failedToLoad();
+signals:
+	void pageChanged();
+	void sendFindAllResult(SearchResult result);
+	void attentionNeeded();
+public slots:
+	void goToPhrase(int page, QRectF rect);
+	void cancelFindAllWorker();
+	void findAllResult(SearchResult result);
 };
 
 #endif

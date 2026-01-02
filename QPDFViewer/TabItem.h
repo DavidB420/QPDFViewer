@@ -1,5 +1,5 @@
 /**
- * Copyright 2025 David Badiei
+ * Copyright 2026 David Badiei
  *
  * This file is part of QPDFViewer, hereafter referred to as the program.
  *
@@ -36,11 +36,12 @@ public:
 	bool getUseNavBar();
 	QByteArray getSplitterData();
 	void setSplitterData(QByteArray data);
-	void setPDFEngine(std::string fileName, QWidget* parentWindow);
+	bool setPDFEngine(std::string fileName, QWidget* parentWindow);
 	void setFilePath(QString filePath);
-	void updateScrollArea();
+	void updateScrollArea(bool dontRefresh=false);
 	void setUseNavBar(bool enabled);
 	std::string getFileName();
+	void rerenderUpdateScrollArea();
 private:
 	PDFEngine* engine;
 	QString title;

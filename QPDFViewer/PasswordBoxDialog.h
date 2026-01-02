@@ -1,5 +1,5 @@
 /**
- * Copyright 2025 David Badiei
+ * Copyright 2026 David Badiei
  *
  * This file is part of QPDFViewer, hereafter referred to as the program.
  *
@@ -17,12 +17,26 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef STRINGCONV_H
-#define STRINGCONV_H
+#ifndef PASSWORDBOXDIALOG_H
+#define PASSWORDBOXDIALOG_H
 
-#include <poppler/cpp/poppler-global.h>
+#include <qdialog.h>
+#include <qlineedit.h>
+#include <qpushbutton.h>
 
-std::string fromPopplerStringStdString(poppler::ustring popplerStr);
-poppler::ustring fromStdStringToPopplerString(std::string stdString);
+class PasswordBoxDialog : public QDialog
+{
+public:
+	PasswordBoxDialog(QWidget* parent = 0);
+	QString getPassword();
+private:
+	QLineEdit* editBox;
+	QPushButton* okButton;
+	QPushButton* cancelButton;
+private slots:
+	void passwordEntered();
+	void cancelled();
+};
 
 #endif
+

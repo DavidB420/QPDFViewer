@@ -1,5 +1,5 @@
 /**
- * Copyright 2025 David Badiei
+ * Copyright 2026 David Badiei
  *
  * This file is part of QPDFViewer, hereafter referred to as the program.
  *
@@ -28,6 +28,13 @@ Page::Page(QWidget* parent, PDFEngine* pdfParent, QImage *img)
 	this->parent = pdfParent;
 	dragging = false;
 	isDragging = false;
+	pageNumber = this->parent->getCurrentPage();
+
+	scale = this->parent->getScaleValue();
+	rotation = this->parent->getCurrentRotation();
+
+	setFixedWidth(pagePixmap.width());
+	setFixedHeight(pagePixmap.height());
 }
 
 QPixmap Page::getPagePixmap()
@@ -35,10 +42,41 @@ QPixmap Page::getPagePixmap()
 	return pagePixmap;
 }
 
+int Page::getPageNumber()
+{
+	return pageNumber;
+}
+
+int Page::getScale()
+{
+	return scale;
+}
+
+QPointF Page::getFirstPoint()
+{
+	return firstPoint;
+}
+
+QPointF Page::getCurrentPoint()
+{
+	return currentPoint;
+}
+
+Poppler::Page::Rotation Page::getRotation()
+{
+	return rotation;
+}
+
+PDFEngine* Page::getParent()
+{
+	return parent;
+}
+
 void Page::mousePressEvent(QMouseEvent* event)
 {
-	//Save first point when lmb is first pressed
+	//Save first point when lmb is first pressed and change page number
 	if (event->button() == Qt::LeftButton) {
+		this->parent->setCurrentPageSignal(this->getPageNumber());
 		dragging = true;
 		firstPoint = event->pos();
 	}
@@ -95,4 +133,7 @@ void Page::drawSelection(QRectF rect)
 	update();
 }
 
-
+void Page::addHyperlink(HyperlinkObject* obj)
+{
+	hyperlinks.push_back(obj);
+}

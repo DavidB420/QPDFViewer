@@ -17,22 +17,30 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TEXTBOXDIALOG_H
-#define TEXTBOXDIALOG_H
+#include "HyperlinkObject.h"
 
-#include <qdialog.h>
-#include <qplaintextedit.h>
-#include <string>
+#include <qdesktopservices.h>
+#include <qurl.h>
+#include <qobject.h>
 
-class TextBoxDialog : public QDialog
+HyperlinkObject::HyperlinkObject(QWidget* parent, QRectF dimSize, QString url): QPushButton(parent)
 {
-public:
-	TextBoxDialog(QWidget* parent = 0, std::string *txt = 0);
-private:
-	QPlainTextEdit* tBox;
-private slots:
-	void exitDialog();
-	void copyAllClipboard();
-};
+    //Make push button invisible and set default values
+    this->setText("");
+    this->setStyleSheet("QPushButton {background-color: transparent;border: none;}");
 
-#endif
+    this->url = url;
+    this->setGeometry(dimSize.x(), dimSize.y(), dimSize.width(), dimSize.height());
+
+    this->setCursor(Qt::PointingHandCursor);
+
+    connect(this, &QPushButton::clicked, this, &HyperlinkObject::hyperlinkClicked);
+
+    this->show();
+}
+
+void HyperlinkObject::hyperlinkClicked()
+{
+    //Open url in default browser
+    QDesktopServices::openUrl(QUrl(url));
+}

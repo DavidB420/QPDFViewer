@@ -1,5 +1,5 @@
 /**
- * Copyright 2025 David Badiei
+ * Copyright 2026 David Badiei
  *
  * This file is part of QPDFViewer, hereafter referred to as the program.
  *
@@ -30,7 +30,7 @@ TabItem::TabItem()
 
 	scrollArea = new TabScrollArea(this);
 	scrollArea->setBackgroundRole(QPalette::Mid);
-	scrollArea->setAlignment(Qt::AlignCenter);
+	scrollArea->viewport()->setBackgroundRole(QPalette::Mid);
 
 	QHBoxLayout* layout = new QHBoxLayout;
 	layout->addWidget(scrollArea);
@@ -69,9 +69,11 @@ void TabItem::setSplitterData(QByteArray data)
 	splitterData = data;
 }
 
-void TabItem::setPDFEngine(std::string fileName, QWidget* parentWindow)
+bool TabItem::setPDFEngine(std::string fileName, QWidget* parentWindow)
 {
 	engine = new PDFEngine(fileName, parentWindow);
+
+	return engine->getSuccess();
 }
 
 void TabItem::setFilePath(QString filePath)
@@ -79,9 +81,16 @@ void TabItem::setFilePath(QString filePath)
 	this->filePath = filePath;
 }
 
-void TabItem::updateScrollArea()
+void TabItem::updateScrollArea(bool dontRefresh)
 {
-	scrollArea->setWidget(engine->returnImage());
+	//Refresh page and document heights when scaling or rotating
+	if (!dontRefresh) {
+		scrollArea->setPageHeights(engine->getPageHeights());
+		scrollArea->setDocumentHeight(engine->getDocumentHeight(), true, engine->getCurrentPage());
+	}
+	else {
+		scrollArea->updateVerticalScrollBar(engine->getCurrentPage());
+	}
 }
 
 void TabItem::setUseNavBar(bool enabled)
@@ -104,5 +113,15 @@ std::string TabItem::getFileName()
 	}
 
 	return filePathStd.substr(startFN,filePathStd.length());
+}
+
+void TabItem::rerenderUpdateScrollArea()
+{
+	//Get updated visible pages from engine and pass it to the scroll area
+	QVector <Page*> pagesVector = engine->getVisiblePages();
+	scrollArea->setCurrentPages(&pagesVector);
+
+	//Release lock
+	scrollArea->setBufferLock(0);
 }
 

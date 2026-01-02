@@ -1,5 +1,5 @@
 /**
- * Copyright 2025 David Badiei
+ * Copyright 2026 David Badiei
  *
  * This file is part of QPDFViewer, hereafter referred to as the program.
  *
@@ -17,23 +17,28 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "StringConv.h"
+#ifndef DETACHABLETABWIDGET_H
+#define DETACHABLETABWIDGET_H
 
-std::string fromPopplerStringStdString(poppler::ustring popplerStr)
+#include <qtabwidget.h>
+
+#include "DetachableTabBar.h"
+
+class DetachableTabWidget : public QTabWidget
 {
-	//Convert poppler::ustring to std::string
-	poppler::byte_array utf8Arr = popplerStr.to_utf8();
+	Q_OBJECT
+public:
+	DetachableTabWidget(QWidget* parent = 0, DetachableTabBar* tBar = 0);
+signals:
+	void tabMerged(int index, QObject* srcViewer);
+protected:
+	void dropEvent(QDropEvent* event) override;
+	void dragMoveEvent(QDragMoveEvent* event) override;
+	void dragEnterEvent(QDragEnterEvent* event) override;
+private:
+	void* viewerPtr;
+	QString TAB_MIME;
+	DetachableTabBar* tBar;
+};
 
-	std::string returnedString = "";
-	
-	for (int i = 0; i < utf8Arr.size(); i++)
-		returnedString.insert(i,1, utf8Arr.at(i));
-
-	return returnedString;
-}
-
-poppler::ustring fromStdStringToPopplerString(std::string stdString)
-{
-	//Convert std::string to poppler::ustring
-	return poppler::ustring::from_utf8(stdString.c_str(), stdString.length());
-}
+#endif

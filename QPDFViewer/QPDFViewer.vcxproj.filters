@@ -49,9 +49,6 @@
     <ClCompile Include="NavigationBar.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="StringConv.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="TabItem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -59,6 +56,24 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="TabScrollArea.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="HyperlinkObject.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PasswordBoxDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DetachableTabBar.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DetachableTabWidget.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="FindAllBox.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="FindAllWorker.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -75,24 +90,39 @@
     <QtMoc Include="TabScrollArea.h">
       <Filter>Header Files</Filter>
     </QtMoc>
+    <QtMoc Include="PDFEngine.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="DetachableTabBar.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="DetachableTabWidget.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="FindAllBox.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="FindAllWorker.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="PDFEngine.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Page.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="TextBoxDialog.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="StringConv.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="TabItem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="HyperlinkObject.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PasswordBoxDialog.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -136,6 +166,15 @@
       <Filter>Resource Files\assets</Filter>
     </Image>
     <Image Include="assets\upIcon.png">
+      <Filter>Resource Files\assets</Filter>
+    </Image>
+    <Image Include="assets\encrypted.png">
+      <Filter>Resource Files\assets</Filter>
+    </Image>
+    <Image Include="assets\forwardsIcon.png">
+      <Filter>Resource Files\assets</Filter>
+    </Image>
+    <Image Include="assets\bidirectIcon.png">
       <Filter>Resource Files\assets</Filter>
     </Image>
   </ItemGroup>

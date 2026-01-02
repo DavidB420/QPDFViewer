@@ -1,5 +1,5 @@
 /**
- * Copyright 2025 David Badiei
+ * Copyright 2026 David Badiei
  *
  * This file is part of QPDFViewer, hereafter referred to as the program.
  *
@@ -33,6 +33,8 @@
 #include "PDFEngine.h"
 #include "NavigationBar.h"
 #include "TabItem.h"
+#include "DetachableTabBar.h"
+#include "DetachableTabWidget.h"
 
 struct MinMaxTuple {
 	int min = 0, max = 0;
@@ -47,8 +49,12 @@ public:
 	explicit Viewer(QWidget* parent = 0);
 	~Viewer();
 	void keyPressEvent(QKeyEvent* event);
-	void openFile(QString fileName);
+	void openFile(QStringList fileName);
+	void setPageKey(int key = -1);
 	void setAndUpdatePageKey(int key = -1);
+	void addTab(TabItem* item);
+	bool toggleDeleteTab();
+	TabItem* getTab(int index);
 private:
 	QLabel* totalPage;
 	QLineEdit* pageNumber;
@@ -65,14 +71,23 @@ private:
 	QAction* rotate90CWAct, *rotate90CCWAct;
 	QAction* pageTextAct;
 	QAction* printAct;
-
-	QTabWidget* tWidget;
+	QAction* findAllForward;
+	QAction* findAllBackward;
+	QAction* findAllBidirect;
+	QWidget* wdgt;
+	QWidget* plusWdgt;
+	DetachableTabWidget* tWidget;
+	DetachableTabBar* tabBar;
 	std::vector <TabItem*> tabItems;
 	int currentTab;
+	bool deleteTab;
+public slots:
+	void onTabCloseRequested(int index);
 private slots:
 	void openFileDialog();
 	void exitApp();
 	void aboutApp();
+	void setPage();
 	void setAndUpdatePage();
 	void setAndUpdateScale();
 	void findPhrase();
@@ -82,9 +97,13 @@ private slots:
 	void rotatePage();
 	void onTabClicked(int index);
 	void onTabMoved(int from, int to);
-	void onTabCloseRequested(int index);
 	void getPrintDialog();
 	void checkIfPDFLoaded();
+	void updatePageNumber();
+	void openNewWindow(int index, const QPoint& windowPos);
+	void mergeTabs(int index, QObject* srcViewer);
+	void findAllSearch();
+	void giveTabAttention();
 };
 
 #endif

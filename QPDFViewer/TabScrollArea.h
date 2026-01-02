@@ -1,5 +1,5 @@
 /**
- * Copyright 2025 David Badiei
+ * Copyright 2026 David Badiei
  *
  * This file is part of QPDFViewer, hereafter referred to as the program.
  *
@@ -21,20 +21,45 @@
 #define TABSCROLLAREA_H
 
 #include "qscrollarea.h"
+#include "Page.h"
 #include <QScrollBar>
 
-class TabScrollArea : public QScrollArea
+class TabScrollArea : public QAbstractScrollArea
 {
 	Q_OBJECT
 public:
 	TabScrollArea(QWidget* parent = nullptr);
-	bool returnTopOrBottom();
+	~TabScrollArea();
+	void updateScrollArea(QVector <Page*> *pages, bool runItself=false);
+	void setDocumentHeight(unsigned long documentHeight, bool recalculateVerticalValue=false, int pageNum=-1);
+	void setCurrentPages(QVector <Page*> *pages);
+	void setPageHeights(QVector <int> heights);
+	void updateVerticalScrollBar(int pageNum);
+	int getPageToLoad();
+	void setBufferLock(int value);
 protected:
 	void wheelEvent(QWheelEvent* event) override;
+	void resizeEvent(QResizeEvent* event) override;
 private:
-	bool topOrBottom;
+	long documentHeight;
+	long verticalScrollValue;
+	long horizontalScrollValue;
+	bool horizontalEnabled;
+	int pageToLoad;
+	int bufferLock;
+	Page* firstPageHeight;
+	QVector <Page*> currentPages;
+	QVector <int> allPageHeights;
+	void findPageToLoad(long pageToLoad);
+	Page* findPage(int pageNum);
+	bool checkIfHorizontalScrollRequired();
+	long findPageOffset(int pageNum);
+	void triggerEventAndUpdateArea();
 signals:
 	void hitExtremity();
+private slots:
+	void onVerticalScrollChanged(int value);
+	void onHorizontalScrollChanged(int value);
 };
 
 #endif

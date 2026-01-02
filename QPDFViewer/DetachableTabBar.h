@@ -17,22 +17,34 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TEXTBOXDIALOG_H
-#define TEXTBOXDIALOG_H
+#ifndef DETACHABLETAB_H
+#define DETACHABLETAB_H
 
-#include <qdialog.h>
-#include <qplaintextedit.h>
-#include <string>
+#include <qtabbar.h>
+#include <qtabwidget.h>
 
-class TextBoxDialog : public QDialog
+class DetachableTabBar : public QTabBar
 {
+	Q_OBJECT
 public:
-	TextBoxDialog(QWidget* parent = 0, std::string *txt = 0);
+	DetachableTabBar(QWidget* parent = 0);
+	QString getTabMime();
+signals:
+	void detachTab(int index, const QPoint& windowPos);
+	void tabMerged(int index, QObject* srcViewer);
+protected:
+	void mousePressEvent(QMouseEvent* event) override;
+	void mouseMoveEvent(QMouseEvent* event) override;
+	void mouseReleaseEvent(QMouseEvent* event) override;
+	void dragEnterEvent(QDragEnterEvent* event) override;
+	void dropEvent(QDropEvent* event) override;
+	void dragMoveEvent(QDragMoveEvent* event) override;
+	void tabLayoutChange() override;
 private:
-	QPlainTextEdit* tBox;
-private slots:
-	void exitDialog();
-	void copyAllClipboard();
+	int detachIndex;
+	QPoint detachStartPos;
+	void* viewerPtr;
+	QString TAB_MIME;
 };
 
 #endif

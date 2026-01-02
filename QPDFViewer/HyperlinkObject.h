@@ -17,22 +17,21 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TEXTBOXDIALOG_H
-#define TEXTBOXDIALOG_H
 
-#include <qdialog.h>
-#include <qplaintextedit.h>
-#include <string>
+#ifndef HYPERLINKOBJECT_H
+#define HYPERLINKOBJECT_H
 
-class TextBoxDialog : public QDialog
+#include <qwidget.h>
+#include <qpushbutton.h>
+
+class HyperlinkObject : public QPushButton
 {
 public:
-	TextBoxDialog(QWidget* parent = 0, std::string *txt = 0);
+	HyperlinkObject(QWidget* parent = 0, QRectF dimSize = QRectF(0, 0, 0, 0), QString url = "");
 private:
-	QPlainTextEdit* tBox;
+	QString url;
 private slots:
-	void exitDialog();
-	void copyAllClipboard();
+	void hyperlinkClicked();
 };
 
 #endif

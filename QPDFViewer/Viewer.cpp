@@ -1,5 +1,5 @@
 ﻿/**
- * Copyright 2025 David Badiei
+ * Copyright 2026 David Badiei
  *
  * This file is part of QPDFViewer, hereafter referred to as the program.
  *
@@ -39,6 +39,7 @@
 #include <QDebug>
 #include "TabItem.h"
 #include "PrintDialog.h"
+#include "FindAllBox.h"
 
 Viewer::Viewer(QWidget* parent)
 {
@@ -84,8 +85,20 @@ Viewer::Viewer(QWidget* parent)
 	connect(rotate90CCWAct, &QAction::triggered, this, &Viewer::rotatePage);
 	navBarShowAct = new QAction(tr("&Show Navigation Bar"), this);
 	navBarShowAct->setCheckable(true);
-	navMenu->addAction(navBarShowAct);
 	connect(navBarShowAct, &QAction::triggered, this, &Viewer::showNavBar);
+	navMenu->addAction(navBarShowAct);
+	findAllForward = new QAction(tr("&Find all forward"));
+	findAllForward->setIcon(QIcon(":/images/assets/forwardsIcon.png"));
+	connect(findAllForward, &QAction::triggered, this, &Viewer::findAllSearch);
+	navMenu->addAction(findAllForward);
+	findAllBackward = new QAction(tr("&Find all backward"));
+	findAllBackward->setIcon(QIcon(":/images/assets/backwardsIcon.png"));
+	connect(findAllBackward, &QAction::triggered, this, &Viewer::findAllSearch);
+	navMenu->addAction(findAllBackward);
+	findAllBidirect = new QAction(tr("&Find all"));
+	findAllBidirect->setIcon(QIcon(":/images/assets/bidirectIcon.png"));
+	connect(findAllBidirect, &QAction::triggered, this, &Viewer::findAllSearch);
+	navMenu->addAction(findAllBidirect);
 	QAction* aboutAct = new QAction(tr("&About"), this);
 	aboutmenu->addAction(aboutAct);
 	connect(aboutAct, &QAction::triggered, this, &Viewer::aboutApp);
@@ -150,24 +163,30 @@ Viewer::Viewer(QWidget* parent)
 	//Initialize tabs and layout
 	layout = new QHBoxLayout;
 	hSplitter = new QSplitter(Qt::Horizontal);
-	tWidget = new QTabWidget(this);
-	tWidget->setMovable(true);
+	tabBar = new DetachableTabBar(this);
+	tWidget = new DetachableTabWidget(this,tabBar);
 	tWidget->setTabsClosable(true);
 	hSplitter->addWidget(tWidget);
 	layout->addWidget(hSplitter);
 	layout->setContentsMargins(0, 0, 0, 0);
 	currentTab = 0;
+	deleteTab = true;
 	tabItems.push_back(new TabItem());
 	tWidget->addTab(tabItems.at(currentTab), "No PDF loaded");
-	tWidget->addTab(new QWidget(), tr("+"));
+	plusWdgt = new QWidget();
+	tWidget->addTab(plusWdgt, tr("+"));
 	tWidget->tabBar()->setTabButton(tWidget->count() - 1, QTabBar::RightSide, nullptr);
-	connect(tabItems.at(currentTab)->getScrollArea(), &TabScrollArea::hitExtremity, this, &Viewer::setAndUpdatePage);
+	connect(tabItems.at(currentTab)->getScrollArea(), &TabScrollArea::hitExtremity, this, &Viewer::setPage);
 	connect(tWidget, &QTabWidget::tabBarClicked, this, &Viewer::onTabClicked);
 	connect(tWidget->tabBar(), &QTabBar::tabMoved, this, &Viewer::onTabMoved);
 	connect(tWidget, &QTabWidget::tabCloseRequested, this, &Viewer::onTabCloseRequested);
+	connect(tabBar, &DetachableTabBar::detachTab, this, &Viewer::openNewWindow);
+	connect(tabBar, &DetachableTabBar::tabMerged, this, &Viewer::mergeTabs);
+	connect(tWidget, &DetachableTabWidget::tabMerged, this, &Viewer::mergeTabs);
 	QWidget* layoutWidget = new QWidget(this);
 	layoutWidget->setLayout(layout);
 	setCentralWidget(layoutWidget);
+	wdgt = new QWidget();
 
 	//Disable pdf control buttons
 	checkIfPDFLoaded();
@@ -188,48 +207,94 @@ void Viewer::keyPressEvent(QKeyEvent* event)
 	}
 }
 
-void Viewer::openFile(QString fileName)
+void Viewer::openFile(QStringList fileNames)
 {
-	if (fileName != NULL) {
-		//Create and setup pdf engine and other controls based on file
-		if (tabItems.at(currentTab)->getEngine() != NULL)
-			delete tabItems.at(currentTab)->getEngine();
-		tabItems.at(currentTab)->setPDFEngine(fileName.toStdString(), this);
-		tabItems.at(currentTab)->setFilePath(fileName);
-		tabItems.at(currentTab)->updateScrollArea();
-		tWidget->setTabText(currentTab, QString::fromStdString(tabItems.at(currentTab)->getFileName()));
-		totalPage->setText(" of " + QString::number(tabItems.at(currentTab)->getEngine()->getTotalNumberOfPages()) + " ");
-		pageNumber->setText(QString::number(tabItems.at(currentTab)->getEngine()->getCurrentPage()));
-		this->setWindowTitle("QPDFViewer - " + fileName);
-		scaleBox->setCurrentIndex(3);
+	for (int i = 0; i < fileNames.length(); i++) {
+		//Create new tab if none are open
+		if (tWidget->count() == 2 && tWidget->widget(0)->isEnabled() == false)
+			onTabClicked(tWidget->count() - 1);
 
-		//Enable all buttons now that pdf engine object exits
-		checkIfPDFLoaded();
+		if (fileNames.at(i) != NULL) {
+			//Create and setup pdf engine and other controls based on file
+			PDFEngine* tmp = tabItems.at(currentTab)->getEngine();
+			if (tabItems.at(currentTab)->setPDFEngine(fileNames.at(i).toStdString(), this)) {
+				if (tmp != NULL)
+					delete tmp;
+				connect(tabItems.at(currentTab)->getEngine(), &PDFEngine::pageChanged, this, &Viewer::updatePageNumber);
+				connect(tabItems.at(currentTab)->getEngine(), &PDFEngine::attentionNeeded, this, &Viewer::giveTabAttention);
+				tabItems.at(currentTab)->setFilePath(fileNames.at(i));
+				tabItems.at(currentTab)->updateScrollArea();
+				tWidget->setTabText(currentTab, QString::fromStdString(tabItems.at(currentTab)->getFileName()));
+				totalPage->setText(" of " + QString::number(tabItems.at(currentTab)->getEngine()->getTotalNumberOfPages()) + " ");
+				pageNumber->setText(QString::number(tabItems.at(currentTab)->getEngine()->getCurrentPage()));
+				this->setWindowTitle("QPDFViewer - " + fileNames.at(i));
+				scaleBox->setCurrentIndex(3);
 
-		//Check if we have data in the nav bar, if so make sure to show it when the file is loaded
-		if (navBar != NULL) {
-			delete navBar;
-			navBar = NULL;
+				//Enable all buttons now that pdf engine object exits
+				checkIfPDFLoaded();
+
+				//Check if we have data in the nav bar, if so make sure to show it when the file is loaded
+				if (navBar != NULL) {
+					delete navBar;
+					navBar = NULL;
+				}
+				navBar = new NavigationBar(this);
+				tabItems.at(currentTab)->getEngine()->addNavOutline(navBar);
+				int tmp = navBar->returnNumOfItems();
+				delete navBar;
+				navBar = NULL;
+				if (tmp > 0) {
+					navBarShowAct->setChecked(true);
+					showNavBar();
+				}
+			}
 		}
-		navBar = new NavigationBar(this);
-		tabItems.at(currentTab)->getEngine()->addNavOutline(navBar);
-		int tmp = navBar->returnNumOfItems();
-		delete navBar;
-		navBar = NULL;
-		if (tmp > 0) {
-			navBarShowAct->setChecked(true);
-			showNavBar();
-		}
+
+		//If there are more files to load, add a new tab
+		if (i < fileNames.length()-1)
+			onTabClicked(tWidget->count() - 1);
 	}
 }
 
 void Viewer::openFileDialog()
 {
 	//Create open file dialog then open the selected file
-	QString fileName = QFileDialog::getOpenFileName(this,
+	QStringList fileNames = QFileDialog::getOpenFileNames(this,
 		tr("Open PDF file"), NULL, tr("PDF Files (*.pdf)"));
 
-	openFile(fileName);
+	openFile(fileNames);
+}
+
+void Viewer::findAllSearch()
+{
+	int direction = 0;
+
+	if (sender() == findAllForward)
+		direction = 1;
+	else if (sender() == findAllBackward)
+		direction = 2;
+	
+	//Open find all box and start search, end search if dialog is destroyed
+	FindAllBox* fBox = new FindAllBox(this, searchBox->text(), direction);
+	tabItems.at(currentTab)->getEngine()->getAllSearchResults(direction, searchBox->text().toStdString());
+	connect(tabItems.at(currentTab)->getEngine(), &PDFEngine::sendFindAllResult, fBox, &FindAllBox::addItemToBox);
+	connect(fBox, &QObject::destroyed, tabItems.at(currentTab)->getEngine(), &PDFEngine::cancelFindAllWorker);
+	connect(fBox, &FindAllBox::itemClicked, tabItems.at(currentTab)->getEngine(), &PDFEngine::goToPhrase);
+	fBox->setAttribute(Qt::WA_DeleteOnClose);
+	fBox->show();
+}
+
+void Viewer::giveTabAttention()
+{
+	//Go back to certain tab and update its displayed contents
+	for (int i = 0; i < tabItems.size(); i++) {
+		if (tabItems.at(i)->getEngine() == sender()) {
+			tWidget->setCurrentIndex(i);
+			onTabClicked(i);
+			tabItems.at(currentTab)->updateScrollArea(true);
+			break;
+		}
+	}
 }
 
 void Viewer::exitApp()
@@ -241,12 +306,50 @@ void Viewer::aboutApp()
 {
 	//Display about box
 	QMessageBox::about(this, tr("About QPDFViewer"),
-		tr("<b>QPDFViewer 1.7</b><br>Written by David Badiei, 2025<br>Licensed under GNU General Public License v3 (GPL-3)"));
+		tr("<b>QPDFViewer 2.0</b><br>Written by David Badiei, 2026<br>Licensed under GNU General Public License v3 (GPL-3)"));
 }
 
-void Viewer::setAndUpdatePage() { setAndUpdatePageKey(); }
+void Viewer::setPage() { setPageKey(); tabItems.at(currentTab)->rerenderUpdateScrollArea();}
 
-void Viewer::setAndUpdatePageKey(int key)
+void Viewer::setAndUpdatePage() { setPage(); tabItems.at(currentTab)->updateScrollArea(true);}
+
+void Viewer::setAndUpdatePageKey(int key) { setPageKey(key); tabItems.at(currentTab)->updateScrollArea(true); }
+
+void Viewer::addTab(TabItem* item)
+{
+	//Add tab to tab items list
+	tabItems.push_back(item);
+
+	//Delete extra tab if necessary
+	if (tWidget->count() == 2 && tabItems.at(0)->getEngine() == NULL) {
+		delete tWidget->widget(0);
+		tabItems.erase(tabItems.begin());
+	}
+
+	//Load tab into this window
+	currentTab = tWidget->count() - 1;
+	QString tabTitle = QString::fromStdString(tabItems.at(currentTab)->getFileName());
+	int currentIndex = tWidget->insertTab(currentTab, tabItems.at(currentTab), tabTitle != "" ? tabTitle : "No PDF loaded");
+	tWidget->setCurrentIndex(currentIndex);
+	connect(tabItems.at(currentTab)->getScrollArea(), &TabScrollArea::hitExtremity, this, &Viewer::setPage);
+	connect(tabItems.at(currentTab)->getEngine(), &PDFEngine::pageChanged, this, &Viewer::updatePageNumber);
+	connect(tabItems.at(currentTab)->getEngine(), &PDFEngine::attentionNeeded, this, &Viewer::giveTabAttention);
+
+	onTabClicked(currentIndex);
+}
+
+bool Viewer::toggleDeleteTab()
+{
+	deleteTab = !deleteTab;
+	return deleteTab;
+}
+
+TabItem* Viewer::getTab(int index)
+{
+	return tabItems.at(index);
+}
+
+void Viewer::setPageKey(int key)
 {
 	//Updates page number either when function keys or arrow buttons are pressed
 	if (tabItems.at(currentTab)->getEngine() != NULL) {
@@ -258,10 +361,14 @@ void Viewer::setAndUpdatePageKey(int key)
 		}
 		else {
 			bool result = false;
-			if (upButton == sender() || key == Qt::Key_F2 || (sender() == tabItems.at(currentTab)->getScrollArea() && !tabItems.at(currentTab)->getScrollArea()->returnTopOrBottom()))
+			if (upButton == sender() || key == Qt::Key_F2)
 				result = tabItems.at(currentTab)->getEngine()->setCurrentPage(tabItems.at(currentTab)->getEngine()->getCurrentPage() + 1);
-			else if (downButton == sender() || key == Qt::Key_F1 || (sender() == tabItems.at(currentTab)->getScrollArea() && tabItems.at(currentTab)->getScrollArea()->returnTopOrBottom()))
+			else if (downButton == sender() || key == Qt::Key_F1)
 				result = tabItems.at(currentTab)->getEngine()->setCurrentPage(tabItems.at(currentTab)->getEngine()->getCurrentPage() - 1);
+
+			//Scroll area should calculate the page to load based on their heights
+			if (sender() == tabItems.at(currentTab)->getScrollArea())
+				result = tabItems.at(currentTab)->getEngine()->setCurrentPage(tabItems.at(currentTab)->getScrollArea()->getPageToLoad());
 
 			if (!result)
 				return;
@@ -269,15 +376,13 @@ void Viewer::setAndUpdatePageKey(int key)
 				pageNumber->setText(QString::number(tabItems.at(currentTab)->getEngine()->getCurrentPage()));
 		}
 		
-		//Refresh page
-		tabItems.at(currentTab)->updateScrollArea();
 	}
 }
 
 void Viewer::setAndUpdateScale()
 {
 	//Update scale if valid
-	if (tabItems.at(currentTab)->getEngine() != NULL) {
+	if (tabItems.size() > 0 && tabItems.at(currentTab)->getEngine() != NULL) {
 		if (scaleBox->currentText().endsWith("%"))
 			scaleBox->setCurrentText(scaleBox->currentText().mid(0, scaleBox->currentText().length() - 1));
 
@@ -299,12 +404,12 @@ void Viewer::findPhrase()
 	bool result = false;
 
 	if (forwardsSearch == sender())
-		result = tabItems.at(currentTab)->getEngine()->findPhraseInDocument(searchBox->text().toStdString(), poppler::page::search_next_result);
+		result = tabItems.at(currentTab)->getEngine()->findPhraseInDocument(searchBox->text().toStdString(), Poppler::Page::SearchDirection::NextResult);
 	else if (backwardsSearch == sender())
-		result = tabItems.at(currentTab)->getEngine()->findPhraseInDocument(searchBox->text().toStdString(),poppler::page::search_previous_result);
+		result = tabItems.at(currentTab)->getEngine()->findPhraseInDocument(searchBox->text().toStdString(), Poppler::Page::SearchDirection::PreviousResult);
 
 	if (result) {
-		tabItems.at(currentTab)->updateScrollArea();
+		tabItems.at(currentTab)->updateScrollArea(true);
 		pageNumber->setText(QString::number(tabItems.at(currentTab)->getEngine()->getCurrentPage()));
 	}
 	else
@@ -361,7 +466,7 @@ void Viewer::updatePageNavBar(const int pNum)
 {
 	//Update the page based on button clicked in nav bar
 	tabItems.at(currentTab)->getEngine()->setCurrentPage(pNum);
-	tabItems.at(currentTab)->updateScrollArea();
+	tabItems.at(currentTab)->updateScrollArea(true);
 	pageNumber->setText(QString::number(pNum));
 }
 
@@ -377,7 +482,7 @@ void Viewer::rotatePage()
 }
 
 void Viewer::onTabClicked(int index)
-{
+{	
 	//If plus button has been pressed
 	if (index == tWidget->count() - 1) {
 		//Delete invisible tab if there are now pdf tabs open beforehand
@@ -390,7 +495,7 @@ void Viewer::onTabClicked(int index)
 		currentTab = tWidget->count() - 1;
 		int currentIndex = tWidget->insertTab(currentTab, tabItems.at(currentTab), "No PDF loaded");
 		tWidget->setCurrentIndex(currentIndex);
-		connect(tabItems.at(currentTab)->getScrollArea(), &TabScrollArea::hitExtremity, this, &Viewer::setAndUpdatePage);
+		connect(tabItems.at(currentTab)->getScrollArea(), &TabScrollArea::hitExtremity, this, &Viewer::setPage);
 	}
 
 	//Update current tab if we are not pressing the the plus buttton
@@ -428,16 +533,8 @@ void Viewer::onTabClicked(int index)
 
 void Viewer::onTabMoved(int from, int to)
 {
-	//If user moved a tab onto the plus tab
-	if (from == tWidget->count() - 1 || to == tWidget->count() - 1) {
-		//Move it back
-		tWidget->tabBar()->blockSignals(true);
-		tWidget->tabBar()->moveTab(to, from);
-		tWidget->tabBar()->blockSignals(false);
-		tWidget->setCurrentIndex(currentTab);
-	}
-	else {
-		//Otherwise do the move
+	//Do the move
+	if (from < tWidget->count() - 1 && to < tWidget->count() - 1) {
 		std::swap(tabItems[from], tabItems[to]);
 		currentTab = from;
 	}
@@ -446,8 +543,12 @@ void Viewer::onTabMoved(int from, int to)
 void Viewer::onTabCloseRequested(int index)
 {
 	//Check if this isnt the plus tab, otherwise do the remove
-	if (index < tWidget->count() - 1) {
+	if (index < tWidget->count() - 1 && tWidget->widget(index) != plusWdgt) {
 		tWidget->removeTab(index);
+		if (deleteTab) {
+			delete tabItems.at(index)->getEngine();
+			delete tabItems.at(index);
+		}
 		tabItems.erase(tabItems.begin()+index);
 		if (currentTab > 0)
 			currentTab--;
@@ -462,11 +563,12 @@ void Viewer::onTabCloseRequested(int index)
 
 	//If we have no tabs left, create an invisible one so the plus button isnt in focus, otherwise update pdf controls
 	if (tWidget->count() == 1) {
-		QWidget* wdgt = new QWidget();
 		wdgt->setEnabled(false);
 		tWidget->insertTab(0, wdgt, "");
 		tWidget->setTabVisible(0,false);
 		tWidget->setCurrentIndex(0);
+		this->setWindowTitle("QPDFViewer");
+		checkIfPDFLoaded();
 	}
 	else {
 		onTabClicked(currentTab);
@@ -548,8 +650,10 @@ void Viewer::getPrintDialog()
 					for (int i = 0; i < copies; i++) {
 						for (int j = min; j <= max; j++) {
 							tabItems.at(currentTab)->getEngine()->setCurrentPage(j);
-							tabItems.at(currentTab)->updateScrollArea();
-							QPixmap pMap = tabItems.at(currentTab)->getEngine()->returnImage()->getPagePixmap();
+							tabItems.at(currentTab)->updateScrollArea(true);
+							Page* printPage = tabItems.at(currentTab)->getEngine()->returnImage();
+							QPixmap pMap = printPage->getPagePixmap();
+							delete printPage;
 							QSize size = pMap.size();
 							size.scale(rect.size(), Qt::KeepAspectRatio);
 							painter.setViewport(rect.x(), rect.y(), size.width(), size.height());
@@ -566,21 +670,23 @@ void Viewer::getPrintDialog()
 
 					//Reset page as it was taken over by the print operation
 					tabItems.at(currentTab)->getEngine()->setCurrentPage(tmp);
-					tabItems.at(currentTab)->updateScrollArea();
+					tabItems.at(currentTab)->updateScrollArea(true);
 				}
 				else
 					QMessageBox::critical(this, "Page range out of bounds", "Entered page range ( " + QString::number(min) + " , " + QString::number(max) + " ) out of bounds!");
 			}
 		}
 	}
+
+	delete pDialog;
 }
 
 void Viewer::checkIfPDFLoaded()
 {
-	//Turn controls on or off depending if we have the engine loaded
+	//Turn controls on or off depending if we have the engine loaded or we are on the invisible tab
 	bool toggle;
 
-	if (tabItems.at(currentTab)->getEngine() == NULL)
+	if ((tWidget->count() == 2 && tWidget->widget(0)->isEnabled() == false) || tabItems.at(currentTab)->getEngine() == NULL)
 		toggle = false;
 	else
 		toggle = true;
@@ -598,6 +704,68 @@ void Viewer::checkIfPDFLoaded()
 	downButton->setEnabled(toggle);
 	backwardsSearch->setEnabled(toggle);
 	forwardsSearch->setEnabled(toggle);
+	findAllBackward->setEnabled(toggle);
+	findAllForward->setEnabled(toggle);
+	findAllBidirect->setEnabled(toggle);
+
+	if (!toggle) {
+		totalPage->setText(" out of ");
+		pageNumber->setText("");
+		scaleBox->setCurrentIndex(0);
+	}
 }
 
+void Viewer::updatePageNumber()
+{
+	pageNumber->setText(QString::number(tabItems.at(currentTab)->getEngine()->getCurrentPage()));
+}
+
+void Viewer::openNewWindow(int index, const QPoint& windowPos)
+{
+	//Check if the index matches a tab (not plus tab)
+	if (index < tabItems.size()) {
+		//Disconnect current signals
+		disconnect(tabItems.at(index)->getScrollArea(), &TabScrollArea::hitExtremity, this, &Viewer::setPage);
+		disconnect(tabItems.at(index)->getEngine(), &PDFEngine::pageChanged, this, &Viewer::updatePageNumber);
+		disconnect(tabItems.at(currentTab)->getEngine(), &PDFEngine::attentionNeeded, this, &Viewer::giveTabAttention);
+
+		//Save tab pointer
+		TabItem* item = tabItems.at(index);
+		
+		//Remove tab from current window without deleting tab object itself
+		toggleDeleteTab();
+		onTabCloseRequested(index);
+		toggleDeleteTab();
+		
+		//Create new window and add tab to it
+		Viewer* newWindow = new Viewer();
+		newWindow->addTab(item);
+
+		newWindow->show();
+	}
+}
+
+void Viewer::mergeTabs(int index, QObject* srcViewer)
+{
+	//Get source window and its tab object
+	Viewer* vwr = reinterpret_cast<Viewer*>(srcViewer);
+	TabItem* item = vwr->getTab(index);
+
+	//Disconnect current signals
+	disconnect(item->getScrollArea(), &TabScrollArea::hitExtremity, vwr, &Viewer::setPage);
+	disconnect(item->getEngine(), &PDFEngine::pageChanged, vwr, &Viewer::updatePageNumber);
+	disconnect(item->getEngine(), &PDFEngine::attentionNeeded, this, &Viewer::giveTabAttention);
+
+	//Remove tab from source window without deleting tab object itself
+	vwr->toggleDeleteTab();
+	vwr->onTabCloseRequested(index);
+	vwr->toggleDeleteTab();
+
+	//Create new tab if necessary
+	if (tabItems.size() < 1)
+		onTabClicked(tWidget->count() - 1);
+
+	//add tab object to this window
+	this->addTab(item);
+}
 
