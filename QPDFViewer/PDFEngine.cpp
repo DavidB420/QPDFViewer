@@ -379,21 +379,20 @@ bool PDFEngine::getSuccess()
 
 void PDFEngine::getAllSearchResults(int direction, std::string phrase)
 {
+	//Kill all workers currently running
 	cancelFindAllWorker();
 	
+	//Create a find all worker with proper parameters and run in seperate thread
 	currentFindAllWorker = new FindAllWorker(QString::fromStdString(fileName),QString::fromStdString(phrase),getCurrentPage(),getTotalNumberOfPages(),direction,getCurrentRotation());
 	currentFindAllThread = new QThread(this);
 
 	currentFindAllWorker->moveToThread(currentFindAllThread);
 
+	//Set up all signals for running the worker, checking when a result is ready, and when the worker is finished
 	connect(currentFindAllThread, &QThread::started, currentFindAllWorker, &FindAllWorker::run);
-
 	connect(currentFindAllWorker, &FindAllWorker::finishedResult,	this, &PDFEngine::findAllResult);
-
 	connect(currentFindAllWorker, &FindAllWorker::finished, currentFindAllThread, &QThread::quit);
-
 	connect(currentFindAllWorker, &FindAllWorker::finished, currentFindAllWorker, &FindAllWorker::deleteLater);
-
 	connect(currentFindAllThread, &QThread::finished, currentFindAllThread, &QObject::deleteLater);
 
 	currentFindAllThread->start();
@@ -401,9 +400,9 @@ void PDFEngine::getAllSearchResults(int direction, std::string phrase)
 
 void PDFEngine::cancelFindAllWorker()
 {
-	if (currentFindAllWorker) {
+	//If the user closes the find all dialog or starts another search
+	if (currentFindAllWorker)
 		currentFindAllWorker->cancel();
-	}
 
 	currentFindAllWorker = NULL;
 	currentFindAllThread = NULL;
@@ -416,6 +415,7 @@ void PDFEngine::findAllResult(SearchResult result)
 
 void PDFEngine::goToPhrase(int page, QRectF rect)
 {
+	//Go to specific phrase the user selects regardless of whatever tab is open in the viewer
 	setCurrentPage(page);
 	selectedRect = rect;
 	foundPageNum = page;

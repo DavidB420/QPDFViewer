@@ -25,6 +25,7 @@
 
 FindAllBox::FindAllBox(QWidget* parent, QString phrase, int direction)
 {
+	//Create dialog box with proper HTML rich text formatting for the snippets
 	this->setWindowTitle("Find all '" + phrase + "'");
 	switch (direction) {
 	case 1:
@@ -50,13 +51,11 @@ FindAllBox::FindAllBox(QWidget* parent, QString phrase, int direction)
 	HtmlItemDelegate* delegate = new HtmlItemDelegate(this);
 	results->setItemDelegateForColumn(1, delegate);
 
-
 	QVBoxLayout* layout = new QVBoxLayout;
-
 	layout->addWidget(results);
-
 	this->setLayout(layout);
 
+	//Detect clicks
 	connect(results, &QTreeWidget::itemActivated, this, &FindAllBox::selectResult);
 
 }
@@ -68,6 +67,7 @@ FindAllBox::~FindAllBox()
 
 void FindAllBox::addItemToBox(SearchResult result)
 {
+	//Add item sent from pdf engine
 	QTreeWidgetItem* newItem = new QTreeWidgetItem(results);
 	newItem->setText(0, QString::number(result.page));
 	newItem->setText(1, result.snippet);
@@ -77,6 +77,7 @@ void FindAllBox::addItemToBox(SearchResult result)
 
 void FindAllBox::selectResult(QTreeWidgetItem* item, int column)
 {
+	//Emit item clicked which is sent back to pdf engine
 	emit itemClicked(item->data(0, Qt::UserRole).toInt(), item->data(1, Qt::UserRole).toRectF());
 }
 

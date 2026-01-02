@@ -268,6 +268,7 @@ void Viewer::findAllSearch()
 	else if (sender() == findAllBackward)
 		direction = 2;
 	
+	//Open find all box and start search, end search if dialog is destroyed
 	FindAllBox* fBox = new FindAllBox(this, searchBox->text(), direction);
 	tabItems.at(currentTab)->getEngine()->getAllSearchResults(direction, searchBox->text().toStdString());
 	connect(tabItems.at(currentTab)->getEngine(), &PDFEngine::sendFindAllResult, fBox, &FindAllBox::addItemToBox);
@@ -279,6 +280,7 @@ void Viewer::findAllSearch()
 
 void Viewer::giveTabAttention()
 {
+	//Go back to certain tab and update its displayed contents
 	for (int i = 0; i < tabItems.size(); i++) {
 		if (tabItems.at(i)->getEngine() == sender()) {
 			tWidget->setCurrentIndex(i);
