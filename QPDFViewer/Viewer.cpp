@@ -207,56 +207,62 @@ void Viewer::keyPressEvent(QKeyEvent* event)
 	}
 }
 
-void Viewer::openFile(QString fileName)
+void Viewer::openFile(QStringList fileNames)
 {
-	//Create new tab if none are open
-	if (tWidget->count() == 2 && tWidget->widget(0)->isEnabled() == false)
-		onTabClicked(tWidget->count() - 1);
-	
-	if (fileName != NULL) {
-		//Create and setup pdf engine and other controls based on file
-		PDFEngine* tmp = tabItems.at(currentTab)->getEngine();
-		if (tabItems.at(currentTab)->setPDFEngine(fileName.toStdString(), this)) {
-			if (tmp != NULL)
-				delete tmp;
-			connect(tabItems.at(currentTab)->getEngine(), &PDFEngine::pageChanged, this, &Viewer::updatePageNumber);
-			connect(tabItems.at(currentTab)->getEngine(), &PDFEngine::attentionNeeded, this, &Viewer::giveTabAttention);
-			tabItems.at(currentTab)->setFilePath(fileName);
-			tabItems.at(currentTab)->updateScrollArea();
-			tWidget->setTabText(currentTab, QString::fromStdString(tabItems.at(currentTab)->getFileName()));
-			totalPage->setText(" of " + QString::number(tabItems.at(currentTab)->getEngine()->getTotalNumberOfPages()) + " ");
-			pageNumber->setText(QString::number(tabItems.at(currentTab)->getEngine()->getCurrentPage()));
-			this->setWindowTitle("QPDFViewer - " + fileName);
-			scaleBox->setCurrentIndex(3);
+	for (int i = 0; i < fileNames.length(); i++) {
+		//Create new tab if none are open
+		if (tWidget->count() == 2 && tWidget->widget(0)->isEnabled() == false)
+			onTabClicked(tWidget->count() - 1);
 
-			//Enable all buttons now that pdf engine object exits
-			checkIfPDFLoaded();
+		if (fileNames.at(i) != NULL) {
+			//Create and setup pdf engine and other controls based on file
+			PDFEngine* tmp = tabItems.at(currentTab)->getEngine();
+			if (tabItems.at(currentTab)->setPDFEngine(fileNames.at(i).toStdString(), this)) {
+				if (tmp != NULL)
+					delete tmp;
+				connect(tabItems.at(currentTab)->getEngine(), &PDFEngine::pageChanged, this, &Viewer::updatePageNumber);
+				connect(tabItems.at(currentTab)->getEngine(), &PDFEngine::attentionNeeded, this, &Viewer::giveTabAttention);
+				tabItems.at(currentTab)->setFilePath(fileNames.at(i));
+				tabItems.at(currentTab)->updateScrollArea();
+				tWidget->setTabText(currentTab, QString::fromStdString(tabItems.at(currentTab)->getFileName()));
+				totalPage->setText(" of " + QString::number(tabItems.at(currentTab)->getEngine()->getTotalNumberOfPages()) + " ");
+				pageNumber->setText(QString::number(tabItems.at(currentTab)->getEngine()->getCurrentPage()));
+				this->setWindowTitle("QPDFViewer - " + fileNames.at(i));
+				scaleBox->setCurrentIndex(3);
 
-			//Check if we have data in the nav bar, if so make sure to show it when the file is loaded
-			if (navBar != NULL) {
+				//Enable all buttons now that pdf engine object exits
+				checkIfPDFLoaded();
+
+				//Check if we have data in the nav bar, if so make sure to show it when the file is loaded
+				if (navBar != NULL) {
+					delete navBar;
+					navBar = NULL;
+				}
+				navBar = new NavigationBar(this);
+				tabItems.at(currentTab)->getEngine()->addNavOutline(navBar);
+				int tmp = navBar->returnNumOfItems();
 				delete navBar;
 				navBar = NULL;
-			}
-			navBar = new NavigationBar(this);
-			tabItems.at(currentTab)->getEngine()->addNavOutline(navBar);
-			int tmp = navBar->returnNumOfItems();
-			delete navBar;
-			navBar = NULL;
-			if (tmp > 0) {
-				navBarShowAct->setChecked(true);
-				showNavBar();
+				if (tmp > 0) {
+					navBarShowAct->setChecked(true);
+					showNavBar();
+				}
 			}
 		}
+
+		//If there are more files to load, add a new tab
+		if (i < fileNames.length()-1)
+			onTabClicked(tWidget->count() - 1);
 	}
 }
 
 void Viewer::openFileDialog()
 {
 	//Create open file dialog then open the selected file
-	QString fileName = QFileDialog::getOpenFileName(this,
+	QStringList fileNames = QFileDialog::getOpenFileNames(this,
 		tr("Open PDF file"), NULL, tr("PDF Files (*.pdf)"));
 
-	openFile(fileName);
+	openFile(fileNames);
 }
 
 void Viewer::findAllSearch()
@@ -300,7 +306,7 @@ void Viewer::aboutApp()
 {
 	//Display about box
 	QMessageBox::about(this, tr("About QPDFViewer"),
-		tr("<b>QPDFViewer 2.0 BETA</b><br>Written by David Badiei, 2026<br>Licensed under GNU General Public License v3 (GPL-3)"));
+		tr("<b>QPDFViewer 2.0</b><br>Written by David Badiei, 2026<br>Licensed under GNU General Public License v3 (GPL-3)"));
 }
 
 void Viewer::setPage() { setPageKey(); tabItems.at(currentTab)->rerenderUpdateScrollArea();}

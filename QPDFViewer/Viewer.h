@@ -49,7 +49,7 @@ public:
 	explicit Viewer(QWidget* parent = 0);
 	~Viewer();
 	void keyPressEvent(QKeyEvent* event);
-	void openFile(QString fileName);
+	void openFile(QStringList fileName);
 	void setPageKey(int key = -1);
 	void setAndUpdatePageKey(int key = -1);
 	void addTab(TabItem* item);

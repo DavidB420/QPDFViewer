@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
     //Create viewer object and open file if necessary
     Viewer vwr;
     if (!parser.positionalArguments().isEmpty())
-        vwr.openFile(parser.positionalArguments().first());
+        vwr.openFile({ parser.positionalArguments().first() });
     vwr.show();
 
     //Signal that tells application to start a new app
@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
             //Create a new window in already existing process
             Viewer *newVwr = new Viewer();
             if (filePath != startCmd)
-                newVwr->openFile(filePath);
+                newVwr->openFile({ filePath });
             newVwr->show();
             clientSocket->disconnectFromServer();
             clientSocket->deleteLater();
