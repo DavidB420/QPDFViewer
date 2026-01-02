@@ -19,9 +19,13 @@
 
 #include "FindAllBox.h"
 
-FindAllBox::FindAllBox(QWidget* parent, int direction)
+#include <qlayout.h>
+#include <qpainter.h>
+#include <qtextdocument.h>
+
+FindAllBox::FindAllBox(QWidget* parent, QString phrase, int direction)
 {
-	this->setWindowTitle("Find all");
+	this->setWindowTitle("Find all '" + phrase + "'");
 	switch (direction) {
 	case 1:
 		this->setWindowTitle(this->windowTitle() + " forwards");
@@ -33,4 +37,83 @@ FindAllBox::FindAllBox(QWidget* parent, int direction)
 
 	this->resize(640, 480);
 	this->setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
+
+	results = new QTreeWidget(this);
+	results->setColumnCount(2);
+	results->setHeaderLabels({ "Page","Snippet" });
+	results->setRootIsDecorated(false);
+	results->setUniformRowHeights(true);
+	results->setSelectionBehavior(QAbstractItemView::SelectRows);
+	results->setSelectionMode(QAbstractItemView::SingleSelection);
+	results->setTextElideMode(Qt::ElideNone);
+	results->setWordWrap(true);
+	results->setItemDelegateForColumn(1, new HtmlItemDelegate(results));
+
+
+	QVBoxLayout* layout = new QVBoxLayout;
+
+	layout->addWidget(results);
+
+	this->setLayout(layout);
+
+	connect(results, &QTreeWidget::itemActivated, this, &FindAllBox::selectResult);
+
+}
+
+void FindAllBox::addItemsToBox(QVector<SearchResult> searchResults)
+{
+	for (int i = 0; i < searchResults.size(); i++) {
+		QTreeWidgetItem* newItem = new QTreeWidgetItem(results);
+		newItem->setText(0, QString::number(searchResults.at(i).page));
+		newItem->setText(1, searchResults.at(i).snippet);
+		newItem->setData(0, Qt::UserRole, searchResults.at(i).page);
+		newItem->setData(1, Qt::UserRole, searchResults.at(i).foundRect);
+	}
+}
+
+void FindAllBox::selectResult(QTreeWidgetItem* item, int column)
+{
+	emit itemClicked(item->data(0, Qt::UserRole).toInt(), item->data(1, Qt::UserRole).toRectF());
+}
+
+void HtmlItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const
+{
+	//Save painter state
+	painter->save();
+	
+	//Create a local copy of the style options for this item This contains text, colors, selection state, fonts, etc.
+	QStyleOptionViewItem opt(option);
+	//Initialize the option with data from the model index (sets opt.text, opt.rect, selection state, font, etc.)
+	initStyleOption(&opt, index);
+
+	//Create a QTextDocument to render rich text (HTML)
+	QTextDocument doc;
+	doc.setHtml(opt.text);
+	
+	//Clear the text in the style option so Qt does NOT draw it as plain text (otherwise it would be drawn twice)
+	opt.text.clear();
+
+	//Ask the current style to draw the item background, selection highlight, focus rectangle, etc. — but without any text
+	opt.widget->style()->drawControl(QStyle::CE_ItemViewItem, &opt, painter, opt.widget);
+
+	//Move the painter's origin to the top-left corner of the item rectangle so text doc draws in the correct position
+	painter->translate(opt.rect.topLeft());
+	QRect clip(0, 0, opt.rect.width(), opt.rect.height());
+	doc.drawContents(painter, clip);
+
+	//Restore the painter to its original state
+	painter->restore();
+}
+
+QSize HtmlItemDelegate::sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const
+{
+	//Create a QTextDocument to render rich text (HTML)
+	QTextDocument doc;
+	//Set text
+	doc.setHtml(index.data().toString());
+	//Get exact width from QStyleOptionViewItem
+	doc.setTextWidth(option.rect.width());
+
+	//Return updated size
+	return QSize(doc.idealWidth(), doc.size().height());
 }

@@ -96,6 +96,9 @@
     <QtMoc Include="DetachableTabWidget.h">
       <Filter>Header Files</Filter>
     </QtMoc>
+    <QtMoc Include="FindAllBox.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Page.h">
@@ -114,9 +117,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PasswordBoxDialog.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="FindAllBox.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

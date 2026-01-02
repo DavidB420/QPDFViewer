@@ -21,11 +21,32 @@
 #define FINDALLBOX_H
 
 #include <qdialog.h>
+#include <qtreewidget.h>
+#include <qstyleditemdelegate.h>
+#include <qobject.h>
+#include "PDFEngine.h"
 
 class FindAllBox : public QDialog
 {
+	Q_OBJECT
 public:
-	FindAllBox(QWidget* parent = 0, int direction=0); //0 - bidirectional, 1 - forward, 2 - backward
+	FindAllBox(QWidget* parent = 0, QString phrase="", int direction = 0); //0 - bidirectional, 1 - forward, 2 - backward
+	void addItemsToBox(QVector <SearchResult> searchResults);
+private:
+	QTreeWidget* results;
+signals:
+	void itemClicked(int page, QRectF rect);
+private slots:
+	void selectResult(QTreeWidgetItem* item, int column);
+};
+
+
+class HtmlItemDelegate : public QStyledItemDelegate
+{
+public:
+	using QStyledItemDelegate::QStyledItemDelegate;
+	void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
+	QSize sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const override;
 };
 
 #endif

@@ -364,6 +364,62 @@ bool PDFEngine::getSuccess()
 	return success;
 }
 
+QVector<SearchResult> PDFEngine::getAllSearchResults(int direction, std::string phrase)
+{
+	int tempPage = getCurrentPage();
+	QVector <SearchResult> result;
+
+	if (direction == 0)
+		setCurrentPage(1);
+
+	int pageCounter = 0, currentSearchPage = getCurrentPage();
+	while (findPhraseInDocument(phrase, direction != 2 ? Poppler::Page::SearchDirection::NextResult : Poppler::Page::SearchDirection::PreviousResult)) {
+		if (getCurrentPage() != currentSearchPage) {
+			currentSearchPage = getCurrentPage();
+			pageCounter = 0;
+		}
+		SearchResult newResult;
+		newResult.page = getCurrentPage();
+		newResult.foundRect = selectedRect;
+		Poppler::Page* page = doc->page(currentPage - 1);
+		QString pageText = page->text(QRectF(0, 0, outputLabel->width(), outputLabel->height()));
+
+		pageCounter = pageText.indexOf(QString::fromStdString(phrase), pageCounter, Qt::CaseInsensitive);
+
+		//Add red highlighting
+		QString highlightHTMLHeader = "< span style = \"color:red; font-weight:bold;\">";
+		QString highlightHTMLFooter = "</span>";
+
+
+		pageText.insert(pageCounter,highlightHTMLHeader);
+		pageCounter += highlightHTMLHeader.size();
+		pageText.insert(pageCounter + QString::fromStdString(phrase).length(), highlightHTMLFooter);
+
+		QString snippet = pageText.mid(qMax(0, pageCounter - 40 - highlightHTMLHeader.size()), qMin(pageText.length(), pageCounter + QString::fromStdString(phrase).length() + highlightHTMLFooter.size() + 40));
+
+		newResult.snippet = snippet;
+
+		pageCounter -= highlightHTMLHeader.size();
+		pageCounter+= QString::fromStdString(phrase).length();
+		delete page;
+
+		result.push_back(newResult);
+	}
+	
+	setCurrentPage(tempPage);
+
+	return result;
+}
+
+void PDFEngine::goToPhrase(int page, QRectF rect)
+{
+	setCurrentPage(page);
+	selectedRect = rect;
+	foundPageNum = page;
+
+	emit attentionNeeded();
+}
+
 bool PDFEngine::setCurrentPageSignal(int page)
 {
 	//Set current page using normal function
@@ -505,6 +561,8 @@ void PDFEngine::unlockDocument()
 		//Attempt unlock, output error message if incorrect password was entered
 		if (doc->unlock(dialog->getPassword().toLatin1(), dialog->getPassword().toLatin1()) != 0)
 			QMessageBox::warning(NULL, "Incorrect Password", "Incorrect password!\nPlease try again.");
+
+		delete dialog;
 	}
 }
 

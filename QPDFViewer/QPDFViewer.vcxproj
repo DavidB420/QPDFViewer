@@ -142,7 +142,7 @@
     <QtMoc Include="NavigationBar.h" />
     <QtMoc Include="DetachableTabBar.h" />
     <QtMoc Include="DetachableTabWidget.h" />
-    <ClInclude Include="FindAllBox.h" />
+    <QtMoc Include="FindAllBox.h" />
     <ClInclude Include="HyperlinkObject.h" />
     <ClInclude Include="Page.h" />
     <QtMoc Include="PDFEngine.h" />

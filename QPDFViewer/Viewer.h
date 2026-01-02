@@ -71,6 +71,9 @@ private:
 	QAction* rotate90CWAct, *rotate90CCWAct;
 	QAction* pageTextAct;
 	QAction* printAct;
+	QAction* findAllForward;
+	QAction* findAllBackward;
+	QAction* findAllBidirect;
 	QWidget* wdgt;
 	QWidget* plusWdgt;
 	DetachableTabWidget* tWidget;
@@ -99,6 +102,8 @@ private slots:
 	void updatePageNumber();
 	void openNewWindow(int index, const QPoint& windowPos);
 	void mergeTabs(int index, QObject* srcViewer);
+	void findAllSearch();
+	void giveTabAttention();
 };
 
 #endif

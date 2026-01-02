@@ -39,6 +39,7 @@
 #include <QDebug>
 #include "TabItem.h"
 #include "PrintDialog.h"
+#include "FindAllBox.h"
 
 Viewer::Viewer(QWidget* parent)
 {
@@ -84,17 +85,20 @@ Viewer::Viewer(QWidget* parent)
 	connect(rotate90CCWAct, &QAction::triggered, this, &Viewer::rotatePage);
 	navBarShowAct = new QAction(tr("&Show Navigation Bar"), this);
 	navBarShowAct->setCheckable(true);
-	navMenu->addAction(navBarShowAct);
-	QAction* findAllForward = new QAction(tr("&Find all forward"));
-	findAllForward->setIcon(QIcon(":/images/assets/forwardsIcon.png"));
-	navMenu->addAction(findAllForward);
-	QAction* findAllBackward = new QAction(tr("&Find all backward"));
-	findAllBackward->setIcon(QIcon(":/images/assets/backwardsIcon.png"));
-	navMenu->addAction(findAllBackward);
-	QAction* findAllBidirect = new QAction(tr("&Find all"));
-	findAllBidirect->setIcon(QIcon(":/images/assets/bidirectIcon.png"));
-	navMenu->addAction(findAllBidirect);
 	connect(navBarShowAct, &QAction::triggered, this, &Viewer::showNavBar);
+	navMenu->addAction(navBarShowAct);
+	findAllForward = new QAction(tr("&Find all forward"));
+	findAllForward->setIcon(QIcon(":/images/assets/forwardsIcon.png"));
+	connect(findAllForward, &QAction::triggered, this, &Viewer::findAllSearch);
+	navMenu->addAction(findAllForward);
+	findAllBackward = new QAction(tr("&Find all backward"));
+	findAllBackward->setIcon(QIcon(":/images/assets/backwardsIcon.png"));
+	connect(findAllBackward, &QAction::triggered, this, &Viewer::findAllSearch);
+	navMenu->addAction(findAllBackward);
+	findAllBidirect = new QAction(tr("&Find all"));
+	findAllBidirect->setIcon(QIcon(":/images/assets/bidirectIcon.png"));
+	connect(findAllBidirect, &QAction::triggered, this, &Viewer::findAllSearch);
+	navMenu->addAction(findAllBidirect);
 	QAction* aboutAct = new QAction(tr("&About"), this);
 	aboutmenu->addAction(aboutAct);
 	connect(aboutAct, &QAction::triggered, this, &Viewer::aboutApp);
@@ -216,6 +220,7 @@ void Viewer::openFile(QString fileName)
 			if (tmp != NULL)
 				delete tmp;
 			connect(tabItems.at(currentTab)->getEngine(), &PDFEngine::pageChanged, this, &Viewer::updatePageNumber);
+			connect(tabItems.at(currentTab)->getEngine(), &PDFEngine::attentionNeeded, this, &Viewer::giveTabAttention);
 			tabItems.at(currentTab)->setFilePath(fileName);
 			tabItems.at(currentTab)->updateScrollArea();
 			tWidget->setTabText(currentTab, QString::fromStdString(tabItems.at(currentTab)->getFileName()));
@@ -254,6 +259,34 @@ void Viewer::openFileDialog()
 	openFile(fileName);
 }
 
+void Viewer::findAllSearch()
+{
+	int direction = 0;
+
+	if (sender() == findAllForward)
+		direction = 1;
+	else if (sender() == findAllBackward)
+		direction = 2;
+	
+	FindAllBox* fBox = new FindAllBox(this, searchBox->text(), direction);
+	fBox->addItemsToBox(tabItems.at(currentTab)->getEngine()->getAllSearchResults(direction, searchBox->text().toStdString()));
+	connect(fBox, &FindAllBox::itemClicked, tabItems.at(currentTab)->getEngine(), &PDFEngine::goToPhrase);
+	fBox->setAttribute(Qt::WA_DeleteOnClose);
+	fBox->show();
+}
+
+void Viewer::giveTabAttention()
+{
+	for (int i = 0; i < tabItems.size(); i++) {
+		if (tabItems.at(i)->getEngine() == sender()) {
+			tWidget->setCurrentIndex(i);
+			onTabClicked(i);
+			tabItems.at(currentTab)->updateScrollArea(true);
+			break;
+		}
+	}
+}
+
 void Viewer::exitApp()
 {
 	QApplication::exit();
@@ -290,6 +323,7 @@ void Viewer::addTab(TabItem* item)
 	tWidget->setCurrentIndex(currentIndex);
 	connect(tabItems.at(currentTab)->getScrollArea(), &TabScrollArea::hitExtremity, this, &Viewer::setPage);
 	connect(tabItems.at(currentTab)->getEngine(), &PDFEngine::pageChanged, this, &Viewer::updatePageNumber);
+	connect(tabItems.at(currentTab)->getEngine(), &PDFEngine::attentionNeeded, this, &Viewer::giveTabAttention);
 
 	onTabClicked(currentIndex);
 }
@@ -633,6 +667,8 @@ void Viewer::getPrintDialog()
 			}
 		}
 	}
+
+	delete pDialog;
 }
 
 void Viewer::checkIfPDFLoaded()
@@ -658,6 +694,9 @@ void Viewer::checkIfPDFLoaded()
 	downButton->setEnabled(toggle);
 	backwardsSearch->setEnabled(toggle);
 	forwardsSearch->setEnabled(toggle);
+	findAllBackward->setEnabled(toggle);
+	findAllForward->setEnabled(toggle);
+	findAllBidirect->setEnabled(toggle);
 
 	if (!toggle) {
 		totalPage->setText(" out of ");
@@ -678,6 +717,7 @@ void Viewer::openNewWindow(int index, const QPoint& windowPos)
 		//Disconnect current signals
 		disconnect(tabItems.at(index)->getScrollArea(), &TabScrollArea::hitExtremity, this, &Viewer::setPage);
 		disconnect(tabItems.at(index)->getEngine(), &PDFEngine::pageChanged, this, &Viewer::updatePageNumber);
+		disconnect(tabItems.at(currentTab)->getEngine(), &PDFEngine::attentionNeeded, this, &Viewer::giveTabAttention);
 
 		//Save tab pointer
 		TabItem* item = tabItems.at(index);
@@ -704,7 +744,8 @@ void Viewer::mergeTabs(int index, QObject* srcViewer)
 	//Disconnect current signals
 	disconnect(item->getScrollArea(), &TabScrollArea::hitExtremity, vwr, &Viewer::setPage);
 	disconnect(item->getEngine(), &PDFEngine::pageChanged, vwr, &Viewer::updatePageNumber);
-	
+	disconnect(item->getEngine(), &PDFEngine::attentionNeeded, this, &Viewer::giveTabAttention);
+
 	//Remove tab from source window without deleting tab object itself
 	vwr->toggleDeleteTab();
 	vwr->onTabCloseRequested(index);

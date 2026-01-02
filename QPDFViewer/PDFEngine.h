@@ -28,6 +28,12 @@
 #include "Page.h"
 #include "NavigationBar.h"
 
+struct SearchResult {
+	int page;
+	QString snippet;
+	QRectF foundRect;
+};
+
 class PDFEngine: public QObject
 {
 	Q_OBJECT
@@ -50,6 +56,7 @@ public:
 	QVector <int> getPageHeights();
 	Poppler::Page::Rotation getCurrentRotation();
 	bool getSuccess();
+	QVector <SearchResult> getAllSearchResults(int direction, std::string phrase);
 private:
 	QWidget *parentWindow;
 	Page* outputLabel;
@@ -73,6 +80,9 @@ private:
 	void failedToLoad();
 signals:
 	void pageChanged();
+	void attentionNeeded();
+public slots:
+	void goToPhrase(int page, QRectF rect);
 };
 
 #endif
