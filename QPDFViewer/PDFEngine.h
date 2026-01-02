@@ -27,18 +27,14 @@
 #include <qstandarditemmodel.h>
 #include "Page.h"
 #include "NavigationBar.h"
-
-struct SearchResult {
-	int page;
-	QString snippet;
-	QRectF foundRect;
-};
+#include "FindAllWorker.h"
 
 class PDFEngine: public QObject
 {
 	Q_OBJECT
 public:
 	PDFEngine(std::string fileName,QWidget *parentWindow);
+	~PDFEngine();
 	Page* returnImage();
 	int getTotalNumberOfPages();
 	int getCurrentPage();
@@ -56,7 +52,7 @@ public:
 	QVector <int> getPageHeights();
 	Poppler::Page::Rotation getCurrentRotation();
 	bool getSuccess();
-	QVector <SearchResult> getAllSearchResults(int direction, std::string phrase);
+	void getAllSearchResults(int direction, std::string phrase);
 private:
 	QWidget *parentWindow;
 	Page* outputLabel;
@@ -73,6 +69,9 @@ private:
 	void recursivelyFillModel(QVector<Poppler::OutlineItem> currentItem, QStandardItem* rootItem, NavigationBar *navBar);
 	QVector <Page*> previousPages;
 	QVector <int> allPageHeights;
+	std::string fileName;
+	FindAllWorker* currentFindAllWorker;
+	QThread* currentFindAllThread;
 	void updateHeightValues(bool total);
 	bool documentSearch(Poppler::Page *page, int pageNum, std::string phrase, QRectF* foundRect, Poppler::Page::SearchDirection direction, Poppler::Page::Rotation rotation);
 	void addHyperlinksToPage(Page* page, Poppler::Page* popplerPage, QImage image);
@@ -80,9 +79,12 @@ private:
 	void failedToLoad();
 signals:
 	void pageChanged();
+	void sendFindAllResult(SearchResult result);
 	void attentionNeeded();
 public slots:
 	void goToPhrase(int page, QRectF rect);
+	void cancelFindAllWorker();
+	void findAllResult(SearchResult result);
 };
 
 #endif

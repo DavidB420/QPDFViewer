@@ -117,6 +117,7 @@
     <ClCompile Include="DetachableTabBar.cpp" />
     <ClCompile Include="DetachableTabWidget.cpp" />
     <ClCompile Include="FindAllBox.cpp" />
+    <ClCompile Include="FindAllWorker.cpp" />
     <ClCompile Include="HyperlinkObject.cpp" />
     <ClCompile Include="NavigationBar.cpp" />
     <ClCompile Include="Page.cpp" />
@@ -143,6 +144,7 @@
     <QtMoc Include="DetachableTabBar.h" />
     <QtMoc Include="DetachableTabWidget.h" />
     <QtMoc Include="FindAllBox.h" />
+    <QtMoc Include="FindAllWorker.h" />
     <ClInclude Include="HyperlinkObject.h" />
     <ClInclude Include="Page.h" />
     <QtMoc Include="PDFEngine.h" />

@@ -47,7 +47,8 @@ FindAllBox::FindAllBox(QWidget* parent, QString phrase, int direction)
 	results->setSelectionMode(QAbstractItemView::SingleSelection);
 	results->setTextElideMode(Qt::ElideNone);
 	results->setWordWrap(true);
-	results->setItemDelegateForColumn(1, new HtmlItemDelegate(results));
+	HtmlItemDelegate* delegate = new HtmlItemDelegate(this);
+	results->setItemDelegateForColumn(1, delegate);
 
 
 	QVBoxLayout* layout = new QVBoxLayout;
@@ -60,15 +61,18 @@ FindAllBox::FindAllBox(QWidget* parent, QString phrase, int direction)
 
 }
 
-void FindAllBox::addItemsToBox(QVector<SearchResult> searchResults)
+FindAllBox::~FindAllBox()
 {
-	for (int i = 0; i < searchResults.size(); i++) {
-		QTreeWidgetItem* newItem = new QTreeWidgetItem(results);
-		newItem->setText(0, QString::number(searchResults.at(i).page));
-		newItem->setText(1, searchResults.at(i).snippet);
-		newItem->setData(0, Qt::UserRole, searchResults.at(i).page);
-		newItem->setData(1, Qt::UserRole, searchResults.at(i).foundRect);
-	}
+	results->clear();
+}
+
+void FindAllBox::addItemToBox(SearchResult result)
+{
+	QTreeWidgetItem* newItem = new QTreeWidgetItem(results);
+	newItem->setText(0, QString::number(result.page));
+	newItem->setText(1, result.snippet);
+	newItem->setData(0, Qt::UserRole, result.page);
+	newItem->setData(1, Qt::UserRole, result.foundRect);
 }
 
 void FindAllBox::selectResult(QTreeWidgetItem* item, int column)

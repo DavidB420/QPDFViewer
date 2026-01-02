@@ -269,7 +269,9 @@ void Viewer::findAllSearch()
 		direction = 2;
 	
 	FindAllBox* fBox = new FindAllBox(this, searchBox->text(), direction);
-	fBox->addItemsToBox(tabItems.at(currentTab)->getEngine()->getAllSearchResults(direction, searchBox->text().toStdString()));
+	tabItems.at(currentTab)->getEngine()->getAllSearchResults(direction, searchBox->text().toStdString());
+	connect(tabItems.at(currentTab)->getEngine(), &PDFEngine::sendFindAllResult, fBox, &FindAllBox::addItemToBox);
+	connect(fBox, &QObject::destroyed, tabItems.at(currentTab)->getEngine(), &PDFEngine::cancelFindAllWorker);
 	connect(fBox, &FindAllBox::itemClicked, tabItems.at(currentTab)->getEngine(), &PDFEngine::goToPhrase);
 	fBox->setAttribute(Qt::WA_DeleteOnClose);
 	fBox->show();

@@ -28,11 +28,13 @@
 #include <string>
 #include <qmessagebox.h>
 #include <poppler-qt5.h>
+#include <qthread.h>
 #include "Page.h"
 #include "TextBoxDialog.h"
 #include "NavigationBar.h"
 #include "HyperlinkObject.h"
 #include "PasswordBoxDialog.h"
+#include "FindAllWorker.h"
 
 PDFEngine::PDFEngine(std::string fileName, QWidget *parentWindow)
 {
@@ -43,6 +45,7 @@ PDFEngine::PDFEngine(std::string fileName, QWidget *parentWindow)
 	success = true;
 
 	//Load pdf doc
+	this->fileName = fileName;
 	doc = Poppler::Document::load(QString::fromStdString(fileName));
 
 	//Unlock document if necessary
@@ -63,6 +66,15 @@ PDFEngine::PDFEngine(std::string fileName, QWidget *parentWindow)
 	foundPageNum = -1;
 
 	searchPos = 0;
+
+	currentFindAllWorker = NULL;
+
+	qRegisterMetaType<SearchResult>("SearchResult");
+}
+
+PDFEngine::~PDFEngine()
+{
+	delete doc;
 }
 
 Page *PDFEngine::returnImage()
@@ -231,6 +243,7 @@ void PDFEngine::displayTextBox(QRectF dim)
 	std::string foundText = page->text(grabRect).toStdString();
 	delete page;
 	TextBoxDialog* dialog = new TextBoxDialog(this->parentWindow, &foundText);
+	dialog->setAttribute(Qt::WA_DeleteOnClose);
 	dialog->show();
 }
 
@@ -364,51 +377,41 @@ bool PDFEngine::getSuccess()
 	return success;
 }
 
-QVector<SearchResult> PDFEngine::getAllSearchResults(int direction, std::string phrase)
+void PDFEngine::getAllSearchResults(int direction, std::string phrase)
 {
-	int tempPage = getCurrentPage();
-	QVector <SearchResult> result;
-
-	if (direction == 0)
-		setCurrentPage(1);
-
-	int pageCounter = 0, currentSearchPage = getCurrentPage();
-	while (findPhraseInDocument(phrase, direction != 2 ? Poppler::Page::SearchDirection::NextResult : Poppler::Page::SearchDirection::PreviousResult)) {
-		if (getCurrentPage() != currentSearchPage) {
-			currentSearchPage = getCurrentPage();
-			pageCounter = 0;
-		}
-		SearchResult newResult;
-		newResult.page = getCurrentPage();
-		newResult.foundRect = selectedRect;
-		Poppler::Page* page = doc->page(currentPage - 1);
-		QString pageText = page->text(QRectF(0, 0, outputLabel->width(), outputLabel->height()));
-
-		pageCounter = pageText.indexOf(QString::fromStdString(phrase), pageCounter, Qt::CaseInsensitive);
-
-		//Add red highlighting
-		QString highlightHTMLHeader = "< span style = \"color:red; font-weight:bold;\">";
-		QString highlightHTMLFooter = "</span>";
-
-
-		pageText.insert(pageCounter,highlightHTMLHeader);
-		pageCounter += highlightHTMLHeader.size();
-		pageText.insert(pageCounter + QString::fromStdString(phrase).length(), highlightHTMLFooter);
-
-		QString snippet = pageText.mid(qMax(0, pageCounter - 40 - highlightHTMLHeader.size()), qMin(pageText.length(), pageCounter + QString::fromStdString(phrase).length() + highlightHTMLFooter.size() + 40));
-
-		newResult.snippet = snippet;
-
-		pageCounter -= highlightHTMLHeader.size();
-		pageCounter+= QString::fromStdString(phrase).length();
-		delete page;
-
-		result.push_back(newResult);
-	}
+	cancelFindAllWorker();
 	
-	setCurrentPage(tempPage);
+	currentFindAllWorker = new FindAllWorker(QString::fromStdString(fileName),QString::fromStdString(phrase),getCurrentPage(),getTotalNumberOfPages(),direction,getCurrentRotation());
+	currentFindAllThread = new QThread(this);
 
-	return result;
+	currentFindAllWorker->moveToThread(currentFindAllThread);
+
+	connect(currentFindAllThread, &QThread::started, currentFindAllWorker, &FindAllWorker::run);
+
+	connect(currentFindAllWorker, &FindAllWorker::finishedResult,	this, &PDFEngine::findAllResult);
+
+	connect(currentFindAllWorker, &FindAllWorker::finished, currentFindAllThread, &QThread::quit);
+
+	connect(currentFindAllWorker, &FindAllWorker::finished, currentFindAllWorker, &FindAllWorker::deleteLater);
+
+	connect(currentFindAllThread, &QThread::finished, currentFindAllThread, &QObject::deleteLater);
+
+	currentFindAllThread->start();
+}
+
+void PDFEngine::cancelFindAllWorker()
+{
+	if (currentFindAllWorker) {
+		currentFindAllWorker->cancel();
+	}
+
+	currentFindAllWorker = NULL;
+	currentFindAllThread = NULL;
+}
+
+void PDFEngine::findAllResult(SearchResult result)
+{
+	emit sendFindAllResult(result);
 }
 
 void PDFEngine::goToPhrase(int page, QRectF rect)

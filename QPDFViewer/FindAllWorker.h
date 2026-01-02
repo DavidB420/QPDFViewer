@@ -17,38 +17,42 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef FINDALLBOX_H
-#define FINDALLBOX_H
+#ifndef FINDALLWORKER_H
+#define FINDALLWORKER_H
 
-#include <qdialog.h>
-#include <qtreewidget.h>
-#include <qstyleditemdelegate.h>
 #include <qobject.h>
-#include "FindAllWorker.h"
+#include <poppler-qt5.h>
 
-class FindAllBox : public QDialog
+struct SearchResult {
+	int page;
+	QString snippet;
+	QRectF foundRect;
+};
+
+Q_DECLARE_METATYPE(SearchResult)
+
+class FindAllWorker: public QObject
 {
 	Q_OBJECT
 public:
-	FindAllBox(QWidget* parent = 0, QString phrase="", int direction = 0); //0 - bidirectional, 1 - forward, 2 - backward
-	~FindAllBox();
+	FindAllWorker(QString fn="", QString phrase="", int currentPage=0, int totalNumberOfPages=0, int direction=0, Poppler::Page::Rotation pdfRotation=Poppler::Page::Rotate0);
+	~FindAllWorker();
 private:
-	QTreeWidget* results;
+	QString fn;
+	QString phrase;
+	int currentPage;
+	int totalNumberOfPages;
+	int direction;
+	bool cancelled;
+	Poppler::Document* doc;
+	Poppler::Page::Rotation pdfRotation;
 signals:
-	void itemClicked(int page, QRectF rect);
+	void finishedResult(SearchResult result);
+	void finished();
 public slots:
-	void addItemToBox(SearchResult result);
-private slots:
-	void selectResult(QTreeWidgetItem* item, int column);
-};
+	void run();
+	void cancel();
 
-
-class HtmlItemDelegate : public QStyledItemDelegate
-{
-public:
-	using QStyledItemDelegate::QStyledItemDelegate;
-	void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
-	QSize sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const override;
 };
 
 #endif
