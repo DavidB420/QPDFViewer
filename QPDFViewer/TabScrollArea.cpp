@@ -159,7 +159,7 @@ bool TabScrollArea::checkIfHorizontalScrollRequired()
 
     //Save the maximum width of the loaded pages and check if any of the widths are greater than the viewports width
     for (int i = 0; i < currentPages.length(); i++) {
-        maxWidth = currentPages.at(i)->width() > maxWidth ? currentPages.at(i)->width() : maxWidth;
+        maxWidth = qMax(maxWidth, currentPages.at(i)->width());
         
         if (maxWidth > viewport()->width()) {
             horizontalScrollBar()->setEnabled(true);
@@ -171,10 +171,10 @@ bool TabScrollArea::checkIfHorizontalScrollRequired()
     if (needed) {
         //Reset horizontal scroll value only when its outside the current range or its at the default value
         if (horizontalScrollValue > maxWidth || horizontalScrollValue < 0) {
-            horizontalScrollValue = viewport()->width() - maxWidth / 2;
+            horizontalScrollValue = qBound((long)0, horizontalScrollValue, (long)(maxWidth-viewport()->width()));
             horizontalScrollBar()->setValue(horizontalScrollValue);
         }
-        horizontalScrollBar()->setRange(0, maxWidth);
+        horizontalScrollBar()->setRange(0, maxWidth-viewport()->width());
         horizontalScrollBar()->setPageStep(viewport()->width());
     }
 

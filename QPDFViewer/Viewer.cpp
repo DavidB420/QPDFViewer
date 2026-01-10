@@ -306,7 +306,7 @@ void Viewer::aboutApp()
 {
 	//Display about box
 	QMessageBox::about(this, tr("About QPDFViewer"),
-		tr("<b>QPDFViewer 2.0</b><br>Written by David Badiei, 2026<br>Licensed under GNU General Public License v3 (GPL-3)"));
+		tr("<b>QPDFViewer 2.01</b><br>Written by David Badiei, 2026<br>Licensed under GNU General Public License v3 (GPL-3)"));
 }
 
 void Viewer::setPage() { setPageKey(); tabItems.at(currentTab)->rerenderUpdateScrollArea();}
