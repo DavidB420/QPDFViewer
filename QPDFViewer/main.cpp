@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
     QApplication a(argc, argv);
     
     //App name for local server and command to tell main program to start a new window
-    QString appName = "QPDFViewer200";
+    QString appName = "QPDFViewer201";
     QString startCmd = "/<QPdfStart>\"?:|";
 
     //Open socket to running server
@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
     //Set core app params
     QCoreApplication::setApplicationName("QPDFViewer");
     QCoreApplication::setOrganizationName("David Badiei");
-    QCoreApplication::setApplicationVersion("2.0");
+    QCoreApplication::setApplicationVersion("2.01");
 
     //Create cmd parser
     QCommandLineParser parser;
