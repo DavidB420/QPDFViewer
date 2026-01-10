@@ -60,7 +60,7 @@ void FindAllWorker::run()
 	int qPhraseLength = qPhrase.length();
 
 	//Run bidirectional capable loop until stop or cancelled
-	for (int i = start; i != stop && !cancelled; i += step) {
+	for (int i = start; (step > 0 ? i <= stop : i >= stop) && !cancelled; i += step) {
 		Poppler::Page* page = doc->page(i-1);
 
 		QList<QRectF> rects = page->search(qPhrase, Poppler::Page::IgnoreCase, pdfRotation);
