@@ -155,6 +155,7 @@
     <QtMoc Include="Viewer.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="VersionNumber.h" />
     <QtMoc Include="NavigationBar.h" />
     <QtMoc Include="DetachableTabBar.h" />
     <QtMoc Include="DetachableTabWidget.h" />
