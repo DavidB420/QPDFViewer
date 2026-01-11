@@ -34,6 +34,7 @@ TabScrollArea::TabScrollArea(QWidget* parent)
 
     //By default horizontal scroll bar is disabled
     horizontalScrollBar()->setEnabled(horizontalEnabled);
+    horizontalScrollBar()->setVisible(horizontalEnabled);
     horizontalScrollBar()->setValue(horizontalScrollValue);
 
     connect(horizontalScrollBar(), &QScrollBar::valueChanged,
@@ -123,6 +124,7 @@ void TabScrollArea::triggerEventAndUpdateArea()
 
     //Check if horizontal scroll bar needs to be updated
     horizontalScrollBar()->setEnabled(false);
+    horizontalScrollBar()->setVisible(false);
     horizontalEnabled = checkIfHorizontalScrollRequired();
 
     //Run scroll area update (recursion not allowed)
@@ -162,6 +164,7 @@ bool TabScrollArea::checkIfHorizontalScrollRequired()
         maxWidth = qMax(maxWidth, currentPages.at(i)->width());
         
         if (maxWidth > viewport()->width()) {
+            horizontalScrollBar()->setVisible(true);
             horizontalScrollBar()->setEnabled(true);
             needed = true;
         }
@@ -293,6 +296,7 @@ void TabScrollArea::resizeEvent(QResizeEvent* event)
 
     //Assume we dont need a scroll bar, will be enabled if required
     horizontalScrollBar()->setEnabled(false);
+    horizontalScrollBar()->setVisible(false);
 
     //Check if horizontal scroll bar is needed
     horizontalEnabled = checkIfHorizontalScrollRequired();
