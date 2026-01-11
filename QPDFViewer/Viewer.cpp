@@ -740,6 +740,7 @@ void Viewer::openNewWindow(int index, const QPoint& windowPos)
 		
 		//Create new window and add tab to it
 		Viewer* newWindow = new Viewer();
+		newWindow->setAttribute(Qt::WA_DeleteOnClose);
 		newWindow->addTab(item);
 
 		newWindow->show();
