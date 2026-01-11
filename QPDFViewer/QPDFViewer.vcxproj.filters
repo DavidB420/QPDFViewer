@@ -125,6 +125,9 @@
     <ClInclude Include="PasswordBoxDialog.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="VersionNumber.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="QPDFViewer.rc">

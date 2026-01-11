@@ -23,13 +23,14 @@
 #include <QtNetwork/QLocalServer>
 #include <QtNetwork/QLocalSocket>
 #include "Viewer.h"
+#include "VersionNumber.h"
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
     
     //App name for local server and command to tell main program to start a new window
-    QString appName = "QPDFViewer201";
+    QString appName = QString("QPDFViewer%1%2").arg(MAJOR_VERSION).arg(MINOR_VERSION, 2, 10, QChar('0'));
     QString startCmd = "/<QPdfStart>\"?:|";
 
     //Open socket to running server
@@ -57,7 +58,7 @@ int main(int argc, char *argv[])
     //Set core app params
     QCoreApplication::setApplicationName("QPDFViewer");
     QCoreApplication::setOrganizationName("David Badiei");
-    QCoreApplication::setApplicationVersion("2.01");
+    QCoreApplication::setApplicationVersion(QString("%1.%2").arg(MAJOR_VERSION).arg(MINOR_VERSION, 2, 10, QChar('0')));
 
     //Create cmd parser
     QCommandLineParser parser;

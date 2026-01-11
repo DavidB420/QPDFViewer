@@ -40,6 +40,7 @@
 #include "TabItem.h"
 #include "PrintDialog.h"
 #include "FindAllBox.h"
+#include "VersionNumber.h"
 
 Viewer::Viewer(QWidget* parent)
 {
@@ -306,7 +307,7 @@ void Viewer::aboutApp()
 {
 	//Display about box
 	QMessageBox::about(this, tr("About QPDFViewer"),
-		tr("<b>QPDFViewer 2.01</b><br>Written by David Badiei, 2026<br>Licensed under GNU General Public License v3 (GPL-3)"));
+		tr("<b>QPDFViewer %1.%2</b><br>Written by David Badiei, 2026<br>Licensed under GNU General Public License v3 (GPL-3)").arg(MAJOR_VERSION).arg(MINOR_VERSION,2,10,QChar('0')));
 }
 
 void Viewer::setPage() { setPageKey(); tabItems.at(currentTab)->rerenderUpdateScrollArea();}
