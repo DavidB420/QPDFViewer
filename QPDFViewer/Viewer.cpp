@@ -36,7 +36,7 @@
 #include <QtPrintSupport/qprinter.h>
 #include <QtPrintSupport/qprintdialog.h>
 #include <vector>
-#include <QDebug>
+#include <QMimeData>
 #include "TabItem.h"
 #include "PrintDialog.h"
 #include "FindAllBox.h"
@@ -188,6 +188,10 @@ Viewer::Viewer(QWidget* parent)
 	layoutWidget->setLayout(layout);
 	setCentralWidget(layoutWidget);
 	wdgt = new QWidget();
+
+	this->setAcceptDrops(true);
+	setAttribute(Qt::WA_AcceptDrops, true);
+	connect(this, &Viewer::tabMerged, this, &Viewer::tabMerged);
 
 	//Disable pdf control buttons
 	checkIfPDFLoaded();
@@ -348,6 +352,31 @@ bool Viewer::toggleDeleteTab()
 TabItem* Viewer::getTab(int index)
 {
 	return tabItems.at(index);
+}
+
+void Viewer::dropEvent(QDropEvent* event)
+{
+	//Check if mime matches before accepting
+	if (event->mimeData()->hasFormat(tabBar->getTabMime())) {
+		event->setDropAction(Qt::ActionMask);
+		event->accept();
+	}
+}
+
+void Viewer::dragMoveEvent(QDragMoveEvent* event)
+{
+	//Check if mime matches before accepting
+	if (event->mimeData()->hasFormat(tabBar->getTabMime())) {
+		event->setDropAction(Qt::ActionMask);
+		event->accept();
+	}
+}
+
+void Viewer::dragEnterEvent(QDragEnterEvent* event)
+{
+	//Drop was successful
+	event->acceptProposedAction();
+	event->setDropAction(Qt::ActionMask);
 }
 
 void Viewer::setPageKey(int key)
@@ -740,6 +769,7 @@ void Viewer::openNewWindow(int index, const QPoint& windowPos)
 		
 		//Create new window and add tab to it
 		Viewer* newWindow = new Viewer();
+		newWindow->setAttribute(Qt::WA_DeleteOnClose);
 		newWindow->addTab(item);
 
 		newWindow->show();

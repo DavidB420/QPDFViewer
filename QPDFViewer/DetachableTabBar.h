@@ -22,6 +22,7 @@
 
 #include <qtabbar.h>
 #include <qtabwidget.h>
+#include <qtimer.h>
 
 class DetachableTabBar : public QTabBar
 {
@@ -39,12 +40,16 @@ protected:
 	void dragEnterEvent(QDragEnterEvent* event) override;
 	void dropEvent(QDropEvent* event) override;
 	void dragMoveEvent(QDragMoveEvent* event) override;
-	void tabLayoutChange() override;
+	void paintEvent(QPaintEvent* event) override;
 private:
 	int detachIndex;
 	QPoint detachStartPos;
 	void* viewerPtr;
 	QString TAB_MIME;
+	QPoint slideOffset;
+	QTimer slideTimer;
+private slots:
+	void updateSlideAnimOffset();
 };
 
 #endif

@@ -55,6 +55,10 @@ public:
 	void addTab(TabItem* item);
 	bool toggleDeleteTab();
 	TabItem* getTab(int index);
+protected:
+	void dropEvent(QDropEvent* event) override;
+	void dragMoveEvent(QDragMoveEvent* event) override;
+	void dragEnterEvent(QDragEnterEvent* event) override;
 private:
 	QLabel* totalPage;
 	QLineEdit* pageNumber;
@@ -81,6 +85,8 @@ private:
 	std::vector <TabItem*> tabItems;
 	int currentTab;
 	bool deleteTab;
+signals:
+	void tabMerged(int index, QObject* srcViewer);
 public slots:
 	void onTabCloseRequested(int index);
 private slots:

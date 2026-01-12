@@ -81,6 +81,7 @@ int main(int argc, char *argv[])
             QString filePath = clientSocket->readAll();
             //Create a new window in already existing process
             Viewer *newVwr = new Viewer();
+            newVwr->setAttribute(Qt::WA_DeleteOnClose);
             if (filePath != startCmd)
                 newVwr->openFile({ filePath });
             newVwr->show();
