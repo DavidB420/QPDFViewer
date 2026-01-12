@@ -25,6 +25,7 @@
 #include <qevent.h>
 #include <qdrag.h>
 #include <qmimedata.h>
+#include <QStylePainter>
 
 DetachableTabBar::DetachableTabBar(QWidget* parent)
 {
@@ -41,6 +42,11 @@ DetachableTabBar::DetachableTabBar(QWidget* parent)
 	detachIndex = -1;
 
 	TAB_MIME = "qpdfviewer/x-detachable-tab";
+
+	slideOffset = QPoint(0, 0);
+
+	slideTimer.setInterval(16); //16 ms = 1/60s = 60 FPS
+	connect(&slideTimer, &QTimer::timeout, this, &DetachableTabBar::updateSlideAnimOffset);
 }
 
 QString DetachableTabBar::getTabMime()
@@ -63,6 +69,26 @@ void DetachableTabBar::mousePressEvent(QMouseEvent* event)
 
 void DetachableTabBar::mouseMoveEvent(QMouseEvent* event)
 {
+	//Manually move tab within tab bar
+	if (rect().contains(event->pos())) {
+		int target = tabAt(event->pos());
+		if (target >= 0 && target != detachIndex && tabText(target) != "+") {
+			//Capture old position
+			QRect before = tabRect(detachIndex);
+			//Move tab
+			moveTab(detachIndex, target);
+			detachIndex = target;
+			//Capture new position
+			QRect after = tabRect(detachIndex);
+			//Create overlap offset
+			slideOffset = before.topLeft() - after.topLeft();
+			slideTimer.start();
+		}
+
+		event->accept();
+		return;
+	}
+	
 	//Check if user started dragging a tab outside the the tab bar
 	if ((event->pos() - detachStartPos).manhattanLength() > QApplication::startDragDistance()) {
 		if (!rect().contains(event->pos()) && detachIndex >= 0) {
@@ -82,10 +108,28 @@ void DetachableTabBar::mouseMoveEvent(QMouseEvent* event)
 			if (result == Qt::IgnoreAction)
 				emit detachTab(detachIndex, event->globalPos());
 			detachIndex = -1;
-			return;
 		}
 	}
-	QTabBar::mouseMoveEvent(event);
+}
+
+void DetachableTabBar::paintEvent(QPaintEvent* event)
+{
+	//Create painter for this object
+	QStylePainter painter(this);
+
+	//Paint each tab
+	for (int i = 0; i < count(); ++i) {
+		QStyleOptionTab opt;
+		initStyleOption(&opt, i);
+
+		//Apply slide offset only to dragged tab
+		if (i == detachIndex && slideOffset != QPoint(0, 0)) {
+			opt.rect.translate(slideOffset);
+		}
+
+		//Draw tab
+		painter.drawControl(QStyle::CE_TabBarTab, opt);
+	}
 }
 
 void DetachableTabBar::mouseReleaseEvent(QMouseEvent* event)
@@ -134,17 +178,17 @@ void DetachableTabBar::dragMoveEvent(QDragMoveEvent* event)
 	}
 }
 
-void DetachableTabBar::tabLayoutChange()
+void DetachableTabBar::updateSlideAnimOffset()
 {
-	int plusIndex = count() - 1;
-
-	//If Qt moved a real tab past the plus tab, snap it back
-	for (int i = 0; i < count() - 1; ++i) {
-		if (tabText(i) == "+") {
-			moveTab(i, plusIndex);
-			break;
-		}
+	//Decrease the offset as time goes on
+	slideOffset *= 0.75;
+	
+	//If the end position is reached, reset everything
+	if (slideOffset.manhattanLength() < 1) {
+		slideOffset = QPoint(0, 0);
+		slideTimer.stop();
 	}
-
-	QTabBar::tabLayoutChange();
+	
+	//Update tab bar
+	update();
 }
