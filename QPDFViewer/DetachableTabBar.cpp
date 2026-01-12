@@ -47,6 +47,8 @@ DetachableTabBar::DetachableTabBar(QWidget* parent)
 
 	slideTimer.setInterval(16); //16 ms = 1/60s = 60 FPS
 	connect(&slideTimer, &QTimer::timeout, this, &DetachableTabBar::updateSlideAnimOffset);
+
+	moveGuard = -1;
 }
 
 QString DetachableTabBar::getTabMime()
@@ -72,7 +74,12 @@ void DetachableTabBar::mouseMoveEvent(QMouseEvent* event)
 	//Manually move tab within tab bar
 	if (rect().contains(event->pos())) {
 		int target = tabAt(event->pos());
-		if (target >= 0 && target != detachIndex && tabText(target) != "+") {
+		QPoint delta = event->pos() - lastMousePos;
+		lastMousePos = event->pos();
+		if ((delta.x() > 0 && lastDelta.x() < 0) || (delta.x() < 0 && lastDelta.x() > 0))
+			 moveGuard = -1;
+		if (target >= 0 && target != detachIndex && moveGuard != target && tabText(target) != "+") {
+			moveGuard = detachIndex;
 			//Capture old position
 			QRect before = tabRect(detachIndex);
 			//Move tab
@@ -84,11 +91,13 @@ void DetachableTabBar::mouseMoveEvent(QMouseEvent* event)
 			slideOffset = before.topLeft() - after.topLeft();
 			slideTimer.start();
 		}
+		
+		lastDelta = delta;
 
 		event->accept();
 		return;
 	}
-	
+
 	//Check if user started dragging a tab outside the the tab bar
 	if ((event->pos() - detachStartPos).manhattanLength() > QApplication::startDragDistance()) {
 		if (!rect().contains(event->pos()) && detachIndex >= 0) {
@@ -123,9 +132,10 @@ void DetachableTabBar::paintEvent(QPaintEvent* event)
 		initStyleOption(&opt, i);
 
 		//Apply slide offset only to dragged tab
-		if (i == detachIndex && slideOffset != QPoint(0, 0)) {
+		if (i == detachIndex && slideOffset != QPoint(0, 0))
 			opt.rect.translate(slideOffset);
-		}
+		else if (i == detachIndex && slideOffset == QPoint(0, 0))
+			moveGuard = false;
 
 		//Draw tab
 		painter.drawControl(QStyle::CE_TabBarTab, opt);
@@ -137,6 +147,7 @@ void DetachableTabBar::mouseReleaseEvent(QMouseEvent* event)
 	//If mouse is released, reset the index
 	detachIndex = -1;
 	QTabBar::mouseReleaseEvent(event);
+	moveGuard = detachIndex;
 }
 
 void DetachableTabBar::dragEnterEvent(QDragEnterEvent* event)

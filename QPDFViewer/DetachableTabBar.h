@@ -48,6 +48,9 @@ private:
 	QString TAB_MIME;
 	QPoint slideOffset;
 	QTimer slideTimer;
+	int moveGuard;
+	QPoint lastMousePos;
+	QPoint lastDelta;
 private slots:
 	void updateSlideAnimOffset();
 };
