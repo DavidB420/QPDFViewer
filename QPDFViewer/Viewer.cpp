@@ -566,7 +566,12 @@ void Viewer::onTabMoved(int from, int to)
 	//Do the move
 	if (from < tWidget->count() - 1 && to < tWidget->count() - 1) {
 		std::swap(tabItems[from], tabItems[to]);
-		currentTab = from;
+		if (currentTab == from)
+			currentTab = to;
+		else if (from < currentTab && to >= currentTab)
+			currentTab--;
+		else if (from > currentTab && to <= currentTab)
+			currentTab++;
 	}
 }
 
