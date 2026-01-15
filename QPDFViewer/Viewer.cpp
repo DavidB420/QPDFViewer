@@ -310,8 +310,9 @@ void Viewer::exitApp()
 void Viewer::aboutApp()
 {
 	//Display about box
+	QString minorVersion = QString("%1").arg(MINOR_VERSION, 2, 10, QChar('0'));
 	QMessageBox::about(this, tr("About QPDFViewer"),
-		tr("<b>QPDFViewer %1.%2</b><br>Written by David Badiei, 2026<br>Licensed under GNU General Public License v3 (GPL-3)").arg(MAJOR_VERSION).arg(MINOR_VERSION,2,10,QChar('0')));
+		tr("<b>QPDFViewer %1.%2</b><br>Written by David Badiei, 2026<br>Licensed under GNU General Public License v3 (GPL-3)").arg(MAJOR_VERSION).arg(minorVersion.replace("0", minorVersion.endsWith('0') ? "" : "0")));
 }
 
 void Viewer::setPage() { setPageKey(); tabItems.at(currentTab)->rerenderUpdateScrollArea();}
