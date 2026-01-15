@@ -53,6 +53,7 @@ public:
 	Poppler::Page::Rotation getCurrentRotation();
 	bool getSuccess();
 	void getAllSearchResults(int direction, std::string phrase);
+	void updateParentWindow(QWidget* parent);
 private:
 	QWidget *parentWindow;
 	Page* outputLabel;

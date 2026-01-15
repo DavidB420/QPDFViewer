@@ -339,6 +339,7 @@ void Viewer::addTab(TabItem* item)
 	connect(tabItems.at(currentTab)->getScrollArea(), &TabScrollArea::hitExtremity, this, &Viewer::setPage);
 	connect(tabItems.at(currentTab)->getEngine(), &PDFEngine::pageChanged, this, &Viewer::updatePageNumber);
 	connect(tabItems.at(currentTab)->getEngine(), &PDFEngine::attentionNeeded, this, &Viewer::giveTabAttention);
+	tabItems.at(currentTab)->updateParentWindow(this);
 
 	onTabClicked(currentIndex);
 }

@@ -88,9 +88,8 @@ void TabItem::updateScrollArea(bool dontRefresh)
 		scrollArea->setPageHeights(engine->getPageHeights());
 		scrollArea->setDocumentHeight(engine->getDocumentHeight(), true, engine->getCurrentPage());
 	}
-	else {
+	else
 		scrollArea->updateVerticalScrollBar(engine->getCurrentPage());
-	}
 }
 
 void TabItem::setUseNavBar(bool enabled)
@@ -123,5 +122,10 @@ void TabItem::rerenderUpdateScrollArea()
 
 	//Release lock
 	scrollArea->setBufferLock(0);
+}
+
+void TabItem::updateParentWindow(QWidget* parent)
+{	
+	engine->updateParentWindow(parent); 
 }
 

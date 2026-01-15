@@ -398,6 +398,11 @@ void PDFEngine::getAllSearchResults(int direction, std::string phrase)
 	currentFindAllThread->start();
 }
 
+void PDFEngine::updateParentWindow(QWidget* parent) 
+{ 
+	this->parentWindow = parent; 
+}
+
 void PDFEngine::cancelFindAllWorker()
 {
 	//If the user closes the find all dialog or starts another search
