@@ -197,8 +197,10 @@ Viewer::Viewer(QWidget* parent)
 	checkIfPDFLoaded();
 }
 
-Viewer::~Viewer()
+Viewer::~Viewer() 
 {
+	for (int i = 0; i < tabItems.size(); i++)
+		delete tabItems.at(i);
 }
 
 void Viewer::keyPressEvent(QKeyEvent* event)
@@ -302,10 +304,7 @@ void Viewer::giveTabAttention()
 	}
 }
 
-void Viewer::exitApp()
-{
-	QApplication::exit();
-}
+void Viewer::exitApp(){	QApplication::exit(); }
 
 void Viewer::aboutApp()
 {
@@ -350,10 +349,7 @@ bool Viewer::toggleDeleteTab()
 	return deleteTab;
 }
 
-TabItem* Viewer::getTab(int index)
-{
-	return tabItems.at(index);
-}
+TabItem* Viewer::getTab(int index) { return tabItems.at(index); }
 
 void Viewer::dropEvent(QDropEvent* event)
 {
@@ -751,10 +747,7 @@ void Viewer::checkIfPDFLoaded()
 	}
 }
 
-void Viewer::updatePageNumber()
-{
-	pageNumber->setText(QString::number(tabItems.at(currentTab)->getEngine()->getCurrentPage()));
-}
+void Viewer::updatePageNumber() { pageNumber->setText(QString::number(tabItems.at(currentTab)->getEngine()->getCurrentPage())); }
 
 void Viewer::openNewWindow(int index, const QPoint& windowPos)
 {
