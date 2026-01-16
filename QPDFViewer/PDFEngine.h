@@ -52,7 +52,7 @@ public:
 	QVector <int> getPageHeights();
 	Poppler::Page::Rotation getCurrentRotation();
 	bool getSuccess();
-	void getAllSearchResults(int direction, std::string phrase);
+	bool getAllSearchResults(int direction, std::string phrase);
 	void updateParentWindow(QWidget* parent);
 private:
 	QWidget *parentWindow;
@@ -78,6 +78,7 @@ private:
 	void addHyperlinksToPage(Page* page, Poppler::Page* popplerPage, QImage image);
 	void unlockDocument();
 	void failedToLoad();
+	std::string checkFileAvailable(std::string fileName);
 signals:
 	void pageChanged();
 	void sendFindAllResult(SearchResult result);

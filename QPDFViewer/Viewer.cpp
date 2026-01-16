@@ -283,12 +283,13 @@ void Viewer::findAllSearch()
 	
 	//Open find all box and start search, end search if dialog is destroyed
 	FindAllBox* fBox = new FindAllBox(this, searchBox->text(), direction);
-	tabItems.at(currentTab)->getEngine()->getAllSearchResults(direction, searchBox->text().toStdString());
-	connect(tabItems.at(currentTab)->getEngine(), &PDFEngine::sendFindAllResult, fBox, &FindAllBox::addItemToBox);
-	connect(fBox, &QObject::destroyed, tabItems.at(currentTab)->getEngine(), &PDFEngine::cancelFindAllWorker);
-	connect(fBox, &FindAllBox::itemClicked, tabItems.at(currentTab)->getEngine(), &PDFEngine::goToPhrase);
-	fBox->setAttribute(Qt::WA_DeleteOnClose);
-	fBox->show();
+	if (tabItems.at(currentTab)->getEngine()->getAllSearchResults(direction, searchBox->text().toStdString())) {
+		connect(tabItems.at(currentTab)->getEngine(), &PDFEngine::sendFindAllResult, fBox, &FindAllBox::addItemToBox);
+		connect(fBox, &QObject::destroyed, tabItems.at(currentTab)->getEngine(), &PDFEngine::cancelFindAllWorker);
+		connect(fBox, &FindAllBox::itemClicked, tabItems.at(currentTab)->getEngine(), &PDFEngine::goToPhrase);
+		fBox->setAttribute(Qt::WA_DeleteOnClose);
+		fBox->show();
+	}
 }
 
 void Viewer::giveTabAttention()
@@ -351,6 +352,15 @@ bool Viewer::toggleDeleteTab()
 }
 
 TabItem* Viewer::getTab(int index) { return tabItems.at(index); }
+
+void Viewer::reloadFile(bool reload)
+{
+	if (reload)
+		openFileDialog();
+	QFileInfo checkFile(tabItems.at(currentTab)->getFilePath());
+	if (!(checkFile.exists() && checkFile.isFile()))
+		onTabCloseRequested(currentTab);
+}
 
 void Viewer::dropEvent(QDropEvent* event)
 {

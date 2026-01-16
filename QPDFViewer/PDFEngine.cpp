@@ -29,7 +29,9 @@
 #include <qmessagebox.h>
 #include <poppler-qt5.h>
 #include <qthread.h>
+#include <qfileinfo.h>
 #include "Page.h"
+#include "Viewer.h"
 #include "TextBoxDialog.h"
 #include "NavigationBar.h"
 #include "HyperlinkObject.h"
@@ -45,8 +47,12 @@ PDFEngine::PDFEngine(std::string fileName, QWidget *parentWindow)
 	success = true;
 
 	//Load pdf doc
-	this->fileName = fileName;
-	doc = Poppler::Document::load(QString::fromStdString(fileName));
+	this->fileName = checkFileAvailable(fileName);
+	
+	if (this->fileName == "")
+		return;
+
+	doc = Poppler::Document::load(QString::fromStdString(this->fileName));
 
 	//Unlock document if necessary
 	unlockDocument();
@@ -377,25 +383,32 @@ bool PDFEngine::getSuccess()
 	return success;
 }
 
-void PDFEngine::getAllSearchResults(int direction, std::string phrase)
+bool PDFEngine::getAllSearchResults(int direction, std::string phrase)
 {
 	//Kill all workers currently running
 	cancelFindAllWorker();
 	
-	//Create a find all worker with proper parameters and run in seperate thread
-	currentFindAllWorker = new FindAllWorker(QString::fromStdString(fileName),QString::fromStdString(phrase),getCurrentPage(),getTotalNumberOfPages(),direction,getCurrentRotation());
-	currentFindAllThread = new QThread(this);
+	std::string foundFileName = checkFileAvailable(fileName);
+	
+	if (foundFileName != "") {
+		//Create a find all worker with proper parameters and run in seperate thread
+		currentFindAllWorker = new FindAllWorker(QString::fromStdString(foundFileName), QString::fromStdString(phrase), getCurrentPage(), getTotalNumberOfPages(), direction, getCurrentRotation());
+		currentFindAllThread = new QThread(this);
 
-	currentFindAllWorker->moveToThread(currentFindAllThread);
+		currentFindAllWorker->moveToThread(currentFindAllThread);
 
-	//Set up all signals for running the worker, checking when a result is ready, and when the worker is finished
-	connect(currentFindAllThread, &QThread::started, currentFindAllWorker, &FindAllWorker::run);
-	connect(currentFindAllWorker, &FindAllWorker::finishedResult,	this, &PDFEngine::findAllResult);
-	connect(currentFindAllWorker, &FindAllWorker::finished, currentFindAllThread, &QThread::quit);
-	connect(currentFindAllWorker, &FindAllWorker::finished, currentFindAllWorker, &FindAllWorker::deleteLater);
-	connect(currentFindAllThread, &QThread::finished, currentFindAllThread, &QObject::deleteLater);
+		//Set up all signals for running the worker, checking when a result is ready, and when the worker is finished
+		connect(currentFindAllThread, &QThread::started, currentFindAllWorker, &FindAllWorker::run);
+		connect(currentFindAllWorker, &FindAllWorker::finishedResult, this, &PDFEngine::findAllResult);
+		connect(currentFindAllWorker, &FindAllWorker::finished, currentFindAllThread, &QThread::quit);
+		connect(currentFindAllWorker, &FindAllWorker::finished, currentFindAllWorker, &FindAllWorker::deleteLater);
+		connect(currentFindAllThread, &QThread::finished, currentFindAllThread, &QObject::deleteLater);
 
-	currentFindAllThread->start();
+		currentFindAllThread->start();
+		return true;
+	}
+	else
+		return false;
 }
 
 void PDFEngine::updateParentWindow(QWidget* parent) 
@@ -575,4 +588,34 @@ void PDFEngine::unlockDocument()
 }
 
 void PDFEngine::failedToLoad(){	success = false;}
+
+std::string PDFEngine::checkFileAvailable(std::string fileName)
+{
+	QFileInfo checkFile(QString::fromStdString(fileName));
+
+	if (!(checkFile.exists() && checkFile.isFile())) {
+		failedToLoad();
+
+		QMessageBox msgBox(parentWindow);
+		msgBox.setIcon(QMessageBox::Critical);
+		msgBox.setWindowTitle(tr("File Not Found"));
+		msgBox.setText(tr(("The PDF file " + fileName + " could not be found.").c_str()));
+		msgBox.setInformativeText(tr("The file may have been moved, renamed, or deleted."));
+		QPushButton* closeTabBtn = msgBox.addButton("Close tab", QMessageBox::RejectRole);
+		QPushButton* locateFileBtn = msgBox.addButton("Locate file...", QMessageBox::AcceptRole);
+		
+		Viewer* vwr = reinterpret_cast<Viewer*>(parentWindow);
+
+		if (msgBox.exec() == QMessageBox::Accepted)
+			vwr->reloadFile();
+		else
+			vwr->reloadFile(false);
+	
+
+
+		return {};
+	}
+	else
+		return fileName;
+}
 

@@ -55,6 +55,7 @@ public:
 	void addTab(TabItem* item);
 	bool toggleDeleteTab();
 	TabItem* getTab(int index);
+	void reloadFile(bool reload=true);
 protected:
 	void dropEvent(QDropEvent* event) override;
 	void dragMoveEvent(QDragMoveEvent* event) override;
@@ -89,8 +90,8 @@ signals:
 	void tabMerged(int index, QObject* srcViewer);
 public slots:
 	void onTabCloseRequested(int index);
-private slots:
 	void openFileDialog();
+private slots:
 	void exitApp();
 	void aboutApp();
 	void setPage();
