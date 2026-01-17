@@ -494,7 +494,14 @@ void PDFEngine::recursivelyFillModel(QVector<Poppler::OutlineItem> currentItem, 
 		rootItem->appendRow(newModelItem);
 
 		NavTuple nTuple;
-		nTuple.pageNum = newItem.destination()->pageNumber();
+		if (newItem.destination() && !newItem.destination().isNull()) {
+			nTuple.pageNum = newItem.destination()->pageNumber();
+			nTuple.url = "";
+		}
+		else if (newItem.uri() != "") {
+			nTuple.pageNum = -1;
+			nTuple.url = newItem.uri();
+		}
 		nTuple.sItem = newModelItem;
 		navBar->navItems.push_back(nTuple);
 

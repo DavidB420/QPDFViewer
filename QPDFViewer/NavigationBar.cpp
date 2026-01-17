@@ -23,6 +23,8 @@
 #include <qtreeview.h>
 #include <qheaderview.h>
 #include <qscrollbar.h>
+#include <qdesktopservices.h>
+#include <qurl.h>
 
 NavigationBar::NavigationBar(QWidget* parent)
 {
@@ -64,7 +66,10 @@ void NavigationBar::onItemClicked(const QModelIndex& index)
 
 	for (int i = 0; i < navItems.size(); i++) {
 		if (navItems.at(i).sItem == item) {
-			emit itemClicked(navItems.at(i).pageNum);
+			if (navItems.at(i).pageNum > -1)
+				emit itemClicked(navItems.at(i).pageNum);
+			if (navItems.at(i).url != "")
+				QDesktopServices::openUrl(QUrl(navItems.at(i).url));
 			break;
 		}
 	}
