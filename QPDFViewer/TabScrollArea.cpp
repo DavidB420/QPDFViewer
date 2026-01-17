@@ -30,7 +30,7 @@ TabScrollArea::TabScrollArea(QWidget* parent)
     horizontalEnabled = false;
     horizontalScrollValue = -1;
     pageToLoad = 0;
-
+    dying = false;
 
     //By default horizontal scroll bar is disabled
     horizontalScrollBar()->setEnabled(horizontalEnabled);
@@ -43,6 +43,7 @@ TabScrollArea::TabScrollArea(QWidget* parent)
 
 TabScrollArea::~TabScrollArea()
 {
+    dying = true;
     //Delete all pages on destruction
     for (int i = 0; i < currentPages.length(); i++)
         delete currentPages.at(i);
@@ -98,6 +99,7 @@ void TabScrollArea::setDocumentHeight(unsigned long documentHeight, bool recalcu
         verticalScrollValue = findPageOffset(pageNum);
         verticalScrollBar()->setValue(verticalScrollValue);
         triggerEventAndUpdateArea();
+        if (dying) return;
     }
     verticalScrollValue = verticalScrollBar()->value();
     connect(verticalScrollBar(), &QScrollBar::valueChanged,
@@ -116,8 +118,12 @@ void TabScrollArea::triggerEventAndUpdateArea()
     //Tells viewer to update page number and tells the tab to tell the engine to update loaded page buffer
     emit hitExtremity();
 
+    if (dying) return;
+
     //Wait for tab to release the lock after update (cant do anything until this finishes)
     while (bufferLock > 0);
+
+    if (dying) return;
 
     //Update current page pointer
     firstPageHeight = findPage(pageToLoad);
@@ -254,8 +260,8 @@ void TabScrollArea::setBufferLock(int value)
 void TabScrollArea::onVerticalScrollChanged(int value)
 {
     //Update scroll bar value
-    QSignalBlocker blocker(verticalScrollBar());
-    
+    verticalScrollBar()->blockSignals(true);
+
     static bool inHandler = false;
     if (inHandler)
         return;
@@ -266,9 +272,14 @@ void TabScrollArea::onVerticalScrollChanged(int value)
 
     //Update scroll area (recursive)
     updateScrollArea(&currentPages,true);
+
+    if (dying) { inHandler = false; return; }
+
     verticalScrollBar()->setValue(verticalScrollValue);
 
     inHandler = false;
+
+    verticalScrollBar()->blockSignals(false);
 }
 
 void TabScrollArea::wheelEvent(QWheelEvent* event)

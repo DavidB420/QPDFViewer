@@ -79,6 +79,7 @@ private:
 	void unlockDocument();
 	void failedToLoad();
 	std::string checkFileAvailable(std::string fileName);
+	Poppler::Page* reloadDocAndPage();
 signals:
 	void pageChanged();
 	void sendFindAllResult(SearchResult result);

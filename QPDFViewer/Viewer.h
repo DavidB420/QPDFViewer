@@ -94,7 +94,7 @@ public slots:
 private slots:
 	void exitApp();
 	void aboutApp();
-	void setPage();
+	bool setPage();
 	void setAndUpdatePage();
 	void setAndUpdateScale();
 	void findPhrase();

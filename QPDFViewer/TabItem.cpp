@@ -125,10 +125,12 @@ void TabItem::rerenderUpdateScrollArea()
 {
 	//Get updated visible pages from engine and pass it to the scroll area
 	QVector <Page*> pagesVector = engine->getVisiblePages();
-	scrollArea->setCurrentPages(&pagesVector);
+	if (pagesVector.size() > 0) {
+		scrollArea->setCurrentPages(&pagesVector);
 
-	//Release lock
-	scrollArea->setBufferLock(0);
+		//Release lock
+		scrollArea->setBufferLock(0);
+	}
 }
 
 void TabItem::updateParentWindow(QWidget* parent)

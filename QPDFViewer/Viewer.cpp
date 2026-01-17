@@ -315,9 +315,20 @@ void Viewer::aboutApp()
 		tr("<b>QPDFViewer %1.%2</b><br>Written by David Badiei, 2026<br>Licensed under GNU General Public License v3 (GPL-3)").arg(MAJOR_VERSION).arg(minorVersion.replace("0", minorVersion.endsWith('0') ? "" : "0")));
 }
 
-void Viewer::setPage() { setPageKey(); tabItems.at(currentTab)->rerenderUpdateScrollArea();}
+bool Viewer::setPage() { 
+	setPageKey(); 
+	TabItem* tmp = tabItems.at(currentTab);
+	tabItems.at(currentTab)->rerenderUpdateScrollArea();
+	if (currentTab >= tabItems.size() || tabItems.at(currentTab) != tmp)
+		return false;
+	else
+		return true;
+}
 
-void Viewer::setAndUpdatePage() { setPage(); tabItems.at(currentTab)->updateScrollArea(true);}
+void Viewer::setAndUpdatePage() {
+	if (setPage())
+		tabItems.at(currentTab)->updateScrollArea(true);
+}
 
 void Viewer::setAndUpdatePageKey(int key) { setPageKey(key); tabItems.at(currentTab)->updateScrollArea(true); }
 
@@ -355,6 +366,11 @@ TabItem* Viewer::getTab(int index) { return tabItems.at(index); }
 
 void Viewer::reloadFile(bool reload)
 {
+	int tmp = currentTab;
+	onTabCloseRequested(currentTab);
+	onTabClicked(tWidget->count() - 1);
+	tabBar->moveTab(tWidget->count() - 2, tmp);
+	
 	if (reload)
 		openFileDialog();
 	QFileInfo checkFile(tabItems.at(currentTab)->getFilePath());

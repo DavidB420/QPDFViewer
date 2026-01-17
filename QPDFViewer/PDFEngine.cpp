@@ -91,9 +91,24 @@ Page *PDFEngine::returnImage()
 	doc->setRenderHint(Poppler::Document::Antialiasing, true);
 	doc->setRenderHint(Poppler::Document::TextAntialiasing, true);
 
+	//Reload if page is unavailable
+	if (page == NULL) {
+		page = reloadDocAndPage();
+		if (page == NULL)
+			return NULL;
+	}
+
 	//Convert the poppler into QImage
 	QImage image = page->renderToImage((float)72 * scaleValue / 75, (float)72 * scaleValue / 75,
 		-1, -1, -1, -1, pdfRotation);
+
+	if (image.isNull()) {
+		page = reloadDocAndPage();
+		image = page->renderToImage((float)72 * scaleValue / 75, (float)72 * scaleValue / 75,
+			-1, -1, -1, -1, pdfRotation);
+		if (image.isNull())
+			return NULL;
+	}
 
 	//Create page object based on QImage
 	outputLabel = new Page(this->parentWindow, this, &image);
@@ -343,6 +358,8 @@ QVector<Page*> PDFEngine::getVisiblePages()
 		}
 		if (page == NULL)
 			page = returnImage();
+		if (page == NULL)
+			return QVector<Page*>{};
 		visiblePages.push_back(page);
 
 		//Update current height and page counter
@@ -617,5 +634,14 @@ std::string PDFEngine::checkFileAvailable(std::string fileName)
 	}
 	else
 		return fileName;
+}
+
+Poppler::Page* PDFEngine::reloadDocAndPage()
+{
+	if (checkFileAvailable(fileName) == "")
+		return NULL;
+	delete doc;
+	doc = Poppler::Document::load(QString::fromStdString(this->fileName));
+	return doc->page(currentPage - 1);
 }
 
