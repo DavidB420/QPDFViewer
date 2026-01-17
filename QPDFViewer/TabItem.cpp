@@ -135,11 +135,13 @@ void TabItem::rerenderUpdateScrollArea()
 
 void TabItem::updateParentWindow(QWidget* parent)
 {	
-	engine->updateParentWindow(parent); 
+	if (engine != NULL)
+		engine->updateParentWindow(parent); 
 }
 
 void TabItem::refreshTab()
 {
-
+	if (engine->refreshEngine())
+		updateScrollArea();
 }
 

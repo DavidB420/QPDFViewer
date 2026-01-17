@@ -430,14 +430,16 @@ void PDFEngine::updateParentWindow(QWidget* parent)
 	this->parentWindow = parent; 
 }
 
-void PDFEngine::refreshEngine()
+bool PDFEngine::refreshEngine()
 {
-	this->fileName = checkFileAvailable(fileName);
+	std::string tmp = checkFileAvailable(fileName);
 
-	if (this->fileName == "")
-		return;
+	if (tmp == "")
+		return false;
 
 	doc = Poppler::Document::load(QString::fromStdString(this->fileName));
+
+	return true;
 }
 
 void PDFEngine::cancelFindAllWorker()

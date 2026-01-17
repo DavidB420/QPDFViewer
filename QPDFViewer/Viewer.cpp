@@ -311,10 +311,14 @@ void Viewer::giveTabAttention()
 
 void Viewer::refreshTabs()
 {
-	for (int i = 0; i < tabItems.size(); i++) {
+	int tmpTabNum = currentTab;
+	for (int i = tabItems.size()-1; i >= 0; i--) {
 		onTabClicked(i);
-
+		if (tabItems.at(i)->getEngine() != NULL)
+			tabItems.at(i)->refreshTab();
 	}
+	if (tmpTabNum >= 0 && tmpTabNum < tabItems.size())
+		onTabClicked(tmpTabNum);
 }
 
 void Viewer::exitApp(){	QApplication::exit(); }
