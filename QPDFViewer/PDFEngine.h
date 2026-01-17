@@ -54,6 +54,7 @@ public:
 	bool getSuccess();
 	bool getAllSearchResults(int direction, std::string phrase);
 	void updateParentWindow(QWidget* parent);
+	void refreshEngine();
 private:
 	QWidget *parentWindow;
 	Page* outputLabel;

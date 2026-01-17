@@ -187,6 +187,7 @@
     <Image Include="assets\openIcon.png" />
     <Image Include="assets\pageTextIcon.png" />
     <Image Include="assets\printIcon.png" />
+    <Image Include="assets\refreshIcon.png" />
     <Image Include="assets\rotate90CCWIcon.png" />
     <Image Include="assets\rotate90CWIcon.png" />
     <Image Include="assets\upIcon.png" />

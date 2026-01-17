@@ -15,5 +15,6 @@
         <file>assets/icon.png</file>
         <file>assets/encrypted.png</file>
         <file>assets/bidirectIcon.png</file>
+        <file>assets/refreshIcon.png</file>
     </qresource>
 </RCC>

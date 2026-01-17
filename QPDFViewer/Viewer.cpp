@@ -71,6 +71,10 @@ Viewer::Viewer(QWidget* parent)
 	fileMenu->addAction(printAct);
 	connect(printAct, &QAction::triggered, this, &Viewer::getPrintDialog);
 	printAct->setIcon(QIcon(":/images/assets/printIcon.png"));
+	QAction* refreshAct = new QAction(tr("&Refresh tabs"), this);
+	connect(refreshAct, &QAction::triggered, this, &Viewer::refreshTabs);
+	refreshAct->setIcon(QIcon(":/images/assets/refreshIcon.png"));
+	fileMenu->addAction(refreshAct);
 	fileMenu->addSeparator();
 	QAction* exitAct = new QAction(tr("&Exit"), this);
 	fileMenu->addAction(exitAct);
@@ -305,6 +309,14 @@ void Viewer::giveTabAttention()
 	}
 }
 
+void Viewer::refreshTabs()
+{
+	for (int i = 0; i < tabItems.size(); i++) {
+		onTabClicked(i);
+
+	}
+}
+
 void Viewer::exitApp(){	QApplication::exit(); }
 
 void Viewer::aboutApp()
@@ -326,8 +338,7 @@ bool Viewer::setPage() {
 }
 
 void Viewer::setAndUpdatePage() {
-	if (setPage())
-		tabItems.at(currentTab)->updateScrollArea(true);
+	if (setPage()) tabItems.at(currentTab)->updateScrollArea(true);
 }
 
 void Viewer::setAndUpdatePageKey(int key) { setPageKey(key); tabItems.at(currentTab)->updateScrollArea(true); }

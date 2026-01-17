@@ -138,3 +138,8 @@ void TabItem::updateParentWindow(QWidget* parent)
 	engine->updateParentWindow(parent); 
 }
 
+void TabItem::refreshTab()
+{
+
+}
+

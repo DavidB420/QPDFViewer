@@ -47,12 +47,9 @@ PDFEngine::PDFEngine(std::string fileName, QWidget *parentWindow)
 	success = true;
 
 	//Load pdf doc
-	this->fileName = checkFileAvailable(fileName);
-	
-	if (this->fileName == "")
-		return;
+	this->fileName = fileName;
 
-	doc = Poppler::Document::load(QString::fromStdString(this->fileName));
+	refreshEngine();
 
 	//Unlock document if necessary
 	unlockDocument();
@@ -431,6 +428,16 @@ bool PDFEngine::getAllSearchResults(int direction, std::string phrase)
 void PDFEngine::updateParentWindow(QWidget* parent) 
 { 
 	this->parentWindow = parent; 
+}
+
+void PDFEngine::refreshEngine()
+{
+	this->fileName = checkFileAvailable(fileName);
+
+	if (this->fileName == "")
+		return;
+
+	doc = Poppler::Document::load(QString::fromStdString(this->fileName));
 }
 
 void PDFEngine::cancelFindAllWorker()

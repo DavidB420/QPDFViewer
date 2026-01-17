@@ -111,6 +111,7 @@ private slots:
 	void mergeTabs(int index, QObject* srcViewer);
 	void findAllSearch();
 	void giveTabAttention();
+	void refreshTabs();
 };
 
 #endif
