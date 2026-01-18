@@ -311,21 +311,22 @@ void Viewer::giveTabAttention()
 
 void Viewer::refreshTabs()
 {
+	tabBar->setAttribute(Qt::WA_TransparentForMouseEvents, true);
 	//Refresh all tabs and return back to currently open tab
 	int tmpTabNum = currentTab;
-	for (int i = tabItems.size()-1; i >= 0; i--) {
+	for (int i = (int)(tabItems.size())-1; i >= 0; i--) {
 		onTabClicked(i);
-		if (tabItems.at(i)->getEngine() != NULL)
-			tabItems.at(i)->refreshTab();
+		tabItems.at(i)->refreshTab();
 	}
 	if (tmpTabNum >= 0 && tmpTabNum < tabItems.size()) {
 		onTabClicked(tmpTabNum);
 		tWidget->setCurrentIndex(tmpTabNum);
 	}
 	else if (tabItems.size() > 0) {
-		onTabClicked(tabItems.size() - 1);
-		tWidget->setCurrentIndex(tabItems.size() - 1);
+		onTabClicked((int)(tabItems.size() - 1));
+		tWidget->setCurrentIndex((int)(tabItems.size() - 1));
 	}
+	tabBar->setAttribute(Qt::WA_TransparentForMouseEvents, false);
 }
 
 void Viewer::exitApp() { close(); }

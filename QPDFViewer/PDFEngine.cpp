@@ -48,8 +48,9 @@ PDFEngine::PDFEngine(std::string fileName, QWidget *parentWindow)
 
 	//Load pdf doc
 	this->fileName = fileName;
-
-	refreshEngine();
+	
+	if (!refreshEngine())
+		return;
 
 	//Unlock document if necessary
 	unlockDocument();
@@ -71,6 +72,8 @@ PDFEngine::PDFEngine(std::string fileName, QWidget *parentWindow)
 	searchPos = 0;
 
 	currentFindAllWorker = NULL;
+
+	rerender = false;
 
 	qRegisterMetaType<SearchResult>("SearchResult");
 }
@@ -116,7 +119,7 @@ Page *PDFEngine::returnImage()
 		QRectF rect(selectedRect.x() * scaleValue / 75, selectedRect.y() * scaleValue / 75, selectedRect.width() * scaleValue / 75, selectedRect.height() * scaleValue / 75);
 		outputLabel->drawSelection(rect);
 		selectedRect = QRectF(0, 0, 0, 0);
-		foundPageNum == -1;
+		foundPageNum = -1;
 	}
 
 	//Delete poppler page
@@ -347,7 +350,7 @@ QVector<Page*> PDFEngine::getVisiblePages()
 		//Only render page if necessary, otherwise keep existing page
 		Page* page = NULL;
 		for (int m = 0; m < previousPages.length(); m++) {
-			if (previousPages.at(m)->getPageNumber() == getCurrentPage() && previousPages.at(m)->getParent() == this && previousPages.at(m)->getScale() == scaleValue && previousPages.at(m)->getRotation() == pdfRotation && 
+			if (!rerender && previousPages.at(m)->getPageNumber() == getCurrentPage() && previousPages.at(m)->getParent() == this && previousPages.at(m)->getScale() == scaleValue && previousPages.at(m)->getRotation() == pdfRotation && 
 				previousPages.at(m)->getCurrentPoint().x() == 0 && previousPages.at(m)->getCurrentPoint().y() == 0 && previousPages.at(m)->getFirstPoint().x() == 0 && previousPages.at(m)->getFirstPoint().y() == 0 && foundPageNum != getCurrentPage())
 				page = previousPages.at(m);
 		}
@@ -443,6 +446,11 @@ bool PDFEngine::refreshEngine()
 	doc->setRenderHint(Poppler::Document::TextAntialiasing, true);
 
 	return true;
+}
+
+void PDFEngine::rerenderAllPages()
+{
+	rerender = true;
 }
 
 void PDFEngine::cancelFindAllWorker()

@@ -142,7 +142,11 @@ void TabItem::updateParentWindow(QWidget* parent)
 
 void TabItem::refreshTab()
 {
-	if (engine->refreshEngine())
-		updateScrollArea();
+	if (engine != NULL) {
+		if (engine->refreshEngine()) {
+			engine->rerenderAllPages();
+			updateScrollArea();
+		}
+	}
 }
 
