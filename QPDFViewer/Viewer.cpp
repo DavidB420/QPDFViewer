@@ -311,17 +311,24 @@ void Viewer::giveTabAttention()
 
 void Viewer::refreshTabs()
 {
+	//Refresh all tabs and return back to currently open tab
 	int tmpTabNum = currentTab;
 	for (int i = tabItems.size()-1; i >= 0; i--) {
 		onTabClicked(i);
 		if (tabItems.at(i)->getEngine() != NULL)
 			tabItems.at(i)->refreshTab();
 	}
-	if (tmpTabNum >= 0 && tmpTabNum < tabItems.size())
+	if (tmpTabNum >= 0 && tmpTabNum < tabItems.size()) {
 		onTabClicked(tmpTabNum);
+		tWidget->setCurrentIndex(tmpTabNum);
+	}
+	else if (tabItems.size() > 0) {
+		onTabClicked(tabItems.size() - 1);
+		tWidget->setCurrentIndex(tabItems.size() - 1);
+	}
 }
 
-void Viewer::exitApp(){	QApplication::exit(); }
+void Viewer::exitApp() { deleteLater(); }
 
 void Viewer::aboutApp()
 {
@@ -332,6 +339,7 @@ void Viewer::aboutApp()
 }
 
 bool Viewer::setPage() { 
+	//Update page number and scroll area, return false if there was an error that resulted in tabs deletion
 	setPageKey(); 
 	TabItem* tmp = tabItems.at(currentTab);
 	tabItems.at(currentTab)->rerenderUpdateScrollArea();
@@ -341,9 +349,7 @@ bool Viewer::setPage() {
 		return true;
 }
 
-void Viewer::setAndUpdatePage() {
-	if (setPage()) tabItems.at(currentTab)->updateScrollArea(true);
-}
+void Viewer::setAndUpdatePage() { if (setPage()) tabItems.at(currentTab)->updateScrollArea(true); }
 
 void Viewer::setAndUpdatePageKey(int key) { setPageKey(key); tabItems.at(currentTab)->updateScrollArea(true); }
 
@@ -381,16 +387,19 @@ TabItem* Viewer::getTab(int index) { return tabItems.at(index); }
 
 void Viewer::reloadFile(bool reload)
 {
+	//Delete current tab and create a new one in its spot
 	int tmp = currentTab;
-	onTabCloseRequested(currentTab);
+	onTabCloseRequested(tmp);
 	onTabClicked(tWidget->count() - 1);
-	tabBar->moveTab(tWidget->count() - 2, tmp);
+	tabBar->moveTab(currentTab, tmp);
+	onTabMoved(currentTab, tmp);
+	onTabClicked(tmp);
 	
 	if (reload)
 		openFileDialog();
-	QFileInfo checkFile(tabItems.at(currentTab)->getFilePath());
+	QFileInfo checkFile(tabItems.at(tmp)->getFilePath());
 	if (!(checkFile.exists() && checkFile.isFile()))
-		onTabCloseRequested(currentTab);
+		onTabCloseRequested(tmp);
 }
 
 void Viewer::dropEvent(QDropEvent* event)
@@ -604,7 +613,9 @@ void Viewer::onTabMoved(int from, int to)
 {
 	//Do the move
 	if (from < tWidget->count() - 1 && to < tWidget->count() - 1) {
-		std::swap(tabItems[from], tabItems[to]);
+		auto item = tabItems[from];
+		tabItems.erase(tabItems.begin() + from);
+		tabItems.insert(tabItems.begin() + to, item);
 		if (currentTab == from)
 			currentTab = to;
 		else if (from < currentTab && to >= currentTab)

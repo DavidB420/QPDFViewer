@@ -43,6 +43,7 @@ TabScrollArea::TabScrollArea(QWidget* parent)
 
 TabScrollArea::~TabScrollArea()
 {
+    //Set dying flag to halt operations
     dying = true;
     //Delete all pages on destruction
     for (int i = 0; i < currentPages.length(); i++)
@@ -99,6 +100,7 @@ void TabScrollArea::setDocumentHeight(unsigned long documentHeight, bool recalcu
         verticalScrollValue = findPageOffset(pageNum);
         verticalScrollBar()->setValue(verticalScrollValue);
         triggerEventAndUpdateArea();
+        //Return immediately if dying flag is true
         if (dying) return;
     }
     verticalScrollValue = verticalScrollBar()->value();
@@ -118,11 +120,13 @@ void TabScrollArea::triggerEventAndUpdateArea()
     //Tells viewer to update page number and tells the tab to tell the engine to update loaded page buffer
     emit hitExtremity();
 
+    //Return immediately if dying flag is true
     if (dying) return;
 
     //Wait for tab to release the lock after update (cant do anything until this finishes)
     while (bufferLock > 0);
 
+    //Return immediately if dying flag is true
     if (dying) return;
 
     //Update current page pointer
@@ -273,6 +277,7 @@ void TabScrollArea::onVerticalScrollChanged(int value)
     //Update scroll area (recursive)
     updateScrollArea(&currentPages,true);
 
+    //Return immediately and clear blocking var if dying flag is true
     if (dying) { inHandler = false; return; }
 
     verticalScrollBar()->setValue(verticalScrollValue);

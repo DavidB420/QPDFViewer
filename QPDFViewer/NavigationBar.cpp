@@ -66,6 +66,7 @@ void NavigationBar::onItemClicked(const QModelIndex& index)
 
 	for (int i = 0; i < navItems.size(); i++) {
 		if (navItems.at(i).sItem == item) {
+			//Open page number or web hyperlink
 			if (navItems.at(i).pageNum > -1)
 				emit itemClicked(navItems.at(i).pageNum);
 			if (navItems.at(i).url != "")

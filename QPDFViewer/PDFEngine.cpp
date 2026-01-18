@@ -85,9 +85,6 @@ Page *PDFEngine::returnImage()
 	//Create poppler image based on current page, rotation and scale values
 	Poppler::Page* page = doc->page(currentPage-1);
 
-	doc->setRenderHint(Poppler::Document::Antialiasing, true);
-	doc->setRenderHint(Poppler::Document::TextAntialiasing, true);
-
 	//Reload if page is unavailable
 	if (page == NULL) {
 		page = reloadDocAndPage();
@@ -99,6 +96,7 @@ Page *PDFEngine::returnImage()
 	QImage image = page->renderToImage((float)72 * scaleValue / 75, (float)72 * scaleValue / 75,
 		-1, -1, -1, -1, pdfRotation);
 
+	//Reload page if image is null
 	if (image.isNull()) {
 		page = reloadDocAndPage();
 		image = page->renderToImage((float)72 * scaleValue / 75, (float)72 * scaleValue / 75,
@@ -402,6 +400,7 @@ bool PDFEngine::getAllSearchResults(int direction, std::string phrase)
 	//Kill all workers currently running
 	cancelFindAllWorker();
 	
+	//Check if file is still available before running
 	std::string foundFileName = checkFileAvailable(fileName);
 	
 	if (foundFileName != "") {
@@ -432,6 +431,7 @@ void PDFEngine::updateParentWindow(QWidget* parent)
 
 bool PDFEngine::refreshEngine()
 {
+	//Should return file name if available
 	std::string tmp = checkFileAvailable(fileName);
 
 	if (tmp == "")
@@ -496,6 +496,7 @@ void PDFEngine::recursivelyFillModel(QVector<Poppler::OutlineItem> currentItem, 
 		rootItem->appendRow(newModelItem);
 
 		NavTuple nTuple;
+		//Add either internal destination (page number) or external destination (web hyperlink)
 		if (newItem.destination() && !newItem.destination().isNull()) {
 			nTuple.pageNum = newItem.destination()->pageNumber();
 			nTuple.url = "";
@@ -624,11 +625,14 @@ void PDFEngine::failedToLoad(){	success = false;}
 
 std::string PDFEngine::checkFileAvailable(std::string fileName)
 {
+	//Check if file exists
 	QFileInfo checkFile(QString::fromStdString(fileName));
 
 	if (!(checkFile.exists() && checkFile.isFile())) {
+		//Loading was unsuccessful
 		failedToLoad();
 
+		//Display error msgbox
 		QMessageBox msgBox(parentWindow);
 		msgBox.setIcon(QMessageBox::Critical);
 		msgBox.setWindowTitle(tr("File Not Found"));
@@ -637,6 +641,7 @@ std::string PDFEngine::checkFileAvailable(std::string fileName)
 		QPushButton* closeTabBtn = msgBox.addButton("Close tab", QMessageBox::RejectRole);
 		QPushButton* locateFileBtn = msgBox.addButton("Locate file...", QMessageBox::AcceptRole);
 		
+		//Reload the file if accepted or get the viewer to close the tab
 		Viewer* vwr = reinterpret_cast<Viewer*>(parentWindow);
 
 		if (msgBox.exec() == QMessageBox::Accepted)
@@ -644,8 +649,6 @@ std::string PDFEngine::checkFileAvailable(std::string fileName)
 		else
 			vwr->reloadFile(false);
 	
-
-
 		return {};
 	}
 	else
@@ -654,10 +657,15 @@ std::string PDFEngine::checkFileAvailable(std::string fileName)
 
 Poppler::Page* PDFEngine::reloadDocAndPage()
 {
+	//Reload the current page
 	if (checkFileAvailable(fileName) == "")
 		return NULL;
 	delete doc;
 	doc = Poppler::Document::load(QString::fromStdString(this->fileName));
+
+	doc->setRenderHint(Poppler::Document::Antialiasing, true);
+	doc->setRenderHint(Poppler::Document::TextAntialiasing, true);
+
 	return doc->page(currentPage - 1);
 }
 

@@ -125,6 +125,7 @@ void TabItem::rerenderUpdateScrollArea()
 {
 	//Get updated visible pages from engine and pass it to the scroll area
 	QVector <Page*> pagesVector = engine->getVisiblePages();
+	//Only update if current page buffer size is greater than 0
 	if (pagesVector.size() > 0) {
 		scrollArea->setCurrentPages(&pagesVector);
 
