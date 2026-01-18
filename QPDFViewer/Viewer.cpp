@@ -328,7 +328,7 @@ void Viewer::refreshTabs()
 	}
 }
 
-void Viewer::exitApp() { deleteLater(); }
+void Viewer::exitApp() { close(); }
 
 void Viewer::aboutApp()
 {
@@ -400,6 +400,12 @@ void Viewer::reloadFile(bool reload)
 	QFileInfo checkFile(tabItems.at(tmp)->getFilePath());
 	if (!(checkFile.exists() && checkFile.isFile()))
 		onTabCloseRequested(tmp);
+}
+
+void Viewer::closeWhenDetachMerge()
+{
+	if (tabItems.size() <= 0)
+		close();
 }
 
 void Viewer::dropEvent(QDropEvent* event)
@@ -825,6 +831,8 @@ void Viewer::openNewWindow(int index, const QPoint& windowPos)
 		newWindow->addTab(item);
 
 		newWindow->show();
+
+		closeWhenDetachMerge();
 	}
 }
 
@@ -850,5 +858,7 @@ void Viewer::mergeTabs(int index, QObject* srcViewer)
 
 	//add tab object to this window
 	this->addTab(item);
+
+	vwr->closeWhenDetachMerge();
 }
 

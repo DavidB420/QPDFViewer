@@ -439,6 +439,9 @@ bool PDFEngine::refreshEngine()
 
 	doc = Poppler::Document::load(QString::fromStdString(this->fileName));
 
+	doc->setRenderHint(Poppler::Document::Antialiasing, true);
+	doc->setRenderHint(Poppler::Document::TextAntialiasing, true);
+
 	return true;
 }
 

@@ -56,6 +56,7 @@ public:
 	bool toggleDeleteTab();
 	TabItem* getTab(int index);
 	void reloadFile(bool reload=true);
+	void closeWhenDetachMerge();
 protected:
 	void dropEvent(QDropEvent* event) override;
 	void dragMoveEvent(QDragMoveEvent* event) override;
