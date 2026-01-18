@@ -180,5 +180,8 @@
     <Image Include="assets\bidirectIcon.png">
       <Filter>Resource Files\assets</Filter>
     </Image>
+    <Image Include="assets\refreshIcon.png">
+      <Filter>Resource Files\assets</Filter>
+    </Image>
   </ItemGroup>
 </Project>

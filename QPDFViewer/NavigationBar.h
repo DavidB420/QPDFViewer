@@ -27,6 +27,7 @@
 
 struct NavTuple {
 	QStandardItem* sItem;
+	QString url;
 	int pageNum;
 };
 

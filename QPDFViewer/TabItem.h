@@ -42,6 +42,8 @@ public:
 	void setUseNavBar(bool enabled);
 	std::string getFileName();
 	void rerenderUpdateScrollArea();
+	void updateParentWindow(QWidget* parent);
+	void refreshTab();
 private:
 	PDFEngine* engine;
 	QString title;

@@ -55,6 +55,7 @@ private:
 	bool checkIfHorizontalScrollRequired();
 	long findPageOffset(int pageNum);
 	void triggerEventAndUpdateArea();
+	bool dying;
 signals:
 	void hitExtremity();
 private slots:

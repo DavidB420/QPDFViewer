@@ -71,9 +71,16 @@ void TabItem::setSplitterData(QByteArray data)
 
 bool TabItem::setPDFEngine(std::string fileName, QWidget* parentWindow)
 {
-	engine = new PDFEngine(fileName, parentWindow);
+	PDFEngine* tmp = new PDFEngine(fileName, parentWindow);
 
-	return engine->getSuccess();
+	bool success = tmp->getSuccess();
+
+	if (!success)
+		delete tmp;
+	else
+		engine = tmp;
+
+	return success;
 }
 
 void TabItem::setFilePath(QString filePath)
@@ -88,9 +95,8 @@ void TabItem::updateScrollArea(bool dontRefresh)
 		scrollArea->setPageHeights(engine->getPageHeights());
 		scrollArea->setDocumentHeight(engine->getDocumentHeight(), true, engine->getCurrentPage());
 	}
-	else {
+	else
 		scrollArea->updateVerticalScrollBar(engine->getCurrentPage());
-	}
 }
 
 void TabItem::setUseNavBar(bool enabled)
@@ -119,9 +125,28 @@ void TabItem::rerenderUpdateScrollArea()
 {
 	//Get updated visible pages from engine and pass it to the scroll area
 	QVector <Page*> pagesVector = engine->getVisiblePages();
-	scrollArea->setCurrentPages(&pagesVector);
+	//Only update if current page buffer size is greater than 0
+	if (pagesVector.size() > 0) {
+		scrollArea->setCurrentPages(&pagesVector);
 
-	//Release lock
-	scrollArea->setBufferLock(0);
+		//Release lock
+		scrollArea->setBufferLock(0);
+	}
+}
+
+void TabItem::updateParentWindow(QWidget* parent)
+{	
+	if (engine != NULL)
+		engine->updateParentWindow(parent); 
+}
+
+void TabItem::refreshTab()
+{
+	if (engine != NULL) {
+		if (engine->refreshEngine()) {
+			engine->rerenderAllPages();
+			updateScrollArea();
+		}
+	}
 }
 

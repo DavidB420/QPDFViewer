@@ -29,7 +29,9 @@
 #include <qmessagebox.h>
 #include <poppler-qt5.h>
 #include <qthread.h>
+#include <qfileinfo.h>
 #include "Page.h"
+#include "Viewer.h"
 #include "TextBoxDialog.h"
 #include "NavigationBar.h"
 #include "HyperlinkObject.h"
@@ -46,7 +48,9 @@ PDFEngine::PDFEngine(std::string fileName, QWidget *parentWindow)
 
 	//Load pdf doc
 	this->fileName = fileName;
-	doc = Poppler::Document::load(QString::fromStdString(fileName));
+	
+	if (!refreshEngine())
+		return;
 
 	//Unlock document if necessary
 	unlockDocument();
@@ -69,6 +73,8 @@ PDFEngine::PDFEngine(std::string fileName, QWidget *parentWindow)
 
 	currentFindAllWorker = NULL;
 
+	rerender = false;
+
 	qRegisterMetaType<SearchResult>("SearchResult");
 }
 
@@ -82,12 +88,25 @@ Page *PDFEngine::returnImage()
 	//Create poppler image based on current page, rotation and scale values
 	Poppler::Page* page = doc->page(currentPage-1);
 
-	doc->setRenderHint(Poppler::Document::Antialiasing, true);
-	doc->setRenderHint(Poppler::Document::TextAntialiasing, true);
+	//Reload if page is unavailable
+	if (page == NULL) {
+		page = reloadDocAndPage();
+		if (page == NULL)
+			return NULL;
+	}
 
 	//Convert the poppler into QImage
 	QImage image = page->renderToImage((float)72 * scaleValue / 75, (float)72 * scaleValue / 75,
 		-1, -1, -1, -1, pdfRotation);
+
+	//Reload page if image is null
+	if (image.isNull()) {
+		page = reloadDocAndPage();
+		image = page->renderToImage((float)72 * scaleValue / 75, (float)72 * scaleValue / 75,
+			-1, -1, -1, -1, pdfRotation);
+		if (image.isNull())
+			return NULL;
+	}
 
 	//Create page object based on QImage
 	outputLabel = new Page(this->parentWindow, this, &image);
@@ -100,7 +119,7 @@ Page *PDFEngine::returnImage()
 		QRectF rect(selectedRect.x() * scaleValue / 75, selectedRect.y() * scaleValue / 75, selectedRect.width() * scaleValue / 75, selectedRect.height() * scaleValue / 75);
 		outputLabel->drawSelection(rect);
 		selectedRect = QRectF(0, 0, 0, 0);
-		foundPageNum == -1;
+		foundPageNum = -1;
 	}
 
 	//Delete poppler page
@@ -331,12 +350,14 @@ QVector<Page*> PDFEngine::getVisiblePages()
 		//Only render page if necessary, otherwise keep existing page
 		Page* page = NULL;
 		for (int m = 0; m < previousPages.length(); m++) {
-			if (previousPages.at(m)->getPageNumber() == getCurrentPage() && previousPages.at(m)->getParent() == this && previousPages.at(m)->getScale() == scaleValue && previousPages.at(m)->getRotation() == pdfRotation && 
+			if (!rerender && previousPages.at(m)->getPageNumber() == getCurrentPage() && previousPages.at(m)->getParent() == this && previousPages.at(m)->getScale() == scaleValue && previousPages.at(m)->getRotation() == pdfRotation && 
 				previousPages.at(m)->getCurrentPoint().x() == 0 && previousPages.at(m)->getCurrentPoint().y() == 0 && previousPages.at(m)->getFirstPoint().x() == 0 && previousPages.at(m)->getFirstPoint().y() == 0 && foundPageNum != getCurrentPage())
 				page = previousPages.at(m);
 		}
 		if (page == NULL)
 			page = returnImage();
+		if (page == NULL)
+			return QVector<Page*>{};
 		visiblePages.push_back(page);
 
 		//Update current height and page counter
@@ -377,25 +398,59 @@ bool PDFEngine::getSuccess()
 	return success;
 }
 
-void PDFEngine::getAllSearchResults(int direction, std::string phrase)
+bool PDFEngine::getAllSearchResults(int direction, std::string phrase)
 {
 	//Kill all workers currently running
 	cancelFindAllWorker();
 	
-	//Create a find all worker with proper parameters and run in seperate thread
-	currentFindAllWorker = new FindAllWorker(QString::fromStdString(fileName),QString::fromStdString(phrase),getCurrentPage(),getTotalNumberOfPages(),direction,getCurrentRotation());
-	currentFindAllThread = new QThread(this);
+	//Check if file is still available before running
+	std::string foundFileName = checkFileAvailable(fileName);
+	
+	if (foundFileName != "") {
+		//Create a find all worker with proper parameters and run in seperate thread
+		currentFindAllWorker = new FindAllWorker(QString::fromStdString(foundFileName), QString::fromStdString(phrase), getCurrentPage(), getTotalNumberOfPages(), direction, getCurrentRotation());
+		currentFindAllThread = new QThread(this);
 
-	currentFindAllWorker->moveToThread(currentFindAllThread);
+		currentFindAllWorker->moveToThread(currentFindAllThread);
 
-	//Set up all signals for running the worker, checking when a result is ready, and when the worker is finished
-	connect(currentFindAllThread, &QThread::started, currentFindAllWorker, &FindAllWorker::run);
-	connect(currentFindAllWorker, &FindAllWorker::finishedResult,	this, &PDFEngine::findAllResult);
-	connect(currentFindAllWorker, &FindAllWorker::finished, currentFindAllThread, &QThread::quit);
-	connect(currentFindAllWorker, &FindAllWorker::finished, currentFindAllWorker, &FindAllWorker::deleteLater);
-	connect(currentFindAllThread, &QThread::finished, currentFindAllThread, &QObject::deleteLater);
+		//Set up all signals for running the worker, checking when a result is ready, and when the worker is finished
+		connect(currentFindAllThread, &QThread::started, currentFindAllWorker, &FindAllWorker::run);
+		connect(currentFindAllWorker, &FindAllWorker::finishedResult, this, &PDFEngine::findAllResult);
+		connect(currentFindAllWorker, &FindAllWorker::finished, currentFindAllThread, &QThread::quit);
+		connect(currentFindAllWorker, &FindAllWorker::finished, currentFindAllWorker, &FindAllWorker::deleteLater);
+		connect(currentFindAllThread, &QThread::finished, currentFindAllThread, &QObject::deleteLater);
 
-	currentFindAllThread->start();
+		currentFindAllThread->start();
+		return true;
+	}
+	else
+		return false;
+}
+
+void PDFEngine::updateParentWindow(QWidget* parent) 
+{ 
+	this->parentWindow = parent; 
+}
+
+bool PDFEngine::refreshEngine()
+{
+	//Should return file name if available
+	std::string tmp = checkFileAvailable(fileName);
+
+	if (tmp == "")
+		return false;
+
+	doc = Poppler::Document::load(QString::fromStdString(this->fileName));
+
+	doc->setRenderHint(Poppler::Document::Antialiasing, true);
+	doc->setRenderHint(Poppler::Document::TextAntialiasing, true);
+
+	return true;
+}
+
+void PDFEngine::rerenderAllPages()
+{
+	rerender = true;
 }
 
 void PDFEngine::cancelFindAllWorker()
@@ -452,7 +507,15 @@ void PDFEngine::recursivelyFillModel(QVector<Poppler::OutlineItem> currentItem, 
 		rootItem->appendRow(newModelItem);
 
 		NavTuple nTuple;
-		nTuple.pageNum = newItem.destination()->pageNumber();
+		//Add either internal destination (page number) or external destination (web hyperlink)
+		if (newItem.destination() && !newItem.destination().isNull()) {
+			nTuple.pageNum = newItem.destination()->pageNumber();
+			nTuple.url = "";
+		}
+		else if (newItem.uri() != "") {
+			nTuple.pageNum = -1;
+			nTuple.url = newItem.uri();
+		}
 		nTuple.sItem = newModelItem;
 		navBar->navItems.push_back(nTuple);
 
@@ -570,4 +633,50 @@ void PDFEngine::unlockDocument()
 }
 
 void PDFEngine::failedToLoad(){	success = false;}
+
+std::string PDFEngine::checkFileAvailable(std::string fileName)
+{
+	//Check if file exists
+	QFileInfo checkFile(QString::fromStdString(fileName));
+
+	if (!(checkFile.exists() && checkFile.isFile())) {
+		//Loading was unsuccessful
+		failedToLoad();
+
+		//Display error msgbox
+		QMessageBox msgBox(parentWindow);
+		msgBox.setIcon(QMessageBox::Critical);
+		msgBox.setWindowTitle(tr("File Not Found"));
+		msgBox.setText(tr(("The PDF file " + fileName + " could not be found.").c_str()));
+		msgBox.setInformativeText(tr("The file may have been moved, renamed, or deleted."));
+		QPushButton* closeTabBtn = msgBox.addButton("Close tab", QMessageBox::RejectRole);
+		QPushButton* locateFileBtn = msgBox.addButton("Locate file...", QMessageBox::AcceptRole);
+		
+		//Reload the file if accepted or get the viewer to close the tab
+		Viewer* vwr = reinterpret_cast<Viewer*>(parentWindow);
+
+		if (msgBox.exec() == QMessageBox::Accepted)
+			vwr->reloadFile();
+		else
+			vwr->reloadFile(false);
+	
+		return {};
+	}
+	else
+		return fileName;
+}
+
+Poppler::Page* PDFEngine::reloadDocAndPage()
+{
+	//Reload the current page
+	if (checkFileAvailable(fileName) == "")
+		return NULL;
+	delete doc;
+	doc = Poppler::Document::load(QString::fromStdString(this->fileName));
+
+	doc->setRenderHint(Poppler::Document::Antialiasing, true);
+	doc->setRenderHint(Poppler::Document::TextAntialiasing, true);
+
+	return doc->page(currentPage - 1);
+}
 

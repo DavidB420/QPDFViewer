@@ -52,7 +52,10 @@ public:
 	QVector <int> getPageHeights();
 	Poppler::Page::Rotation getCurrentRotation();
 	bool getSuccess();
-	void getAllSearchResults(int direction, std::string phrase);
+	bool getAllSearchResults(int direction, std::string phrase);
+	void updateParentWindow(QWidget* parent);
+	bool refreshEngine();
+	void rerenderAllPages();
 private:
 	QWidget *parentWindow;
 	Page* outputLabel;
@@ -72,11 +75,14 @@ private:
 	std::string fileName;
 	FindAllWorker* currentFindAllWorker;
 	QThread* currentFindAllThread;
+	bool rerender;
 	void updateHeightValues(bool total);
 	bool documentSearch(Poppler::Page *page, int pageNum, std::string phrase, QRectF* foundRect, Poppler::Page::SearchDirection direction, Poppler::Page::Rotation rotation);
 	void addHyperlinksToPage(Page* page, Poppler::Page* popplerPage, QImage image);
 	void unlockDocument();
 	void failedToLoad();
+	std::string checkFileAvailable(std::string fileName);
+	Poppler::Page* reloadDocAndPage();
 signals:
 	void pageChanged();
 	void sendFindAllResult(SearchResult result);

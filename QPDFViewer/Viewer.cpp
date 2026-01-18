@@ -71,6 +71,10 @@ Viewer::Viewer(QWidget* parent)
 	fileMenu->addAction(printAct);
 	connect(printAct, &QAction::triggered, this, &Viewer::getPrintDialog);
 	printAct->setIcon(QIcon(":/images/assets/printIcon.png"));
+	QAction* refreshAct = new QAction(tr("&Refresh tabs"), this);
+	connect(refreshAct, &QAction::triggered, this, &Viewer::refreshTabs);
+	refreshAct->setIcon(QIcon(":/images/assets/refreshIcon.png"));
+	fileMenu->addAction(refreshAct);
 	fileMenu->addSeparator();
 	QAction* exitAct = new QAction(tr("&Exit"), this);
 	fileMenu->addAction(exitAct);
@@ -197,8 +201,10 @@ Viewer::Viewer(QWidget* parent)
 	checkIfPDFLoaded();
 }
 
-Viewer::~Viewer()
+Viewer::~Viewer() 
 {
+	for (int i = 0; i < tabItems.size(); i++)
+		delete tabItems.at(i);
 }
 
 void Viewer::keyPressEvent(QKeyEvent* event)
@@ -281,12 +287,13 @@ void Viewer::findAllSearch()
 	
 	//Open find all box and start search, end search if dialog is destroyed
 	FindAllBox* fBox = new FindAllBox(this, searchBox->text(), direction);
-	tabItems.at(currentTab)->getEngine()->getAllSearchResults(direction, searchBox->text().toStdString());
-	connect(tabItems.at(currentTab)->getEngine(), &PDFEngine::sendFindAllResult, fBox, &FindAllBox::addItemToBox);
-	connect(fBox, &QObject::destroyed, tabItems.at(currentTab)->getEngine(), &PDFEngine::cancelFindAllWorker);
-	connect(fBox, &FindAllBox::itemClicked, tabItems.at(currentTab)->getEngine(), &PDFEngine::goToPhrase);
-	fBox->setAttribute(Qt::WA_DeleteOnClose);
-	fBox->show();
+	if (tabItems.at(currentTab)->getEngine()->getAllSearchResults(direction, searchBox->text().toStdString())) {
+		connect(tabItems.at(currentTab)->getEngine(), &PDFEngine::sendFindAllResult, fBox, &FindAllBox::addItemToBox);
+		connect(fBox, &QObject::destroyed, tabItems.at(currentTab)->getEngine(), &PDFEngine::cancelFindAllWorker);
+		connect(fBox, &FindAllBox::itemClicked, tabItems.at(currentTab)->getEngine(), &PDFEngine::goToPhrase);
+		fBox->setAttribute(Qt::WA_DeleteOnClose);
+		fBox->show();
+	}
 }
 
 void Viewer::giveTabAttention()
@@ -302,21 +309,48 @@ void Viewer::giveTabAttention()
 	}
 }
 
-void Viewer::exitApp()
+void Viewer::refreshTabs()
 {
-	QApplication::exit();
+	tabBar->setAttribute(Qt::WA_TransparentForMouseEvents, true);
+	//Refresh all tabs and return back to currently open tab
+	int tmpTabNum = currentTab;
+	for (int i = (int)(tabItems.size())-1; i >= 0; i--) {
+		onTabClicked(i);
+		tabItems.at(i)->refreshTab();
+	}
+	if (tmpTabNum >= 0 && tmpTabNum < tabItems.size()) {
+		onTabClicked(tmpTabNum);
+		tWidget->setCurrentIndex(tmpTabNum);
+	}
+	else if (tabItems.size() > 0) {
+		onTabClicked((int)(tabItems.size() - 1));
+		tWidget->setCurrentIndex((int)(tabItems.size() - 1));
+	}
+	tabBar->setAttribute(Qt::WA_TransparentForMouseEvents, false);
 }
+
+void Viewer::exitApp() { close(); }
 
 void Viewer::aboutApp()
 {
 	//Display about box
+	QString minorVersion = QString("%1").arg(MINOR_VERSION, 2, 10, QChar('0'));
 	QMessageBox::about(this, tr("About QPDFViewer"),
-		tr("<b>QPDFViewer %1.%2</b><br>Written by David Badiei, 2026<br>Licensed under GNU General Public License v3 (GPL-3)").arg(MAJOR_VERSION).arg(MINOR_VERSION,2,10,QChar('0')));
+		tr("<b>QPDFViewer %1.%2</b><br>Written by David Badiei, 2026<br>Licensed under GNU General Public License v3 (GPL-3)").arg(MAJOR_VERSION).arg(minorVersion.replace("0", minorVersion.endsWith('0') ? "" : "0")));
 }
 
-void Viewer::setPage() { setPageKey(); tabItems.at(currentTab)->rerenderUpdateScrollArea();}
+bool Viewer::setPage() { 
+	//Update page number and scroll area, return false if there was an error that resulted in tabs deletion
+	setPageKey(); 
+	TabItem* tmp = tabItems.at(currentTab);
+	tabItems.at(currentTab)->rerenderUpdateScrollArea();
+	if (currentTab >= tabItems.size() || tabItems.at(currentTab) != tmp)
+		return false;
+	else
+		return true;
+}
 
-void Viewer::setAndUpdatePage() { setPage(); tabItems.at(currentTab)->updateScrollArea(true);}
+void Viewer::setAndUpdatePage() { if (setPage()) tabItems.at(currentTab)->updateScrollArea(true); }
 
 void Viewer::setAndUpdatePageKey(int key) { setPageKey(key); tabItems.at(currentTab)->updateScrollArea(true); }
 
@@ -339,6 +373,7 @@ void Viewer::addTab(TabItem* item)
 	connect(tabItems.at(currentTab)->getScrollArea(), &TabScrollArea::hitExtremity, this, &Viewer::setPage);
 	connect(tabItems.at(currentTab)->getEngine(), &PDFEngine::pageChanged, this, &Viewer::updatePageNumber);
 	connect(tabItems.at(currentTab)->getEngine(), &PDFEngine::attentionNeeded, this, &Viewer::giveTabAttention);
+	tabItems.at(currentTab)->updateParentWindow(this);
 
 	onTabClicked(currentIndex);
 }
@@ -349,9 +384,29 @@ bool Viewer::toggleDeleteTab()
 	return deleteTab;
 }
 
-TabItem* Viewer::getTab(int index)
+TabItem* Viewer::getTab(int index) { return tabItems.at(index); }
+
+void Viewer::reloadFile(bool reload)
 {
-	return tabItems.at(index);
+	//Delete current tab and create a new one in its spot
+	int tmp = currentTab;
+	onTabCloseRequested(tmp);
+	onTabClicked(tWidget->count() - 1);
+	tabBar->moveTab(currentTab, tmp);
+	onTabMoved(currentTab, tmp);
+	onTabClicked(tmp);
+	
+	if (reload)
+		openFileDialog();
+	QFileInfo checkFile(tabItems.at(tmp)->getFilePath());
+	if (!(checkFile.exists() && checkFile.isFile()))
+		onTabCloseRequested(tmp);
+}
+
+void Viewer::closeWhenDetachMerge()
+{
+	if (tabItems.size() <= 0)
+		close();
 }
 
 void Viewer::dropEvent(QDropEvent* event)
@@ -565,7 +620,9 @@ void Viewer::onTabMoved(int from, int to)
 {
 	//Do the move
 	if (from < tWidget->count() - 1 && to < tWidget->count() - 1) {
-		std::swap(tabItems[from], tabItems[to]);
+		auto item = tabItems[from];
+		tabItems.erase(tabItems.begin() + from);
+		tabItems.insert(tabItems.begin() + to, item);
 		if (currentTab == from)
 			currentTab = to;
 		else if (from < currentTab && to >= currentTab)
@@ -750,10 +807,7 @@ void Viewer::checkIfPDFLoaded()
 	}
 }
 
-void Viewer::updatePageNumber()
-{
-	pageNumber->setText(QString::number(tabItems.at(currentTab)->getEngine()->getCurrentPage()));
-}
+void Viewer::updatePageNumber() { pageNumber->setText(QString::number(tabItems.at(currentTab)->getEngine()->getCurrentPage())); }
 
 void Viewer::openNewWindow(int index, const QPoint& windowPos)
 {
@@ -778,6 +832,8 @@ void Viewer::openNewWindow(int index, const QPoint& windowPos)
 		newWindow->addTab(item);
 
 		newWindow->show();
+
+		closeWhenDetachMerge();
 	}
 }
 
@@ -803,5 +859,7 @@ void Viewer::mergeTabs(int index, QObject* srcViewer)
 
 	//add tab object to this window
 	this->addTab(item);
+
+	vwr->closeWhenDetachMerge();
 }
 
