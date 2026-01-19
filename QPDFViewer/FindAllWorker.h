@@ -38,7 +38,6 @@ class FindAllWorker: public QObject
 public:
 	FindAllWorker(QString fn="", QString phrase="", QString password="", bool hasPassword=false, int currentPage = 0, int totalNumberOfPages = 0, int direction = 0, Poppler::Page::Rotation pdfRotation = Poppler::Page::Rotate0);
 	~FindAllWorker();
-	bool isDone();
 private:
 	QString fn;
 	QString phrase;
@@ -46,7 +45,6 @@ private:
 	int totalNumberOfPages;
 	int direction;
 	bool cancelled;
-	bool done;
 	Poppler::Document* doc;
 	Poppler::Page::Rotation pdfRotation;
 signals:

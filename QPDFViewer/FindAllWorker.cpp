@@ -32,7 +32,6 @@ FindAllWorker::FindAllWorker(QString fn, QString phrase, QString password, bool 
 	this->pdfRotation = pdfRotation;
 
 	cancelled = false;
-	done = false;
 
 	doc = Poppler::Document::load(fn);
 
@@ -43,11 +42,6 @@ FindAllWorker::FindAllWorker(QString fn, QString phrase, QString password, bool 
 FindAllWorker::~FindAllWorker()
 {
 	delete doc;
-}
-
-bool FindAllWorker::isDone()
-{
-	return done;
 }
 
 void FindAllWorker::cancel()
@@ -119,5 +113,4 @@ void FindAllWorker::run()
 	}
 
 	emit finished();
-	done = true;
 }
