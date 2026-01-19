@@ -19,7 +19,7 @@
 
 #include "FindAllWorker.h"
 
-FindAllWorker::FindAllWorker(QString fn, QString phrase, int currentPage, int totalNumberOfPages, int direction, Poppler::Page::Rotation pdfRotation)
+FindAllWorker::FindAllWorker(QString fn, QString phrase, QString password, bool hasPassword, int currentPage, int totalNumberOfPages, int direction, Poppler::Page::Rotation pdfRotation)
 {
 	//Save parameters and reload document seperately for the worker, as poppler is not thread safe
 	this->fn = fn;
@@ -32,6 +32,9 @@ FindAllWorker::FindAllWorker(QString fn, QString phrase, int currentPage, int to
 	cancelled = false;
 
 	doc = Poppler::Document::load(fn);
+
+	if (hasPassword)
+		doc->unlock(password.toLatin1(), password.toLatin1());
 }
 
 FindAllWorker::~FindAllWorker()

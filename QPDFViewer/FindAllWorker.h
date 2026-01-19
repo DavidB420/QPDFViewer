@@ -35,7 +35,7 @@ class FindAllWorker: public QObject
 {
 	Q_OBJECT
 public:
-	FindAllWorker(QString fn="", QString phrase="", int currentPage=0, int totalNumberOfPages=0, int direction=0, Poppler::Page::Rotation pdfRotation=Poppler::Page::Rotate0);
+	FindAllWorker(QString fn="", QString phrase="", QString password="", bool hasPassword=false, int currentPage = 0, int totalNumberOfPages = 0, int direction = 0, Poppler::Page::Rotation pdfRotation = Poppler::Page::Rotate0);
 	~FindAllWorker();
 private:
 	QString fn;

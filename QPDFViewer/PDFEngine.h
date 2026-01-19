@@ -75,6 +75,8 @@ private:
 	std::string fileName;
 	FindAllWorker* currentFindAllWorker;
 	QThread* currentFindAllThread;
+	QString password;
+	bool hasPassword;
 	bool rerender;
 	void updateHeightValues(bool total);
 	bool documentSearch(Poppler::Page *page, int pageNum, std::string phrase, QRectF* foundRect, Poppler::Page::SearchDirection direction, Poppler::Page::Rotation rotation);
