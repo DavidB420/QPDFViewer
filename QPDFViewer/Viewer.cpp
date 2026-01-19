@@ -197,14 +197,15 @@ Viewer::Viewer(QWidget* parent)
 	setAttribute(Qt::WA_AcceptDrops, true);
 	connect(this, &Viewer::tabMerged, this, &Viewer::tabMerged);
 
+	fBox = NULL;
+
 	//Disable pdf control buttons
 	checkIfPDFLoaded();
 }
 
 Viewer::~Viewer() 
 {
-	for (int i = 0; i < tabItems.size(); i++)
-		delete tabItems.at(i);
+	for (int i = 0; i < tabItems.size(); i++) delete tabItems.at(i);
 }
 
 void Viewer::keyPressEvent(QKeyEvent* event)
@@ -286,10 +287,16 @@ void Viewer::findAllSearch()
 		direction = 2;
 	
 	//Open find all box and start search, end search if dialog is destroyed
-	FindAllBox* fBox = new FindAllBox(this, searchBox->text(), direction);
+	if (fBox != NULL) {
+		disconnect(tabItems.at(currentTab)->getEngine(), &PDFEngine::sendFindAllResult, fBox, &FindAllBox::addItemToBox);
+		disconnect(fBox, &QObject::destroyed, tabItems.at(currentTab)->getEngine(), &PDFEngine::cancelFindAllWorker);
+	}
+
 	if (tabItems.at(currentTab)->getEngine()->getAllSearchResults(direction, searchBox->text().toStdString())) {
+		fBox = new FindAllBox(this, searchBox->text(), direction);
 		connect(tabItems.at(currentTab)->getEngine(), &PDFEngine::sendFindAllResult, fBox, &FindAllBox::addItemToBox);
 		connect(fBox, &QObject::destroyed, tabItems.at(currentTab)->getEngine(), &PDFEngine::cancelFindAllWorker);
+		connect(fBox, &QObject::destroyed, this, &Viewer::findAllBoxDeleted);
 		connect(fBox, &FindAllBox::itemClicked, tabItems.at(currentTab)->getEngine(), &PDFEngine::goToPhrase);
 		fBox->setAttribute(Qt::WA_DeleteOnClose);
 		fBox->show();
@@ -328,6 +335,8 @@ void Viewer::refreshTabs()
 	}
 	tabBar->setAttribute(Qt::WA_TransparentForMouseEvents, false);
 }
+
+void Viewer::findAllBoxDeleted() { fBox = NULL; }
 
 void Viewer::exitApp() { close(); }
 
@@ -405,8 +414,7 @@ void Viewer::reloadFile(bool reload)
 
 void Viewer::closeWhenDetachMerge()
 {
-	if (tabItems.size() <= 0)
-		close();
+	if (tabItems.size() <= 0) close();
 }
 
 void Viewer::dropEvent(QDropEvent* event)

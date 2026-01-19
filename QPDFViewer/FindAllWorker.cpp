@@ -19,6 +19,8 @@
 
 #include "FindAllWorker.h"
 
+#include <qthread.h>
+
 FindAllWorker::FindAllWorker(QString fn, QString phrase, QString password, bool hasPassword, int currentPage, int totalNumberOfPages, int direction, Poppler::Page::Rotation pdfRotation)
 {
 	//Save parameters and reload document seperately for the worker, as poppler is not thread safe
@@ -30,6 +32,7 @@ FindAllWorker::FindAllWorker(QString fn, QString phrase, QString password, bool 
 	this->pdfRotation = pdfRotation;
 
 	cancelled = false;
+	done = false;
 
 	doc = Poppler::Document::load(fn);
 
@@ -42,8 +45,14 @@ FindAllWorker::~FindAllWorker()
 	delete doc;
 }
 
+bool FindAllWorker::isDone()
+{
+	return done;
+}
+
 void FindAllWorker::cancel()
 {
+	this->blockSignals(true);
 	cancelled = true;
 }
 
@@ -64,6 +73,8 @@ void FindAllWorker::run()
 
 	//Run bidirectional capable loop until stop or cancelled
 	for (int i = start; (step > 0 ? i <= stop : i > stop) && !cancelled; i += step) {
+		if (QThread::currentThread()->isInterruptionRequested())
+			break;
 		Poppler::Page* page = doc->page(i-1);
 
 		QList<QRectF> rects = page->search(qPhrase, Poppler::Page::IgnoreCase, pdfRotation);
@@ -76,12 +87,13 @@ void FindAllWorker::run()
 
 			//Get all results in the page
 			int index = direction == 2 ? text.length()-1 : 0, j = direction == 2 ? rects.length() - 1 : 0;
-			while ((direction == 2 && (index = text.lastIndexOf(qPhrase, index, Qt::CaseInsensitive)) != -1) || (direction != 2 && (index = text.indexOf(qPhrase, index, Qt::CaseInsensitive)) != -1)) {
+			while ((direction == 2 && (index = text.lastIndexOf(qPhrase, index, Qt::CaseInsensitive)) != -1) || (direction != 2 && (index = text.indexOf(qPhrase, index, Qt::CaseInsensitive)) != -1)) {	
 				//Get new copy of text and save rect and page number in result
 				textTmp = text;
 				SearchResult newResult;
 				newResult.page = i;
 				newResult.foundRect = rects.at(j);
+				newResult.done = cancelled;
 
 				//Insert HTML header and footer around found phrase
 				textTmp.insert(index, highlightHTMLHeader);
@@ -107,4 +119,5 @@ void FindAllWorker::run()
 	}
 
 	emit finished();
+	done = true;
 }

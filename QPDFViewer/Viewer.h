@@ -35,6 +35,7 @@
 #include "TabItem.h"
 #include "DetachableTabBar.h"
 #include "DetachableTabWidget.h"
+#include "FindAllBox.h"
 
 struct MinMaxTuple {
 	int min = 0, max = 0;
@@ -87,6 +88,7 @@ private:
 	std::vector <TabItem*> tabItems;
 	int currentTab;
 	bool deleteTab;
+	FindAllBox* fBox;
 signals:
 	void tabMerged(int index, QObject* srcViewer);
 public slots:
@@ -113,6 +115,7 @@ private slots:
 	void findAllSearch();
 	void giveTabAttention();
 	void refreshTabs();
+	void findAllBoxDeleted();
 };
 
 #endif

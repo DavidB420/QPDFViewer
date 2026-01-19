@@ -421,9 +421,7 @@ bool PDFEngine::getAllSearchResults(int direction, std::string phrase)
 		//Set up all signals for running the worker, checking when a result is ready, and when the worker is finished
 		connect(currentFindAllThread, &QThread::started, currentFindAllWorker, &FindAllWorker::run);
 		connect(currentFindAllWorker, &FindAllWorker::finishedResult, this, &PDFEngine::findAllResult);
-		connect(currentFindAllWorker, &FindAllWorker::finished, currentFindAllThread, &QThread::quit);
-		connect(currentFindAllWorker, &FindAllWorker::finished, currentFindAllWorker, &FindAllWorker::deleteLater);
-		connect(currentFindAllThread, &QThread::finished, currentFindAllThread, &QObject::deleteLater);
+		connect(currentFindAllWorker, &FindAllWorker::finished, this, &PDFEngine::cancelFindAllWorker);
 
 		currentFindAllThread->start();
 		return true;
@@ -461,16 +459,30 @@ void PDFEngine::rerenderAllPages()
 void PDFEngine::cancelFindAllWorker()
 {
 	//If the user closes the find all dialog or starts another search
-	if (currentFindAllWorker)
-		currentFindAllWorker->cancel();
+	if (!currentFindAllWorker)
+		return;
 
-	currentFindAllWorker = NULL;
-	currentFindAllThread = NULL;
+	disconnect(currentFindAllWorker, &FindAllWorker::finishedResult, this, &PDFEngine::findAllResult);
+	disconnect(currentFindAllWorker, &FindAllWorker::finished, this, &PDFEngine::cancelFindAllWorker);
+
+	currentFindAllWorker->blockSignals(true);	
+
+	currentFindAllWorker->cancel();
+	currentFindAllThread->requestInterruption();
+
+	currentFindAllThread->quit();
+	currentFindAllThread->wait();
+
+	currentFindAllWorker->deleteLater();
+	currentFindAllThread->deleteLater();
+
+	currentFindAllWorker = nullptr;
+	currentFindAllThread = nullptr;
 }
 
 void PDFEngine::findAllResult(SearchResult result)
 {
-	emit sendFindAllResult(result);
+	if (!result.done) emit sendFindAllResult(result);
 }
 
 void PDFEngine::goToPhrase(int page, QRectF rect)
