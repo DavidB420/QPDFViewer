@@ -45,13 +45,15 @@ PDFEngine::PDFEngine(std::string fileName, QWidget *parentWindow)
 	
 	//Before loading document, set success to true
 	success = true;
+	password = "";
+	hasPassword = false;
 
 	//Load pdf doc
 	this->fileName = fileName;
 	
 	if (!refreshEngine())
 		return;
-
+	
 	//Unlock document if necessary
 	unlockDocument();
 
@@ -87,6 +89,9 @@ Page *PDFEngine::returnImage()
 {
 	//Create poppler image based on current page, rotation and scale values
 	Poppler::Page* page = doc->page(currentPage-1);
+
+	doc->setRenderHint(Poppler::Document::Antialiasing, true);
+	doc->setRenderHint(Poppler::Document::TextAntialiasing, true);
 
 	//Reload if page is unavailable
 	if (page == NULL) {
@@ -408,7 +413,7 @@ bool PDFEngine::getAllSearchResults(int direction, std::string phrase)
 	
 	if (foundFileName != "") {
 		//Create a find all worker with proper parameters and run in seperate thread
-		currentFindAllWorker = new FindAllWorker(QString::fromStdString(foundFileName), QString::fromStdString(phrase), getCurrentPage(), getTotalNumberOfPages(), direction, getCurrentRotation());
+		currentFindAllWorker = new FindAllWorker(QString::fromStdString(foundFileName), QString::fromStdString(phrase), password, hasPassword, getCurrentPage(), getTotalNumberOfPages(), direction, getCurrentRotation());
 		currentFindAllThread = new QThread(this);
 
 		currentFindAllWorker->moveToThread(currentFindAllThread);
@@ -442,8 +447,8 @@ bool PDFEngine::refreshEngine()
 
 	doc = Poppler::Document::load(QString::fromStdString(this->fileName));
 
-	doc->setRenderHint(Poppler::Document::Antialiasing, true);
-	doc->setRenderHint(Poppler::Document::TextAntialiasing, true);
+	if (hasPassword)
+		doc->unlock(password.toLatin1(), password.toLatin1());
 
 	return true;
 }
@@ -627,6 +632,10 @@ void PDFEngine::unlockDocument()
 		//Attempt unlock, output error message if incorrect password was entered
 		if (doc->unlock(dialog->getPassword().toLatin1(), dialog->getPassword().toLatin1()) != 0)
 			QMessageBox::warning(NULL, "Incorrect Password", "Incorrect password!\nPlease try again.");
+		else {
+			password = dialog->getPassword();
+			hasPassword = true;
+		}
 
 		delete dialog;
 	}
@@ -673,6 +682,9 @@ Poppler::Page* PDFEngine::reloadDocAndPage()
 		return NULL;
 	delete doc;
 	doc = Poppler::Document::load(QString::fromStdString(this->fileName));
+
+	if (hasPassword)
+		doc->unlock(password.toLatin1(), password.toLatin1());
 
 	doc->setRenderHint(Poppler::Document::Antialiasing, true);
 	doc->setRenderHint(Poppler::Document::TextAntialiasing, true);
