@@ -27,6 +27,10 @@
 
 int main(int argc, char *argv[])
 {
+    //Fix dpi issues
+    QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+    QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
+    
     QApplication a(argc, argv);
     
     //App name for local server and command to tell main program to start a new window
