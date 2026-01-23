@@ -50,6 +50,8 @@ PDFEngine::PDFEngine(std::string fileName, QWidget *parentWindow)
 
 	//Load pdf doc
 	this->fileName = fileName;
+
+	doc = NULL;
 	
 	if (!refreshEngine())
 		return;
@@ -443,6 +445,9 @@ bool PDFEngine::refreshEngine()
 	if (tmp == "")
 		return false;
 
+	if (doc != NULL)
+		delete doc;
+	
 	doc = Poppler::Document::load(QString::fromStdString(this->fileName));
 
 	if (hasPassword)
