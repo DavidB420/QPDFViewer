@@ -319,6 +319,14 @@ void TabScrollArea::resizeEvent(QResizeEvent* event)
 
     //Update scroll area upon resize
     updateScrollArea(&currentPages, false);
+
+    //Update vertical scroll bar
+    int newMax = (this->documentHeight - viewport()->height()) + 40;
+    verticalScrollBar()->setRange(0, newMax);
+    verticalScrollBar()->setPageStep(viewport()->height());
+    if (verticalScrollValue > newMax)
+        verticalScrollValue = newMax;
+    verticalScrollBar()->setValue(verticalScrollValue);
 }
 
 
