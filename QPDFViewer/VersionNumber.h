@@ -18,4 +18,4 @@
  */
 
 #define MAJOR_VERSION 2
-#define MINOR_VERSION 12
+#define MINOR_VERSION 13
