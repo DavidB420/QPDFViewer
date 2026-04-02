@@ -22,6 +22,9 @@
 #include <QCommandLineParser>
 #include <QtNetwork/QLocalServer>
 #include <QtNetwork/QLocalSocket>
+#ifdef Q_OS_WIN
+    #include <windows.h>
+#endif
 #include "Viewer.h"
 #include "VersionNumber.h"
 
@@ -51,6 +54,10 @@ int main(int argc, char *argv[])
             socket.write(startCmd.toLatin1());
             socket.waitForBytesWritten();
         }
+
+        #ifdef Q_OS_WIN
+            AllowSetForegroundWindow(ASFW_ANY);
+        #endif
         return 0;
     }
 
@@ -77,6 +84,9 @@ int main(int argc, char *argv[])
     if (!parser.positionalArguments().isEmpty())
         vwr.openFile({ parser.positionalArguments().first() });
     vwr.show();
+    vwr.setWindowState((vwr.windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
+    vwr.raise();
+    vwr.activateWindow();
 
     //Signal that tells application to start a new app
     QObject::connect(&server, &QLocalServer::newConnection, [&]() {
