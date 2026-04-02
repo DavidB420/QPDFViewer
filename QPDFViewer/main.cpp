@@ -89,6 +89,9 @@ int main(int argc, char *argv[])
             if (filePath != startCmd)
                 newVwr->openFile({ filePath });
             newVwr->show();
+            newVwr->setWindowState((newVwr->windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
+            newVwr->raise();
+            newVwr->activateWindow();
             clientSocket->disconnectFromServer();
             clientSocket->deleteLater();
             });
