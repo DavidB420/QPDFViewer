@@ -17,5 +17,5 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#define MAJOR_VERSION 2
-#define MINOR_VERSION 14
+#define MAJOR_VERSION 3
+#define MINOR_VERSION 0
