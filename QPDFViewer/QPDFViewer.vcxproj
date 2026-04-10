@@ -186,6 +186,7 @@
     <Image Include="assets\forwardsIcon.png" />
     <Image Include="assets\icon.ico" />
     <Image Include="assets\icon.png" />
+    <Image Include="assets\loadingIcon.png" />
     <Image Include="assets\openIcon.png" />
     <Image Include="assets\pageTextIcon.png" />
     <Image Include="assets\printIcon.png" />
