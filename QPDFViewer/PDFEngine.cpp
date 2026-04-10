@@ -37,6 +37,7 @@
 #include "HyperlinkObject.h"
 #include "PasswordBoxDialog.h"
 #include "FindAllWorker.h"
+#include "PageRendererWorker.h"
 
 PDFEngine::PDFEngine(std::string fileName, QWidget *parentWindow)
 {
@@ -361,8 +362,31 @@ QVector<Page*> PDFEngine::getVisiblePages()
 				previousPages.at(m)->getCurrentPoint().x() == 0 && previousPages.at(m)->getCurrentPoint().y() == 0 && previousPages.at(m)->getFirstPoint().x() == 0 && previousPages.at(m)->getFirstPoint().y() == 0 && foundPageNum != getCurrentPage())
 				page = previousPages.at(m);
 		}
-		if (page == NULL)
+		if (page == NULL) {
+			struct PageRenderTask renderTask;
+			renderTask.fileName = QString::fromStdString(this->fileName);
+			renderTask.scale = this->getScaleValue();
+			renderTask.pageNum = this->getCurrentPage();
+			renderTask.hasPassword = hasPassword;
+			renderTask.password = password;
+			renderTask.rotation = this->getCurrentRotation();
+
+			PageRendererWorker* worker = new PageRendererWorker(renderTask);
+			QThread* thread = new QThread(this);
+			struct PageRenderThread renderThreadStruct;
+			renderThreadStruct.renderThread = thread;
+			renderThreadStruct.worker = worker;
+			renderThreadList[this->getCurrentPage()] = renderThreadStruct;
+			worker->moveToThread(thread);
+			//connect(thread, &QThread::started, worker, &PageRendererWorker::run);
+			//connect(worker, &PageRenderWorker::finished, this, &PDFEngine::onPageRendered);
+			//connect(thread, &QThread::finished, worker, &QObject::deleteLater);
+
+			//thread->start();
+
+			//Display default loading image
 			page = returnImage();
+		}
 		if (page == NULL)
 			return QVector<Page*>{};
 		visiblePages.push_back(page);

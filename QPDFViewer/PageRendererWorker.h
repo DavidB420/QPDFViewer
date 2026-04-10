@@ -22,11 +22,12 @@
 
 #include <qobject.h>
 #include <poppler-qt5.h>
+#include "Page.h"
 
 struct PageRenderTask {
     int pageNum;
     int scale;
-    int rotation;
+    Poppler::Page::Rotation rotation;
     QString fileName;
     QString password;
     bool hasPassword;
@@ -37,6 +38,17 @@ class PageRendererWorker: public QObject
     Q_OBJECT
 public:
     PageRendererWorker(PageRenderTask renderTask);
+public slots:
+    void run();
+private:
+    int pageNum, scale, rotation;
+    QString fileName;
+    QString password;
+    bool hasPassword;
+    Poppler::Document* doc;
+    Page* finishedPage;
+signals:
+    void finished(int pageNum, Page* pg);
 };
 
 #endif

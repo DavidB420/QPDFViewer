@@ -21,5 +21,19 @@
 
 PageRendererWorker::PageRendererWorker(PageRenderTask renderTask)
 {
+	pageNum = renderTask.pageNum;
+	scale = renderTask.scale;
+	rotation = renderTask.rotation;
+	fileName = renderTask.fileName;
+	password = renderTask.password;
+	hasPassword = renderTask.hasPassword;
+
+	doc = Poppler::Document::load(fileName);
+
+	finishedPage = NULL;
+}
+
+void PageRendererWorker::run()
+{
 
 }

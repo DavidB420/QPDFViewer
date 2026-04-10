@@ -28,7 +28,12 @@
 #include "Page.h"
 #include "NavigationBar.h"
 #include "FindAllWorker.h"
+#include "PageRendererWorker.h"
 
+struct PageRenderThread {
+	QThread* renderThread;
+	PageRendererWorker* worker;
+};
 class PDFEngine: public QObject
 {
 	Q_OBJECT
@@ -72,6 +77,7 @@ private:
 	void recursivelyFillModel(QVector<Poppler::OutlineItem> currentItem, QStandardItem* rootItem, NavigationBar *navBar);
 	QVector <Page*> previousPages;
 	QVector <int> allPageHeights;
+	QMap <int, struct PageRenderThread> renderThreadList;
 	std::string fileName;
 	FindAllWorker* currentFindAllWorker;
 	QThread* currentFindAllThread;
