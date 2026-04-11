@@ -41,6 +41,7 @@ public:
 	PDFEngine(std::string fileName,QWidget *parentWindow);
 	~PDFEngine();
 	Page* returnImage();
+	Page* returnDefaultImage(int w, int h);
 	int getTotalNumberOfPages();
 	int getCurrentPage();
 	int getScaleValue();
@@ -99,6 +100,7 @@ public slots:
 	void goToPhrase(int page, QRectF rect);
 	void cancelFindAllWorker();
 	void findAllResult(SearchResult result);
+	void onPageRendered(int pageNum, QImage renderedImg);
 };
 
 #endif

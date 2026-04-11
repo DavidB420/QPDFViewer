@@ -21,8 +21,8 @@
 #define PAGERENDERERWORKER_H
 
 #include <qobject.h>
+#include <qwidget.h>
 #include <poppler-qt5.h>
-#include "Page.h"
 
 struct PageRenderTask {
     int pageNum;
@@ -31,6 +31,7 @@ struct PageRenderTask {
     QString fileName;
     QString password;
     bool hasPassword;
+    QRectF selectedRect;
 };
 
 class PageRendererWorker: public QObject
@@ -38,17 +39,20 @@ class PageRendererWorker: public QObject
     Q_OBJECT
 public:
     PageRendererWorker(PageRenderTask renderTask);
+    void cancel();
 public slots:
     void run();
 private:
-    int pageNum, scale, rotation;
+    int pageNum, scale;
+    Poppler::Page::Rotation rotation;
     QString fileName;
     QString password;
-    bool hasPassword;
+    bool hasPassword, cancelled;
     Poppler::Document* doc;
-    Page* finishedPage;
+    QRectF selectedRect;
+    int foundPageNum;
 signals:
-    void finished(int pageNum, Page* pg);
+    void finished(int pageNum, QImage renderedImg);
 };
 
 #endif

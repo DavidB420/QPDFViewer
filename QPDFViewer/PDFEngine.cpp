@@ -136,6 +136,16 @@ Page *PDFEngine::returnImage()
 	return outputLabel;
 }
 
+Page* PDFEngine::returnDefaultImage(int w, int h)
+{
+	QImage img(":/images/assets/loadingIcon.png");
+	
+	Page* loadingPage = new Page(this->parentWindow, this, &img);
+	loadingPage->setFixedSize(w, h);
+
+	return loadingPage;
+}
+
 int PDFEngine::getTotalNumberOfPages()
 {
 	return doc->numPages();
@@ -370,6 +380,7 @@ QVector<Page*> PDFEngine::getVisiblePages()
 			renderTask.hasPassword = hasPassword;
 			renderTask.password = password;
 			renderTask.rotation = this->getCurrentRotation();
+			renderTask.selectedRect = selectedRect;
 
 			PageRendererWorker* worker = new PageRendererWorker(renderTask);
 			QThread* thread = new QThread(this);
@@ -378,14 +389,14 @@ QVector<Page*> PDFEngine::getVisiblePages()
 			renderThreadStruct.worker = worker;
 			renderThreadList[this->getCurrentPage()] = renderThreadStruct;
 			worker->moveToThread(thread);
-			//connect(thread, &QThread::started, worker, &PageRendererWorker::run);
-			//connect(worker, &PageRenderWorker::finished, this, &PDFEngine::onPageRendered);
-			//connect(thread, &QThread::finished, worker, &QObject::deleteLater);
+			connect(thread, &QThread::started, worker, &PageRendererWorker::run);
+			connect(worker, &PageRendererWorker::finished, this, &PDFEngine::onPageRendered);
+			connect(thread, &QThread::finished, worker, &QObject::deleteLater);
 
-			//thread->start();
+			thread->start();
 
 			//Display default loading image
-			page = returnImage();
+			page = returnDefaultImage(100,allPageHeights.at(this->getCurrentPage()-1));
 		}
 		if (page == NULL)
 			return QVector<Page*>{};
@@ -512,6 +523,16 @@ void PDFEngine::cancelFindAllWorker()
 void PDFEngine::findAllResult(SearchResult result)
 {
 	if (!result.done) emit sendFindAllResult(result);
+}
+
+void PDFEngine::onPageRendered(int pageNum, QImage renderedImg)
+{
+	//Clean up thread and worker
+	if (renderThreadList.contains(pageNum)) {
+		renderThreadList[pageNum].renderThread->quit();
+		renderThreadList[pageNum].renderThread->wait();
+		renderThreadList.remove(pageNum);
+	}
 }
 
 void PDFEngine::goToPhrase(int page, QRectF rect)
