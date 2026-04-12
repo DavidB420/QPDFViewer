@@ -48,6 +48,7 @@ public:
 	void paintEvent(QPaintEvent* event);
 	void drawSelection(QRectF rect);
 	void addHyperlink(HyperlinkObject* obj);
+	void loadPixmap(QImage* img);
 private:
 	bool dragging, isDragging;
 	QPixmap pagePixmap;

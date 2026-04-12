@@ -69,8 +69,6 @@ void PageRendererWorker::run()
 			return NULL;
 	}*/
 
-	//addHyperlinksToPage(outputLabel, page, image);
-
 	//If there has been a selection from searching in the past, be sure to show it
 	/*if (selectedRect.x() != 0 && selectedRect.y() != 0 && selectedRect.width() != 0 && selectedRect.height() != 0 && getCurrentPage() == foundPageNum) {
 		QRectF rect(selectedRect.x() * scaleValue / 75, selectedRect.y() * scaleValue / 75, selectedRect.width() * scaleValue / 75, selectedRect.height() * scaleValue / 75);

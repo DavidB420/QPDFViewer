@@ -527,6 +527,16 @@ void PDFEngine::findAllResult(SearchResult result)
 
 void PDFEngine::onPageRendered(int pageNum, QImage renderedImg)
 {
+	for (int i = 0; i < previousPages.length(); i++) {
+		if (previousPages.at(i)->getPageNumber() == pageNum) {
+			previousPages.at(i)->loadPixmap(&renderedImg);
+			previousPages.at(i)->resize(renderedImg.width(), renderedImg.height());
+			Poppler::Page* page = doc->page(pageNum - 1);
+			addHyperlinksToPage(previousPages.at(i), page, renderedImg);
+			break;
+		}
+	}
+	
 	//Clean up thread and worker
 	if (renderThreadList.contains(pageNum)) {
 		renderThreadList[pageNum].renderThread->quit();
@@ -675,7 +685,7 @@ void PDFEngine::addHyperlinksToPage(Page* page, Poppler::Page* popplerPage, QIma
 				height = link->linkArea().width() * image.height();
 				break;
 			}
-			outputLabel->addHyperlink(new HyperlinkObject(outputLabel, QRectF(x, y, width, height), link->url()));
+			page->addHyperlink(new HyperlinkObject(page, QRectF(x, y, width, height), link->url()));
 		}
 	}
 }
