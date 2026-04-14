@@ -287,7 +287,9 @@ void PDFEngine::displayTextBox(QRectF dim)
 void PDFEngine::displayAllText()
 {
 	//Display entire text contents of a page
-	QRectF rect(0, 0, outputLabel->width(), outputLabel->height());
+	Poppler::Page* page = doc->page(getCurrentPage() - 1);
+	QRectF rect(0, 0, page->pageSizeF().width(), page->pageSizeF().height());
+	delete page;
 	displayTextBox(rect);
 }
 
@@ -373,6 +375,8 @@ QVector<Page*> PDFEngine::getVisiblePages()
 				page = previousPages.at(m);
 		}
 		if (page == NULL) {
+			if (doc->page(getCurrentPage() - 1) == NULL)
+				reloadDocAndPage();
 			struct PageRenderTask renderTask;
 			renderTask.fileName = QString::fromStdString(this->fileName);
 			renderTask.scale = this->getScaleValue();
@@ -531,8 +535,16 @@ void PDFEngine::onPageRendered(int pageNum, QImage renderedImg)
 		if (previousPages.at(i)->getPageNumber() == pageNum) {
 			previousPages.at(i)->loadPixmap(&renderedImg);
 			previousPages.at(i)->resize(renderedImg.width(), renderedImg.height());
+			//Add hyperlinks to page
 			Poppler::Page* page = doc->page(pageNum - 1);
 			addHyperlinksToPage(previousPages.at(i), page, renderedImg);
+			//If there has been a selection from searching in the past, be sure to show it
+			if (selectedRect.x() != 0 && selectedRect.y() != 0 && selectedRect.width() != 0 && selectedRect.height() != 0 && pageNum == foundPageNum) {
+				QRectF rect(selectedRect.x() * scaleValue / 75, selectedRect.y() * scaleValue / 75, selectedRect.width() * scaleValue / 75, selectedRect.height() * scaleValue / 75);
+				previousPages.at(i)->drawSelection(rect);
+				selectedRect = QRectF(0, 0, 0, 0);
+				foundPageNum = -1;
+			}
 			break;
 		}
 	}

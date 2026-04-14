@@ -26,6 +26,7 @@
 
 struct PageRenderTask {
     int pageNum;
+    int foundPageNum;
     int scale;
     Poppler::Page::Rotation rotation;
     QString fileName;
@@ -51,8 +52,11 @@ private:
     Poppler::Document* doc;
     QRectF selectedRect;
     int foundPageNum;
+    volatile int reloadResult;
+    void loadDocument();
 signals:
     void finished(int pageNum, QImage renderedImg);
+    void needReloadCheck(PageRendererWorker *worker);
 };
 
 #endif
