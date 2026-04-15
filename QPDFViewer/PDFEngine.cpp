@@ -545,6 +545,7 @@ void PDFEngine::onPageRendered(int pageNum, QImage renderedImg)
 				selectedRect = QRectF(0, 0, 0, 0);
 				foundPageNum = -1;
 			}
+			emit attentionNeeded();
 			break;
 		}
 	}
