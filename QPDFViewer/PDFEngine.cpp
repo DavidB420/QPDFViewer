@@ -85,6 +85,10 @@ PDFEngine::PDFEngine(std::string fileName, QWidget *parentWindow)
 
 PDFEngine::~PDFEngine()
 {
+	QList<int> keys = renderThreadList.keys();
+	for (int i = 0; i < keys.length(); i++)
+		killThread(renderThreadList[keys.at(i)]);
+
 	delete doc;
 }
 
@@ -136,12 +140,17 @@ Page *PDFEngine::returnImage()
 	return outputLabel;
 }
 
-Page* PDFEngine::returnDefaultImage(int w, int h)
+Page* PDFEngine::returnDefaultImage(int h)
 {
 	QImage img(":/images/assets/loadingIcon.png");
 	
+	for (int i = 0; i < previousPages.length(); i++) {
+		if (!rerender && previousPages.at(i)->getPageNumber() == getCurrentPage() && previousPages.at(i)->getParent() == this && previousPages.at(i)->getScale() == scaleValue && previousPages.at(i)->getRotation() == pdfRotation)
+			img = previousPages.at(i)->getPagePixmap().toImage();
+	}
+	
 	Page* loadingPage = new Page(this->parentWindow, this, &img);
-	loadingPage->setFixedSize(w, h);
+	loadingPage->setFixedSize(img.width(), h);
 
 	return loadingPage;
 }
@@ -375,8 +384,11 @@ QVector<Page*> PDFEngine::getVisiblePages()
 				page = previousPages.at(m);
 		}
 		if (page == NULL) {
-			if (doc->page(getCurrentPage() - 1) == NULL)
+			if (doc->page(this->getCurrentPage()-1) == NULL)
 				reloadDocAndPage();
+			//Cancel any stale workers for pages no longer visible
+			if (renderThreadList.keys().contains(this->getCurrentPage()))
+				killThread(renderThreadList[this->getCurrentPage()]);
 			struct PageRenderTask renderTask;
 			renderTask.fileName = QString::fromStdString(this->fileName);
 			renderTask.scale = this->getScaleValue();
@@ -400,7 +412,7 @@ QVector<Page*> PDFEngine::getVisiblePages()
 			thread->start();
 
 			//Display default loading image
-			page = returnDefaultImage(100,allPageHeights.at(this->getCurrentPage()-1));
+			page = returnDefaultImage(allPageHeights.at(this->getCurrentPage() - 1));
 		}
 		if (page == NULL)
 			return QVector<Page*>{};
@@ -531,6 +543,9 @@ void PDFEngine::findAllResult(SearchResult result)
 
 void PDFEngine::onPageRendered(int pageNum, QImage renderedImg)
 {
+	if (doc == NULL)
+		return;
+	
 	for (int i = 0; i < previousPages.length(); i++) {
 		if (previousPages.at(i)->getPageNumber() == pageNum) {
 			previousPages.at(i)->loadPixmap(&renderedImg);
@@ -545,15 +560,14 @@ void PDFEngine::onPageRendered(int pageNum, QImage renderedImg)
 				selectedRect = QRectF(0, 0, 0, 0);
 				foundPageNum = -1;
 			}
-			emit attentionNeeded();
+			emit pageFinished();
 			break;
 		}
 	}
 	
 	//Clean up thread and worker
 	if (renderThreadList.contains(pageNum)) {
-		renderThreadList[pageNum].renderThread->quit();
-		renderThreadList[pageNum].renderThread->wait();
+		killThread(renderThreadList[pageNum]);
 		renderThreadList.remove(pageNum);
 	}
 }
@@ -701,6 +715,14 @@ void PDFEngine::addHyperlinksToPage(Page* page, Poppler::Page* popplerPage, QIma
 			page->addHyperlink(new HyperlinkObject(page, QRectF(x, y, width, height), link->url()));
 		}
 	}
+}
+
+void PDFEngine::killThread(PageRenderThread thread)
+{
+	thread.worker->cancel();
+	disconnect(thread.worker, &PageRendererWorker::finished, this, &PDFEngine::onPageRendered);
+	thread.renderThread->quit();
+	thread.renderThread->wait();
 }
 
 void PDFEngine::unlockDocument()

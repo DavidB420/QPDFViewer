@@ -234,6 +234,7 @@ void Viewer::openFile(QStringList fileNames)
 					delete tmp;
 				connect(tabItems.at(currentTab)->getEngine(), &PDFEngine::pageChanged, this, &Viewer::updatePageNumber);
 				connect(tabItems.at(currentTab)->getEngine(), &PDFEngine::attentionNeeded, this, &Viewer::giveTabAttention);
+				connect(tabItems.at(currentTab)->getEngine(), &PDFEngine::pageFinished, tabItems.at(currentTab)->getScrollArea(), &TabScrollArea::refreshScrollArea);
 				tabItems.at(currentTab)->setFilePath(fileNames.at(i));
 				tabItems.at(currentTab)->updateScrollArea();
 				tWidget->setTabText(currentTab, QString::fromStdString(tabItems.at(currentTab)->getFileName()));

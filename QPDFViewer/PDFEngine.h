@@ -41,7 +41,7 @@ public:
 	PDFEngine(std::string fileName,QWidget *parentWindow);
 	~PDFEngine();
 	Page* returnImage();
-	Page* returnDefaultImage(int w, int h);
+	Page* returnDefaultImage(int h);
 	int getTotalNumberOfPages();
 	int getCurrentPage();
 	int getScaleValue();
@@ -88,6 +88,7 @@ private:
 	void updateHeightValues(bool total);
 	bool documentSearch(Poppler::Page *page, int pageNum, std::string phrase, QRectF* foundRect, Poppler::Page::SearchDirection direction, Poppler::Page::Rotation rotation);
 	void addHyperlinksToPage(Page* page, Poppler::Page* popplerPage, QImage image);
+	void killThread(PageRenderThread thread);
 	void unlockDocument();
 	void failedToLoad();
 	std::string checkFileAvailable(std::string fileName);
@@ -96,6 +97,7 @@ signals:
 	void pageChanged();
 	void sendFindAllResult(SearchResult result);
 	void attentionNeeded();
+	void pageFinished();
 public slots:
 	void goToPhrase(int page, QRectF rect);
 	void cancelFindAllWorker();
