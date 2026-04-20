@@ -18,6 +18,7 @@
  */
 
 #include "PageRendererWorker.h"
+#include "PDFEngine.h"
 #include <poppler-qt5.h>
 
 PageRendererWorker::PageRendererWorker(PageRenderTask renderTask)
@@ -30,8 +31,6 @@ PageRendererWorker::PageRendererWorker(PageRenderTask renderTask)
 	hasPassword = renderTask.hasPassword;
 	selectedRect = renderTask.selectedRect;
 
-	loadDocument();
-
 	cancelled = false;
 	foundPageNum = 0;
 	reloadResult = 0;
@@ -39,42 +38,21 @@ PageRendererWorker::PageRendererWorker(PageRenderTask renderTask)
 
 void PageRendererWorker::cancel() { cancelled = true; }
 
-void PageRendererWorker::loadDocument()
-{
-	doc = Poppler::Document::load(fileName);
-	
-	if (hasPassword)
-		doc->unlock(password.toLatin1(), password.toLatin1());
-	
-	doc->setRenderHint(Poppler::Document::Antialiasing, true);
-	doc->setRenderHint(Poppler::Document::TextAntialiasing, true);
-}
-
 void PageRendererWorker::run()
 {
-	//Create poppler image based on current page, rotation and scale values
-	Poppler::Page* page = doc->page(pageNum - 1);
-
-	//Reload if page is unavailable
-	if (page == NULL) {
-		emit finished(-1, QImage());
-		return;
-	}
-
-	//Convert the poppler into QImage
-	QImage image = page->renderToImage((float)72 * scale / 75, (float)72 * scale / 75,
-		-1, -1, -1, -1, rotation);
-
-	//Reload page if image is null
-	if (image.isNull()) {
-		emit finished(-1, QImage());
-		return;
-	}
-
-	//Delete poppler page and documentr
-	delete page;
-	delete doc;
+	QImage image = PDFEngine::returnImage(fileName, password, hasPassword, pageNum, scale, rotation, &PageRendererWorker::check1Static, &PageRendererWorker::check1Static, this);
 
 	if (!cancelled)
 		emit finished(pageNum, image);
+}
+
+void PageRendererWorker::check1() 
+{
+	emit finished(-1, QImage());
+	return;
+}
+
+void PageRendererWorker::check1Static(void* ctx) {
+	auto* self = static_cast<PageRendererWorker*>(ctx);
+	self->check1(); 
 }

@@ -92,52 +92,36 @@ PDFEngine::~PDFEngine()
 	delete doc;
 }
 
-Page *PDFEngine::returnImage()
+QImage PDFEngine::returnImage(QString fileName, QString password, bool hasPassword, int pageNum, int scaleValue, Poppler::Page::Rotation pdfRotation, void (*check1)(void*), void (*check2)(void*), void* ctx)
 {
-	//Create poppler image based on current page, rotation and scale values
-	Poppler::Page* page = doc->page(currentPage-1);
+	Poppler::Document* doc = Poppler::Document::load(fileName);
+
+	if (hasPassword)
+		doc->unlock(password.toLatin1(), password.toLatin1());
 
 	doc->setRenderHint(Poppler::Document::Antialiasing, true);
 	doc->setRenderHint(Poppler::Document::TextAntialiasing, true);
 
+	//Create poppler image based on current page, rotation and scale values
+	Poppler::Page* page = doc->page(pageNum-1);
+
 	//Reload if page is unavailable
-	if (page == NULL) {
-		page = reloadDocAndPage();
-		if (page == NULL)
-			return NULL;
-	}
+	if (check1 != NULL && page == NULL)
+		check1(ctx);
 
 	//Convert the poppler into QImage
 	QImage image = page->renderToImage((float)72 * scaleValue / 75, (float)72 * scaleValue / 75,
 		-1, -1, -1, -1, pdfRotation);
 
 	//Reload page if image is null
-	if (image.isNull()) {
-		page = reloadDocAndPage();
-		image = page->renderToImage((float)72 * scaleValue / 75, (float)72 * scaleValue / 75,
-			-1, -1, -1, -1, pdfRotation);
-		if (image.isNull())
-			return NULL;
-	}
-
-	//Create page object based on QImage
-	outputLabel = new Page(this->parentWindow, this, &image);
-	outputLabel->resize(image.width(), image.height());
-
-	addHyperlinksToPage(outputLabel, page, image);
-	
-	//If there has been a selection from searching in the past, be sure to show it
-	if (selectedRect.x() != 0 && selectedRect.y() != 0 && selectedRect.width() != 0 && selectedRect.height() != 0 && getCurrentPage() == foundPageNum) {
-		QRectF rect(selectedRect.x() * scaleValue / 75, selectedRect.y() * scaleValue / 75, selectedRect.width() * scaleValue / 75, selectedRect.height() * scaleValue / 75);
-		outputLabel->drawSelection(rect);
-		selectedRect = QRectF(0, 0, 0, 0);
-		foundPageNum = -1;
-	}
+	if (check2 != NULL && image.isNull())
+		check2(ctx);
 
 	//Delete poppler page
 	delete page;
+	delete doc;
 
-	return outputLabel;
+	return image;
 }
 
 Page* PDFEngine::returnDefaultImage(int h)
@@ -153,6 +137,16 @@ Page* PDFEngine::returnDefaultImage(int h)
 	loadingPage->setFixedSize(img.width(), h);
 
 	return loadingPage;
+}
+
+QString PDFEngine::getPassword()
+{
+	return password;
+}
+
+bool PDFEngine::getHasPassword()
+{
+	return hasPassword;
 }
 
 int PDFEngine::getTotalNumberOfPages()

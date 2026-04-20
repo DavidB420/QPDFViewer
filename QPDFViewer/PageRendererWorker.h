@@ -53,7 +53,8 @@ private:
     QRectF selectedRect;
     int foundPageNum;
     volatile int reloadResult;
-    void loadDocument();
+    void check1();
+    static void check1Static(void *ctx);
 signals:
     void finished(int pageNum, QImage renderedImg);
     void needReloadCheck(PageRendererWorker *worker);

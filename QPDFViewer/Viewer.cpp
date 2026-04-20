@@ -753,14 +753,19 @@ void Viewer::getPrintDialog()
 						for (int j = min; j <= max; j++) {
 							tabItems.at(currentTab)->getEngine()->setCurrentPage(j);
 							tabItems.at(currentTab)->updateScrollArea(true);
-							Page* printPage = tabItems.at(currentTab)->getEngine()->returnImage();
-							QPixmap pMap = printPage->getPagePixmap();
-							delete printPage;
-							QSize size = pMap.size();
-							size.scale(rect.size(), Qt::KeepAspectRatio);
-							painter.setViewport(rect.x(), rect.y(), size.width(), size.height());
-							painter.setWindow(pMap.rect());
-							painter.drawPixmap(0, 0, pMap);
+							if (tabItems.at(currentTab)->getEngine()->checkFileAvailable(tabItems.at(currentTab)->getFilePath().toStdString()) != "" && tabItems.at(currentTab)->getEngine()->reloadDocAndPage()) {
+								QImage printImg = PDFEngine::returnImage(tabItems.at(currentTab)->getFilePath(), tabItems.at(currentTab)->getEngine()->getPassword(), tabItems.at(currentTab)->getEngine()->getHasPassword(), tabItems.at(currentTab)->getEngine()->getCurrentPage(), tabItems.at(currentTab)->getEngine()->getScaleValue(), tabItems.at(currentTab)->getEngine()->getCurrentRotation(), NULL, NULL, NULL);
+								QPixmap pMap = QPixmap::fromImage(printImg);
+								QSize size = pMap.size();
+								size.scale(rect.size(), Qt::KeepAspectRatio);
+								painter.setViewport(rect.x(), rect.y(), size.width(), size.height());
+								painter.setWindow(pMap.rect());
+								painter.drawPixmap(0, 0, pMap);
+							}
+							else {
+								delete pDialog;
+								return;
+							}
 
 							if (j < max || numOfTuples < minMaxList.size() - 1) //create new page if we are on a new page or a new section
 								printer.newPage();
