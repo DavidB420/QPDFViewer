@@ -520,17 +520,19 @@ void Viewer::showNavBar()
 {
 	//Show nav bar if the action is checked
 	if (navBarShowAct->isChecked()) {
-		if (navBar != NULL) {
-			delete navBar;
-			navBar = NULL;
-		}
-		navBar = new NavigationBar(this);
+		if (navBar == NULL) {
+			navBar = new NavigationBar(this);
 
-		//Update splitter with nav bar
-		hSplitter->insertWidget(0,navBar);
-		hSplitter->setSizes({ 200, INT_MAX-500 });
-		for (int i = 0; i < hSplitter->count(); i++)
-			hSplitter->setCollapsible(i, false);
+			//Update splitter with nav bar
+			hSplitter->insertWidget(0, navBar);
+			hSplitter->setSizes({ 200, INT_MAX - 500 });
+			for (int i = 0; i < hSplitter->count(); i++)
+				hSplitter->setCollapsible(i, false);
+			connect(navBar, &NavigationBar::itemClicked, this, &Viewer::updatePageNavBar);
+		}
+		
+		navBar->setVisible(true);
+		navBar->clearBar();
 
 		tabItems.at(currentTab)->getEngine()->addNavOutline(navBar);
 
@@ -539,7 +541,6 @@ void Viewer::showNavBar()
 			tabItems.at(currentTab)->setSplitterData(hSplitter->saveState());
 		hSplitter->restoreState(tabItems.at(currentTab)->getSplitterData());
 
-		connect(navBar, &NavigationBar::itemClicked, this, &Viewer::updatePageNavBar);
 		tabItems.at(currentTab)->setUseNavBar(true);
 		
 		//If the splitter is moved save the new state
@@ -550,8 +551,8 @@ void Viewer::showNavBar()
 			});
 	}
 	else {
-		delete navBar;
-		navBar = NULL;
+		if (navBar != NULL)
+			navBar->setVisible(false);
 		tabItems.at(currentTab)->setUseNavBar(false);
 	}
 }
@@ -593,7 +594,7 @@ void Viewer::onTabClicked(int index)
 	}
 
 	//Update current tab if we are not pressing the the plus buttton
-	if (index != tWidget->count() - 1)
+	if (index != tWidget->count() - 1) 
 		currentTab = index;
 
 	//Change window title depending on if a pdf has been loaded or not
@@ -608,7 +609,7 @@ void Viewer::onTabClicked(int index)
 	else
 		navBarShowAct->setChecked(false);
 	showNavBar();
-	
+
 	//Update some of the controls depending on if a pdf has been loaded or not
 	if (tabItems.at(currentTab)->getEngine() != NULL) {
 		pageNumber->setText(QString::number(tabItems.at(currentTab)->getEngine()->getCurrentPage()));

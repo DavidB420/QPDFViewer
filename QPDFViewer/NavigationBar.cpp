@@ -53,6 +53,11 @@ QTreeView* NavigationBar::returnTree()
 	return navTree;
 }
 
+void NavigationBar::clearBar()
+{
+	navItems.clear();
+}
+
 int NavigationBar::returnNumOfItems()
 {
 	return navItems.size();
