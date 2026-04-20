@@ -19,6 +19,7 @@
 
 #include "TabScrollArea.h"
 #include <QWheelEvent>
+#include <algorithm>
 
 TabScrollArea::TabScrollArea(QWidget* parent)
 {
@@ -325,11 +326,10 @@ void TabScrollArea::refreshScrollArea()
     updateScrollArea(&currentPages, false);
 
     //Update vertical scroll bar
-    int newMax = (this->documentHeight - viewport()->height()) + 40;
+    long newMax = std::max((long)0, (this->documentHeight - viewport()->height()) + 40);
     verticalScrollBar()->setRange(0, newMax);
     verticalScrollBar()->setPageStep(viewport()->height());
-    if (verticalScrollValue > newMax)
-        verticalScrollValue = newMax;
+    verticalScrollValue = std::min(verticalScrollValue, newMax);
     verticalScrollBar()->setValue(verticalScrollValue);
 }
 
