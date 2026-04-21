@@ -82,6 +82,7 @@ private:
 	void recursivelyFillModel(QVector<Poppler::OutlineItem> currentItem, QStandardItem* rootItem, NavigationBar *navBar);
 	QVector <Page*> previousPages;
 	QVector <int> allPageHeights;
+	QVector <qint64> renderTimes;
 	QMap <int, struct PageRenderThread> renderThreadList;
 	std::string fileName;
 	FindAllWorker* currentFindAllWorker;
@@ -89,6 +90,8 @@ private:
 	QString password;
 	bool hasPassword;
 	bool rerender;
+	bool useMultithreading;
+	void updateRenderTimeAvgs(qint64 elapsed);
 	void updateHeightValues(bool total);
 	bool documentSearch(Poppler::Page *page, int pageNum, std::string phrase, QRectF* foundRect, Poppler::Page::SearchDirection direction, Poppler::Page::Rotation rotation);
 	void addHyperlinksToPage(Page* page, Poppler::Page* popplerPage, QImage image);

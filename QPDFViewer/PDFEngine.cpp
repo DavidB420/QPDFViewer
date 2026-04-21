@@ -80,6 +80,8 @@ PDFEngine::PDFEngine(std::string fileName, QWidget *parentWindow)
 
 	rerender = false;
 
+	useMultithreading = false;
+
 	qRegisterMetaType<SearchResult>("SearchResult");
 }
 
@@ -299,18 +301,20 @@ void PDFEngine::displayAllText()
 void PDFEngine::addNavOutline(NavigationBar* navBar)
 {
 	//Add toc to navigation bar if it exists
-	QVector<Poppler::OutlineItem> outline = doc->outline();
+	try{
+		QVector<Poppler::OutlineItem> outline = doc->outline();
 
-	if (!outline.isEmpty()) {
-		QStandardItemModel* model = new QStandardItemModel;
-		
-		//QDomElement currentItem  = docToc->documentElement();
-		QStandardItem* rootItem = model->invisibleRootItem();
+		if (!outline.isEmpty()) {
+			QStandardItemModel* model = new QStandardItemModel;
 
-		recursivelyFillModel(outline, rootItem, navBar);
+			//QDomElement currentItem  = docToc->documentElement();
+			QStandardItem* rootItem = model->invisibleRootItem();
 
-		navBar->returnTree()->setModel(model);
-	}
+			recursivelyFillModel(outline, rootItem, navBar);
+
+			navBar->returnTree()->setModel(model);
+		}
+	} catch (const std::invalid_argument&) { return; }
 }
 
 void PDFEngine::rotatePDF(bool plus90)
@@ -378,35 +382,44 @@ QVector<Page*> PDFEngine::getVisiblePages()
 				page = previousPages.at(m);
 		}
 		if (page == NULL) {
-			if (doc->page(this->getCurrentPage()-1) == NULL)
-				reloadDocAndPage();
-			//Cancel any stale workers for pages no longer visible
-			if (renderThreadList.keys().contains(this->getCurrentPage()))
-				killThread(renderThreadList[this->getCurrentPage()]);
-			struct PageRenderTask renderTask;
-			renderTask.fileName = QString::fromStdString(this->fileName);
-			renderTask.scale = this->getScaleValue();
-			renderTask.pageNum = this->getCurrentPage();
-			renderTask.hasPassword = hasPassword;
-			renderTask.password = password;
-			renderTask.rotation = this->getCurrentRotation();
-			renderTask.selectedRect = selectedRect;
+			if (useMultithreading) {
+				if (doc->page(this->getCurrentPage() - 1) == NULL)
+					reloadDocAndPage();
+				//Cancel any stale workers for pages no longer visible
+				if (renderThreadList.keys().contains(this->getCurrentPage()))
+					killThread(renderThreadList[this->getCurrentPage()]);
+				struct PageRenderTask renderTask;
+				renderTask.fileName = QString::fromStdString(this->fileName);
+				renderTask.scale = this->getScaleValue();
+				renderTask.pageNum = this->getCurrentPage();
+				renderTask.hasPassword = hasPassword;
+				renderTask.password = password;
+				renderTask.rotation = this->getCurrentRotation();
+				renderTask.selectedRect = selectedRect;
 
-			PageRendererWorker* worker = new PageRendererWorker(renderTask);
-			QThread* thread = new QThread(this);
-			struct PageRenderThread renderThreadStruct;
-			renderThreadStruct.renderThread = thread;
-			renderThreadStruct.worker = worker;
-			renderThreadList[this->getCurrentPage()] = renderThreadStruct;
-			worker->moveToThread(thread);
-			connect(thread, &QThread::started, worker, &PageRendererWorker::run);
-			connect(worker, &PageRendererWorker::finished, this, &PDFEngine::onPageRendered);
-			connect(thread, &QThread::finished, worker, &QObject::deleteLater);
+				PageRendererWorker* worker = new PageRendererWorker(renderTask);
+				QThread* thread = new QThread(this);
+				struct PageRenderThread renderThreadStruct;
+				renderThreadStruct.renderThread = thread;
+				renderThreadStruct.worker = worker;
+				renderThreadList[this->getCurrentPage()] = renderThreadStruct;
+				worker->moveToThread(thread);
+				connect(thread, &QThread::started, worker, &PageRendererWorker::run);
+				connect(worker, &PageRendererWorker::finished, this, &PDFEngine::onPageRendered);
+				connect(thread, &QThread::finished, worker, &QObject::deleteLater);
 
-			thread->start();
+				thread->start();
 
-			//Display default loading image
-			page = returnDefaultImage(allPageHeights.at(this->getCurrentPage() - 1));
+				//Display default loading image
+				page = returnDefaultImage(allPageHeights.at(this->getCurrentPage() - 1));
+			}
+			else {
+				QElapsedTimer timer;
+				timer.start();
+				QImage img = PDFEngine::returnImage(QString::fromStdString(fileName), password, hasPassword, currentPage, scaleValue, pdfRotation, NULL, NULL, NULL);
+				page = new Page(this->parentWindow, this, &img);
+				updateRenderTimeAvgs(timer.elapsed());
+			}
 		}
 		if (page == NULL)
 			return QVector<Page*>{};
@@ -620,6 +633,21 @@ void PDFEngine::recursivelyFillModel(QVector<Poppler::OutlineItem> currentItem, 
 		if (newItem.hasChildren())
 			recursivelyFillModel(newItem.children(), newModelItem, navBar);
 	}
+}
+
+void PDFEngine::updateRenderTimeAvgs(qint64 elapsed)
+{
+	renderTimes.push_back(elapsed);
+
+	if (renderTimes.size() > 5)
+		renderTimes.removeFirst();
+
+	qint64 avg = 0;
+	for (qint64 sample : renderTimes)
+		avg += sample;
+	avg /= renderTimes.size();
+
+	useMultithreading = avg > 100;
 }
 
 void PDFEngine::updateHeightValues(bool total)

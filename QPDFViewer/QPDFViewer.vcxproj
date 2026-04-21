@@ -80,7 +80,7 @@
       <AdditionalLibraryDirectories>$(POPPLER_ROOT);$(POPPLER_ROOT)\qt5\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /Y /D "$(POPPLER_ROOT)Debug\poppler.dll" "$(TargetDir)"
+      <Command>xcopy /Y /D "$(POPPLER_ROOT)build\Debug\poppler.dll" "$(TargetDir)"
 
 </Command>
     </PostBuildEvent>
@@ -95,7 +95,7 @@
       <PreprocessorDefinitions>QT_NO_DEPRECATED_WARNINGS;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <PostBuildEvent>
-      <Command>xcopy /Y /D "$(POPPLER_ROOT)Release\poppler.dll" "$(TargetDir)"
+      <Command>xcopy /Y /D "$(POPPLER_ROOT)build\Release\poppler.dll" "$(TargetDir)"
 
 </Command>
     </PostBuildEvent>
