@@ -368,6 +368,7 @@ QVector<Page*> PDFEngine::getVisiblePages()
 	int k = getCurrentPage(); //stores current page for restore later
 	int j = k <= 3 ? 1 : k - 2; //Page counter, starts two pages before the current page
 	int l = 0; //stores number of pages allowed after the max height limit
+	int n = j;
 	
 	//Run until offset limit is reached or we hit the end of the document
 	while ((l <= 4) && j <= getTotalNumberOfPages()) {
@@ -383,33 +384,45 @@ QVector<Page*> PDFEngine::getVisiblePages()
 		}
 		if (page == NULL) {
 			if (useMultithreading) {
-				if (doc->page(this->getCurrentPage() - 1) == NULL)
-					reloadDocAndPage();
-				//Cancel any stale workers for pages no longer visible
-				if (renderThreadList.keys().contains(this->getCurrentPage()))
-					killThread(renderThreadList[this->getCurrentPage()]);
-				struct PageRenderTask renderTask;
-				renderTask.fileName = QString::fromStdString(this->fileName);
-				renderTask.scale = this->getScaleValue();
-				renderTask.pageNum = this->getCurrentPage();
-				renderTask.hasPassword = hasPassword;
-				renderTask.password = password;
-				renderTask.rotation = this->getCurrentRotation();
-				renderTask.selectedRect = selectedRect;
+				if (!renderThreadList.keys().contains(this->getCurrentPage())) {
+					if (doc->page(this->getCurrentPage() - 1) == NULL)
+						reloadDocAndPage();
+					QSet<int> needed;
+					for (int p = n; p <= getTotalNumberOfPages(); ++p) needed.insert(p);
+					//Cancel any stale workers for pages no longer visible
+					const QList<int> activeKeys = renderThreadList.keys();
+					for (int key : activeKeys) {
+						if (!needed.contains(key)) {
+							killThread(renderThreadList[key]);
+							renderThreadList.remove(key);
+						}
+					}
+					struct PageRenderTask renderTask;
+					renderTask.fileName = QString::fromStdString(this->fileName);
+					renderTask.scale = this->getScaleValue();
+					renderTask.pageNum = this->getCurrentPage();
+					renderTask.hasPassword = hasPassword;
+					renderTask.password = password;
+					renderTask.rotation = this->getCurrentRotation();
+					renderTask.selectedRect = selectedRect;
 
-				PageRendererWorker* worker = new PageRendererWorker(renderTask);
-				QThread* thread = new QThread(this);
-				struct PageRenderThread renderThreadStruct;
-				renderThreadStruct.renderThread = thread;
-				renderThreadStruct.worker = worker;
-				renderThreadList[this->getCurrentPage()] = renderThreadStruct;
-				worker->moveToThread(thread);
-				connect(thread, &QThread::started, worker, &PageRendererWorker::run);
-				connect(worker, &PageRendererWorker::finished, this, &PDFEngine::onPageRendered);
-				connect(thread, &QThread::finished, worker, &QObject::deleteLater);
+					PageRendererWorker* worker = new PageRendererWorker(renderTask);
+					QThread* thread = new QThread(this);
+					if (this->getCurrentPage() == k)
+						thread->setPriority(QThread::HighestPriority);
+					else
+						thread->setPriority(QThread::HighPriority);
+					struct PageRenderThread renderThreadStruct;
+					renderThreadStruct.renderThread = thread;
+					renderThreadStruct.worker = worker;
+					renderThreadList[this->getCurrentPage()] = renderThreadStruct;
+					worker->moveToThread(thread);
+					connect(thread, &QThread::started, worker, &PageRendererWorker::run);
+					connect(worker, &PageRendererWorker::finished, this, &PDFEngine::onPageRendered);
+					connect(thread, &QThread::finished, worker, &QObject::deleteLater);
 
-				thread->start();
-
+					thread->start();
+				}
 				//Display default loading image
 				page = returnDefaultImage(allPageHeights.at(this->getCurrentPage() - 1));
 			}
@@ -647,7 +660,7 @@ void PDFEngine::updateRenderTimeAvgs(qint64 elapsed)
 		avg += sample;
 	avg /= renderTimes.size();
 
-	useMultithreading = avg > 100;
+	useMultithreading = avg > 400;
 }
 
 void PDFEngine::updateHeightValues(bool total)
