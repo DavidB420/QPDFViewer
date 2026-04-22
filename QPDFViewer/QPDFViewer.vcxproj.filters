@@ -192,5 +192,8 @@
     <Image Include="assets\loadingIcon.png">
       <Filter>Resource Files\assets</Filter>
     </Image>
+    <Image Include="assets\optionIcon.png">
+      <Filter>Resource Files\assets</Filter>
+    </Image>
   </ItemGroup>
 </Project>

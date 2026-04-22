@@ -57,8 +57,8 @@ Viewer::Viewer(QWidget* parent)
 	pageMenu = mBar->addMenu(tr("&Page"));
 	QMenu* navMenu = new QMenu(this);
 	navMenu = mBar->addMenu(tr("&Navigation"));
-	QMenu* aboutmenu = new QMenu(this);
-	aboutmenu = mBar->addMenu(tr("&About"));
+	QMenu* helpmenu = new QMenu(this);
+	helpmenu = mBar->addMenu(tr("&Help"));
 	QAction* openAct = new QAction(tr("&Open..."), this);
 	connect(openAct, &QAction::triggered, this, &Viewer::openFileDialog);
 	openAct->setIcon(QIcon(":/images/assets/openIcon.png"));
@@ -104,8 +104,12 @@ Viewer::Viewer(QWidget* parent)
 	findAllBidirect->setIcon(QIcon(":/images/assets/bidirectIcon.png"));
 	connect(findAllBidirect, &QAction::triggered, this, &Viewer::findAllSearch);
 	navMenu->addAction(findAllBidirect);
+	QAction* optionAct = new QAction(tr("&Options"), this);
+	helpmenu->addAction(optionAct);
+	connect(optionAct, &QAction::triggered, this, &Viewer::aboutApp);
+	optionAct->setIcon(QIcon(":/images/assets/optionIcon.png"));
 	QAction* aboutAct = new QAction(tr("&About"), this);
-	aboutmenu->addAction(aboutAct);
+	helpmenu->addAction(aboutAct);
 	connect(aboutAct, &QAction::triggered, this, &Viewer::aboutApp);
 	aboutAct->setIcon(QIcon(":/images/assets/aboutIcon.png"));
 
