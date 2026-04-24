@@ -397,34 +397,38 @@ QVector<Page*> PDFEngine::getVisiblePages()
 							renderThreadList.remove(key);
 						}
 					}
-					struct PageRenderTask renderTask;
-					renderTask.fileName = QString::fromStdString(this->fileName);
-					renderTask.scale = this->getScaleValue();
-					renderTask.pageNum = this->getCurrentPage();
-					renderTask.hasPassword = hasPassword;
-					renderTask.password = password;
-					renderTask.rotation = this->getCurrentRotation();
-					renderTask.selectedRect = selectedRect;
+					if (pageCache.contains(getCurrentPage()) && pageCache[getCurrentPage()]->pdfRotation == this->getCurrentRotation() && pageCache[getCurrentPage()]->scaleValue == this->getScaleValue())
+						page = new Page(this->parentWindow, this, &pageCache[getCurrentPage()]->image);
+					else {
+						struct PageRenderTask renderTask;
+						renderTask.fileName = QString::fromStdString(this->fileName);
+						renderTask.scale = this->getScaleValue();
+						renderTask.pageNum = this->getCurrentPage();
+						renderTask.hasPassword = hasPassword;
+						renderTask.password = password;
+						renderTask.rotation = this->getCurrentRotation();
+						renderTask.selectedRect = selectedRect;
 
-					PageRendererWorker* worker = new PageRendererWorker(renderTask);
-					QThread* thread = new QThread(this);
-					if (this->getCurrentPage() == k)
-						thread->setPriority(QThread::HighestPriority);
-					else
-						thread->setPriority(QThread::HighPriority);
-					struct PageRenderThread renderThreadStruct;
-					renderThreadStruct.renderThread = thread;
-					renderThreadStruct.worker = worker;
-					renderThreadList[this->getCurrentPage()] = renderThreadStruct;
-					worker->moveToThread(thread);
-					connect(thread, &QThread::started, worker, &PageRendererWorker::run);
-					connect(worker, &PageRendererWorker::finished, this, &PDFEngine::onPageRendered);
-					connect(thread, &QThread::finished, worker, &QObject::deleteLater);
+						PageRendererWorker* worker = new PageRendererWorker(renderTask);
+						QThread* thread = new QThread(this);
+						if (this->getCurrentPage() == k)
+							thread->setPriority(QThread::HighestPriority);
+						else
+							thread->setPriority(QThread::HighPriority);
+						struct PageRenderThread renderThreadStruct;
+						renderThreadStruct.renderThread = thread;
+						renderThreadStruct.worker = worker;
+						renderThreadList[this->getCurrentPage()] = renderThreadStruct;
+						worker->moveToThread(thread);
+						connect(thread, &QThread::started, worker, &PageRendererWorker::run);
+						connect(worker, &PageRendererWorker::finished, this, &PDFEngine::onPageRendered);
+						connect(thread, &QThread::finished, worker, &QObject::deleteLater);
 
-					thread->start();
+						thread->start();
+					}
 				}
 				//Display default loading image
-				page = returnDefaultImage(allPageHeights.at(this->getCurrentPage() - 1));
+				if (page == NULL)	page = returnDefaultImage(allPageHeights.at(this->getCurrentPage() - 1));
 			}
 			else {
 				QElapsedTimer timer;
@@ -530,6 +534,7 @@ bool PDFEngine::refreshEngine()
 void PDFEngine::rerenderAllPages()
 {
 	rerender = true;
+	pageCache.clear();
 }
 
 void PDFEngine::cancelFindAllWorker()
@@ -561,13 +566,22 @@ void PDFEngine::findAllResult(SearchResult result)
 	if (!result.done) emit sendFindAllResult(result);
 }
 
-void PDFEngine::onPageRendered(int pageNum, QImage renderedImg)
+void PDFEngine::onPageRendered(int pageNum, QImage renderedImg, int elapsedTime)
 {
 	if (doc == NULL)
 		return;
 	
 	for (int i = 0; i < previousPages.length(); i++) {
 		if (previousPages.at(i)->getPageNumber() == pageNum) {
+			if (elapsedTime > 800 && pageCache.maxCost() != 200 * 1024 * 1024)
+					pageCache.setMaxCost(200 * 1024 * 1024);
+			if (pageCache.maxCost() == 200 * 1024 * 1024) {
+				PageCacheObject* cacheObject = new PageCacheObject();
+				cacheObject->image = QImage(renderedImg);
+				cacheObject->pdfRotation = pdfRotation;
+				cacheObject->scaleValue = scaleValue;
+				pageCache.insert(pageNum, cacheObject, renderedImg.width() * renderedImg.height() * renderedImg.depth() / 8);
+			}
 			previousPages.at(i)->loadPixmap(&renderedImg);
 			previousPages.at(i)->resize(renderedImg.width(), renderedImg.height());
 			//Add hyperlinks to page
@@ -580,6 +594,7 @@ void PDFEngine::onPageRendered(int pageNum, QImage renderedImg)
 				selectedRect = QRectF(0, 0, 0, 0);
 				foundPageNum = -1;
 			}
+			updateRenderTimeAvgs(elapsedTime);
 			emit pageFinished();
 			break;
 		}

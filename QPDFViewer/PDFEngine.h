@@ -25,6 +25,7 @@
 #include <string>
 #include <qtreeview.h>
 #include <qstandarditemmodel.h>
+#include <qcache.h>
 #include "Page.h"
 #include "NavigationBar.h"
 #include "FindAllWorker.h"
@@ -33,6 +34,11 @@
 struct PageRenderThread {
 	QThread* renderThread;
 	PageRendererWorker* worker;
+};
+struct PageCacheObject {
+	QImage image;
+	int scaleValue;
+	Poppler::Page::Rotation pdfRotation;
 };
 class PDFEngine: public QObject
 {
@@ -83,6 +89,7 @@ private:
 	QVector <Page*> previousPages;
 	QVector <int> allPageHeights;
 	QVector <qint64> renderTimes;
+	QCache<int, PageCacheObject> pageCache;
 	QMap <int, struct PageRenderThread> renderThreadList;
 	std::string fileName;
 	FindAllWorker* currentFindAllWorker;
@@ -107,7 +114,7 @@ public slots:
 	void goToPhrase(int page, QRectF rect);
 	void cancelFindAllWorker();
 	void findAllResult(SearchResult result);
-	void onPageRendered(int pageNum, QImage renderedImg);
+	void onPageRendered(int pageNum, QImage renderedImg, int elapsedTime);
 };
 
 #endif

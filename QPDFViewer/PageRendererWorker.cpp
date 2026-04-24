@@ -20,6 +20,7 @@
 #include "PageRendererWorker.h"
 #include "PDFEngine.h"
 #include <poppler-qt5.h>
+#include <qthread.h>
 
 PageRendererWorker::PageRendererWorker(PageRenderTask renderTask)
 {
@@ -40,15 +41,18 @@ void PageRendererWorker::cancel() { cancelled = true; }
 
 void PageRendererWorker::run()
 {
+	QElapsedTimer timer;
+	timer.start();
+
 	QImage image = PDFEngine::returnImage(fileName, password, hasPassword, pageNum, scale, rotation, &PageRendererWorker::check1Static, &PageRendererWorker::check1Static, this);
 
 	if (!cancelled)
-		emit finished(pageNum, image);
+		emit finished(pageNum, image,timer.elapsed());
 }
 
 void PageRendererWorker::check1() 
 {
-	emit finished(-1, QImage());
+	emit finished(-1, QImage(), -1);
 	return;
 }
 

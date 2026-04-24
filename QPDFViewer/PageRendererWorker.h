@@ -49,14 +49,13 @@ private:
     QString fileName;
     QString password;
     bool hasPassword, cancelled;
-    Poppler::Document* doc;
     QRectF selectedRect;
     int foundPageNum;
     volatile int reloadResult;
     void check1();
     static void check1Static(void *ctx);
 signals:
-    void finished(int pageNum, QImage renderedImg);
+    void finished(int pageNum, QImage renderedImg, qint64 elapsedTime);
     void needReloadCheck(PageRendererWorker *worker);
 };
 
