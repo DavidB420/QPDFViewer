@@ -44,7 +44,7 @@ void PageRendererWorker::run()
 	QElapsedTimer timer;
 	timer.start();
 
-	QImage image = PDFEngine::returnImage(fileName, password, hasPassword, pageNum, scale, rotation, &PageRendererWorker::check1Static, &PageRendererWorker::check1Static, this);
+	QImage image = PDFEngine::returnImage(fileName, password, hasPassword, pageNum, scale, rotation, NULL, &PageRendererWorker::check1Static, &PageRendererWorker::check1Static, this);
 
 	if (!cancelled)
 		emit finished(pageNum, image,timer.elapsed());

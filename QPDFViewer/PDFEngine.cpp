@@ -94,9 +94,9 @@ PDFEngine::~PDFEngine()
 	delete doc;
 }
 
-QImage PDFEngine::returnImage(QString fileName, QString password, bool hasPassword, int pageNum, int scaleValue, Poppler::Page::Rotation pdfRotation, void (*check1)(void*), void (*check2)(void*), void* ctx)
+QImage PDFEngine::returnImage(QString fileName, QString password, bool hasPassword, int pageNum, int scaleValue, Poppler::Page::Rotation pdfRotation, Poppler::Document* document, void (*check1)(void*), void (*check2)(void*), void* ctx)
 {
-	Poppler::Document* doc = Poppler::Document::load(fileName);
+	Poppler::Document* doc = document != NULL ? document : Poppler::Document::load(fileName);
 
 	if (hasPassword)
 		doc->unlock(password.toLatin1(), password.toLatin1());
@@ -121,7 +121,7 @@ QImage PDFEngine::returnImage(QString fileName, QString password, bool hasPasswo
 
 	//Delete poppler page
 	delete page;
-	delete doc;
+	if (document == NULL) delete doc;
 
 	return image;
 }
@@ -433,7 +433,7 @@ QVector<Page*> PDFEngine::getVisiblePages()
 			else {
 				QElapsedTimer timer;
 				timer.start();
-				QImage img = PDFEngine::returnImage(QString::fromStdString(fileName), password, hasPassword, currentPage, scaleValue, pdfRotation, NULL, NULL, NULL);
+				QImage img = PDFEngine::returnImage(QString::fromStdString(fileName), password, hasPassword, currentPage, scaleValue, pdfRotation, doc, NULL, NULL, NULL);
 				page = new Page(this->parentWindow, this, &img);
 				updateRenderTimeAvgs(timer.elapsed());
 			}
