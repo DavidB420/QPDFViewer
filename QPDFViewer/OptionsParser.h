@@ -17,39 +17,33 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef OPTIONSDIALOG_H
-#define OPTIONSDIALOG_H
+#ifndef OPTIONSPARSER_H
+#define OPTIONSPARSER_H
 
-#include <qdialog.h>
-#include <qcheckbox.h>
-#include <qlineedit.h>
+#include <qstring.h>
+#include <qpalette.h>
 
-struct OptionsResult {
+class OptionsParser
+{
+public:
+	OptionsParser();
+	void loadFromFile();
+	void saveToFile();
+	bool returnDarkMode();
+	bool returnSameViewer();
+	int returnCacheSize();
+	int returnMultithreadTime();
+	int returnCacheTime();
+	void setValues(bool darkMode, bool sameViewer, int cacheSize, int multithreadTime, int cacheTime);
+private:
 	bool darkMode;
 	bool sameViewer;
 	int cacheSize;
 	int multithreadTime;
 	int cacheTime;
-};
-class OptionsDialog : public QDialog
-{
-	Q_OBJECT
-public:
-	OptionsDialog(QWidget* parent = 0, bool darkMode=false, bool sameViewer=false, int cacheSize=200, int multithreadTime=400, int cacheTime=800);
-	OptionsResult getResult();
-private:
-	QCheckBox* darkModeBox;
-	QCheckBox* sameViewerBox;
-	QLineEdit* cacheEdit;
-	QLineEdit* multithreadTimeEdit;
-	QLineEdit* cacheTimeEdit;
-	QPushButton* saveExitButton;
-	QPushButton* cancelButton;
-	OptionsResult result;
-private slots:
-	void exitDialog();
-	void acceptDialog();
-
+	QString defaultStyle;
+	QPalette defaultPalette;
+	void changeTheme();
 };
 
 #endif

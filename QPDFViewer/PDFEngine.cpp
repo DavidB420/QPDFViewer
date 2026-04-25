@@ -83,6 +83,10 @@ PDFEngine::PDFEngine(std::string fileName, QWidget *parentWindow)
 	useMultithreading = false;
 
 	qRegisterMetaType<SearchResult>("SearchResult");
+
+	cacheSize = 200;
+	multithreadTime = 400;
+	cacheTime = 800;
 }
 
 PDFEngine::~PDFEngine()
@@ -537,6 +541,13 @@ void PDFEngine::rerenderAllPages()
 	pageCache.clear();
 }
 
+void PDFEngine::updateCustomValues(int cacheSize, int multithreadTime, int cacheTime)
+{
+	this->cacheSize = cacheSize;
+	this->multithreadTime = multithreadTime;
+	this->cacheTime = cacheTime;
+}
+
 void PDFEngine::cancelFindAllWorker()
 {
 	//If the user closes the find all dialog or starts another search
@@ -573,9 +584,9 @@ void PDFEngine::onPageRendered(int pageNum, QImage renderedImg, int elapsedTime)
 	
 	for (int i = 0; i < previousPages.length(); i++) {
 		if (previousPages.at(i)->getPageNumber() == pageNum) {
-			if (elapsedTime > 800 && pageCache.maxCost() != 200 * 1024 * 1024)
-					pageCache.setMaxCost(200 * 1024 * 1024);
-			if (pageCache.maxCost() == 200 * 1024 * 1024) {
+			if (elapsedTime > cacheTime && pageCache.maxCost() != cacheSize * 1024 * 1024)
+					pageCache.setMaxCost(cacheSize * 1024 * 1024);
+			if (pageCache.maxCost() == cacheSize * 1024 * 1024) {
 				PageCacheObject* cacheObject = new PageCacheObject();
 				cacheObject->image = QImage(renderedImg);
 				cacheObject->pdfRotation = pdfRotation;
@@ -675,7 +686,7 @@ void PDFEngine::updateRenderTimeAvgs(qint64 elapsed)
 		avg += sample;
 	avg /= renderTimes.size();
 
-	useMultithreading = avg > 400;
+	useMultithreading = avg > multithreadTime;
 }
 
 void PDFEngine::updateHeightValues(bool total)

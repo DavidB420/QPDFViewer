@@ -42,10 +42,13 @@
 #include "PrintDialog.h"
 #include "FindAllBox.h"
 #include "VersionNumber.h"
+#include "OptionsParser.h"
 
 Viewer::Viewer(QWidget* parent)
 {
 	//Set basic window settings
+	parser = new OptionsParser();
+	parser->loadFromFile();
 	this->setWindowTitle("QPDFViewer");
 	this->resize(800, 600);
 
@@ -265,6 +268,7 @@ void Viewer::openFile(QStringList fileNames)
 					navBarShowAct->setChecked(true);
 					showNavBar();
 				}
+				tabItems.at(currentTab)->getEngine()->updateCustomValues(parser->returnCacheSize(), parser->returnMultithreadTime(), parser->returnCacheTime());
 			}
 		}
 
@@ -418,10 +422,11 @@ void Viewer::reloadFile(bool reload)
 		onTabCloseRequested(tmp);
 }
 
-void Viewer::closeWhenDetachMerge()
-{
-	if (tabItems.size() <= 0) close();
-}
+void Viewer::closeWhenDetachMerge() { if (tabItems.size() <= 0) close(); }
+
+void Viewer::addTabIfNecessary() { if (tabItems.at(currentTab)->getEngine() != NULL) onTabClicked(tWidget->count() - 1); }
+
+OptionsParser* Viewer::getOptionsParser() { return parser; }
 
 void Viewer::dropEvent(QDropEvent* event)
 {
@@ -511,8 +516,7 @@ void Viewer::findPhrase()
 		tabItems.at(currentTab)->updateScrollArea(true);
 		pageNumber->setText(QString::number(tabItems.at(currentTab)->getEngine()->getCurrentPage()));
 	}
-	else
-		QMessageBox::warning(this, "Could not find phrase", "Could not find phrase: " + searchBox->text());
+	else QMessageBox::warning(this, "Could not find phrase", "Could not find phrase: " + searchBox->text());
 }
 
 void Viewer::getPageText()
@@ -684,8 +688,14 @@ void Viewer::onTabCloseRequested(int index)
 
 void Viewer::getOptionsDialog()
 {
-	OptionsDialog* oDialog = new OptionsDialog(this);
-	oDialog->show();
+	OptionsDialog* oDialog = new OptionsDialog(this,parser->returnDarkMode(),parser->returnSameViewer(),parser->returnCacheSize(),parser->returnMultithreadTime(),parser->returnCacheTime());
+	if (oDialog->exec() == QDialog::Accepted) { 
+		parser->setValues(oDialog->getResult().darkMode, oDialog->getResult().sameViewer, oDialog->getResult().cacheSize, oDialog->getResult().multithreadTime, oDialog->getResult().cacheTime); 
+		parser->saveToFile(); 
+		for (int i = 0; i < tabItems.size(); i++)
+			if (tabItems.at(currentTab)->getEngine() != NULL) tabItems.at(currentTab)->getEngine()->updateCustomValues(parser->returnCacheSize(), parser->returnMultithreadTime(), parser->returnCacheTime());
+	}
+	delete oDialog;
 }
 
 void Viewer::getPrintDialog()

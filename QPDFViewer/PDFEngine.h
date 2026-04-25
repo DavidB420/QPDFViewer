@@ -70,6 +70,7 @@ public:
 	void updateParentWindow(QWidget* parent);
 	bool refreshEngine();
 	void rerenderAllPages();
+	void updateCustomValues(int cacheSize, int multithreadTime, int cacheTime);
 	Poppler::Page* reloadDocAndPage();
 	std::string checkFileAvailable(std::string fileName);
 private:
@@ -83,6 +84,9 @@ private:
 	int scaleValue;
 	int foundPageNum;
 	int searchPos;
+	int cacheSize;
+	int multithreadTime;
+	int cacheTime;
 	bool success;
 	unsigned long documentHeight;
 	void recursivelyFillModel(QVector<Poppler::OutlineItem> currentItem, QStandardItem* rootItem, NavigationBar *navBar);

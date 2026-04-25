@@ -94,16 +94,22 @@ int main(int argc, char *argv[])
         QObject::connect(clientSocket, &QLocalSocket::readyRead, [&, clientSocket]() {
             QString filePath = clientSocket->readAll();
             //Create a new window in already existing process
-            Viewer *newVwr = new Viewer();
-            newVwr->setAttribute(Qt::WA_DeleteOnClose);
-            if (filePath != startCmd)
-                newVwr->openFile({ filePath });
-            newVwr->show();
-            newVwr->setWindowState((newVwr->windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
-            newVwr->raise();
-            newVwr->activateWindow();
-            clientSocket->disconnectFromServer();
-            clientSocket->deleteLater();
+            if (!(vwr.getOptionsParser()->returnSameViewer())) {
+                Viewer* newVwr = new Viewer();
+                newVwr->setAttribute(Qt::WA_DeleteOnClose);
+                if (filePath != startCmd)
+                    newVwr->openFile({ filePath });
+                newVwr->show();
+                newVwr->setWindowState((newVwr->windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
+                newVwr->raise();
+                newVwr->activateWindow();
+                clientSocket->disconnectFromServer();
+                clientSocket->deleteLater();
+            }
+            else {
+                vwr.addTabIfNecessary();
+                vwr.openFile({ filePath });
+            }
             });
         });
 

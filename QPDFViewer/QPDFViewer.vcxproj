@@ -136,6 +136,7 @@
     <ClCompile Include="HyperlinkObject.cpp" />
     <ClCompile Include="NavigationBar.cpp" />
     <ClCompile Include="OptionsDialog.cpp" />
+    <ClCompile Include="OptionsParser.cpp" />
     <ClCompile Include="Page.cpp" />
     <ClCompile Include="PageRendererWorker.cpp" />
     <ClCompile Include="PasswordBoxDialog.cpp" />
@@ -159,6 +160,7 @@
   <ItemGroup>
     <QtMoc Include="PageRendererWorker.h" />
     <QtMoc Include="OptionsDialog.h" />
+    <ClInclude Include="OptionsParser.h" />
     <ClInclude Include="VersionNumber.h" />
     <QtMoc Include="NavigationBar.h" />
     <QtMoc Include="DetachableTabBar.h" />
