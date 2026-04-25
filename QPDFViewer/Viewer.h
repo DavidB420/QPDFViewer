@@ -107,6 +107,7 @@ private slots:
 	void rotatePage();
 	void onTabClicked(int index);
 	void onTabMoved(int from, int to);
+	void getOptionsDialog();
 	void getPrintDialog();
 	void checkIfPDFLoaded();
 	void updatePageNumber();

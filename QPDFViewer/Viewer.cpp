@@ -38,6 +38,7 @@
 #include <vector>
 #include <QMimeData>
 #include "TabItem.h"
+#include "OptionsDialog.h"
 #include "PrintDialog.h"
 #include "FindAllBox.h"
 #include "VersionNumber.h"
@@ -106,7 +107,7 @@ Viewer::Viewer(QWidget* parent)
 	navMenu->addAction(findAllBidirect);
 	QAction* optionAct = new QAction(tr("&Options"), this);
 	helpmenu->addAction(optionAct);
-	connect(optionAct, &QAction::triggered, this, &Viewer::aboutApp);
+	connect(optionAct, &QAction::triggered, this, &Viewer::getOptionsDialog);
 	optionAct->setIcon(QIcon(":/images/assets/optionIcon.png"));
 	QAction* aboutAct = new QAction(tr("&About"), this);
 	helpmenu->addAction(aboutAct);
@@ -679,6 +680,12 @@ void Viewer::onTabCloseRequested(int index)
 	else {
 		onTabClicked(currentTab);
 	}
+}
+
+void Viewer::getOptionsDialog()
+{
+	OptionsDialog* oDialog = new OptionsDialog(this);
+	oDialog->show();
 }
 
 void Viewer::getPrintDialog()
