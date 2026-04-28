@@ -137,6 +137,8 @@ void OptionsParser::changeTheme()
 
 	if (darkMode) {
 		a->setStyle("Fusion");
+		NoMnemonicStyle *style = new NoMnemonicStyle(a->style());
+		a->setStyle(style);
 		QPalette dark;
 		dark.setColor(QPalette::Window, QColor(37, 37, 38));
 		dark.setColor(QPalette::WindowText, QColor(220, 220, 220));
