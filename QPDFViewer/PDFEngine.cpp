@@ -98,9 +98,12 @@ PDFEngine::~PDFEngine()
 	delete doc;
 }
 
-QImage PDFEngine::returnImage(QString fileName, QString password, bool hasPassword, int pageNum, int scaleValue, Poppler::Page::Rotation pdfRotation, Poppler::Document* document, void (*check1)(void*), void (*check2)(void*), void* ctx)
+QImage PDFEngine::returnImage(QString fileName, QString password, bool hasPassword, int pageNum, int scaleValue, Poppler::Page::Rotation pdfRotation, Poppler::Document* document, Poppler::Document* (*check1)(void*), Poppler::Document* (*check2)(void*), void* ctx)
 {
 	Poppler::Document* doc = document != NULL ? document : Poppler::Document::load(fileName);
+
+	if (doc == NULL)
+		return QImage();
 
 	if (hasPassword)
 		doc->unlock(password.toLatin1(), password.toLatin1());
@@ -112,16 +115,26 @@ QImage PDFEngine::returnImage(QString fileName, QString password, bool hasPasswo
 	Poppler::Page* page = doc->page(pageNum-1);
 
 	//Reload if page is unavailable
-	if (check1 != NULL && page == NULL)
-		check1(ctx);
+	if (check1 != NULL && page == NULL) {
+		doc = check1(ctx);
+		if (doc == NULL)	return QImage();
+		page = doc->page(pageNum - 1);
+	}
+
+	if (!page) return QImage();
 
 	//Convert the poppler into QImage
 	QImage image = page->renderToImage((float)72 * scaleValue / 75, (float)72 * scaleValue / 75,
 		-1, -1, -1, -1, pdfRotation);
 
 	//Reload page if image is null
-	if (check2 != NULL && image.isNull())
-		check2(ctx);
+	if (check2 != NULL && image.isNull()){
+		doc = check2(ctx);
+		if (doc == NULL)	return QImage();
+		page = doc->page(pageNum - 1);
+		image = page->renderToImage((float)72 * scaleValue / 75, (float)72 * scaleValue / 75,
+			-1, -1, -1, -1, pdfRotation);
+	}
 
 	//Delete poppler page
 	delete page;
@@ -437,9 +450,9 @@ QVector<Page*> PDFEngine::getVisiblePages()
 			else {
 				QElapsedTimer timer;
 				timer.start();
-				QImage img = PDFEngine::returnImage(QString::fromStdString(fileName), password, hasPassword, currentPage, scaleValue, pdfRotation, doc, NULL, NULL, NULL);
+				QImage img = PDFEngine::returnImage(QString::fromStdString(fileName), password, hasPassword, currentPage, scaleValue, pdfRotation, doc, &PDFEngine::check1Static, &PDFEngine::check1Static, this);
+				if (img.isNull()) return QVector<Page*>{};
 				page = new Page(this->parentWindow, this, &img);
-				updateRenderTimeAvgs(timer.elapsed());
 			}
 		}
 		if (page == NULL)
@@ -810,6 +823,23 @@ void PDFEngine::unlockDocument()
 }
 
 void PDFEngine::failedToLoad(){	success = false;}
+
+Poppler::Document* PDFEngine::check1()
+{
+		if (checkFileAvailable(fileName) == "")
+			return NULL;
+		Poppler::Document* doc = Poppler::Document::load(QString::fromStdString(fileName));
+		doc->setRenderHint(Poppler::Document::Antialiasing, true);
+		doc->setRenderHint(Poppler::Document::TextAntialiasing, true);
+		return doc;
+	return NULL;
+}
+
+Poppler::Document* PDFEngine::check1Static(void* ctx)
+{
+	auto* self = static_cast<PDFEngine*>(ctx);
+	return self->check1();
+}
 
 std::string PDFEngine::checkFileAvailable(std::string fileName)
 {

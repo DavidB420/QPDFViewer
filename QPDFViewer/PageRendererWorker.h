@@ -52,8 +52,8 @@ private:
     QRectF selectedRect;
     int foundPageNum;
     volatile int reloadResult;
-    void check1();
-    static void check1Static(void *ctx);
+    Poppler::Document* check1();
+    static Poppler::Document* check1Static(void *ctx);
 signals:
     void finished(int pageNum, QImage renderedImg, qint64 elapsedTime);
     void needReloadCheck(PageRendererWorker *worker);

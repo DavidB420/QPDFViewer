@@ -50,13 +50,13 @@ void PageRendererWorker::run()
 		emit finished(pageNum, image,timer.elapsed());
 }
 
-void PageRendererWorker::check1() 
+Poppler::Document* PageRendererWorker::check1() 
 {
 	emit finished(-1, QImage(), -1);
-	return;
+	return NULL;
 }
 
-void PageRendererWorker::check1Static(void* ctx) {
+Poppler::Document* PageRendererWorker::check1Static(void* ctx) {
 	auto* self = static_cast<PageRendererWorker*>(ctx);
-	self->check1(); 
+	return self->check1(); 
 }

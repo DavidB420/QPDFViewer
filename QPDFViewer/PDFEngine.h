@@ -46,7 +46,7 @@ class PDFEngine: public QObject
 public:
 	PDFEngine(std::string fileName,QWidget *parentWindow);
 	~PDFEngine();
-	static QImage returnImage(QString fileName, QString password, bool hasPassword, int pageNum, int scaleValue, Poppler::Page::Rotation pdfRotation, Poppler::Document* document=NULL, void (*check1)(void*)=NULL, void (*check2)(void*)=NULL,void*ctx=NULL);
+	static QImage returnImage(QString fileName, QString password, bool hasPassword, int pageNum, int scaleValue, Poppler::Page::Rotation pdfRotation, Poppler::Document* document=NULL, Poppler::Document* (*check1)(void*)=NULL, Poppler::Document* (*check2)(void*)=NULL,void*ctx=NULL);
 	Page* returnDefaultImage(int h);
 	QString getPassword();
 	bool getHasPassword();
@@ -109,6 +109,8 @@ private:
 	void killThread(PageRenderThread thread);
 	void unlockDocument();
 	void failedToLoad();
+	Poppler::Document* check1();
+	static Poppler::Document* check1Static(void* ctx);
 signals:
 	void pageChanged();
 	void sendFindAllResult(SearchResult result);
