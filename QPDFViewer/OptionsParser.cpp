@@ -24,6 +24,9 @@
 #include <qapplication.h>
 #include <qpalette.h>
 #include <qstyle.h>
+#include <qstandardpaths.h>
+#include <qdir.h>
+#include "VersionNumber.h"
 
 OptionsParser::OptionsParser()
 {
@@ -41,7 +44,9 @@ OptionsParser::OptionsParser()
 void OptionsParser::loadFromFile()
 {
 	//Load from the config file if it exists, otherwise intiialize the file with default values
-	QString path = QCoreApplication::applicationDirPath() + "/config.cfg";
+	QString dir = QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
+	QDir().mkpath(dir);
+	QString path = dir + "/config.cfg";
 	QFile file(path);
 
 	if (file.exists()) {
@@ -62,7 +67,12 @@ void OptionsParser::loadFromFile()
 			QString key = parts[0].trimmed();
 			QString value = parts[1].trimmed();
 
-			if (key == "darkMode") {
+			if ((key == "QPDFViewer_MajorVersion" && value.toInt() != MAJOR_VERSION) || (key == "QPDFViewer_MinorVersion" && value.toInt() != MINOR_VERSION)) {
+				file.close();
+				saveToFile();
+				return;
+			}
+			else if (key == "darkMode") {
 				darkMode = value.toInt();
 				changeTheme();
 			}
@@ -84,12 +94,16 @@ void OptionsParser::loadFromFile()
 void OptionsParser::saveToFile()
 {
 	//Save config file with update values and update theme if necessary 
-	QString path = QCoreApplication::applicationDirPath() + "/config.cfg";
+	QString dir = QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
+	QDir().mkpath(dir);
+	QString path = dir + "/config.cfg";
 	QFile file(path);
 
 	if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
 		changeTheme();
 		QTextStream out(&file);
+		out << "QPDFViewer_MajorVersion=" << MAJOR_VERSION << "\n";
+		out << "QPDFViewer_MinorVersion=" << MINOR_VERSION << "\n";
 		out << "darkMode=" << darkMode << "\n";
 		out << "sameViewer=" << sameViewer << "\n";
 		out << "cacheSize=" << cacheSize << "\n";
