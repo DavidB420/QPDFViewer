@@ -17,5 +17,39 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#define MAJOR_VERSION 3
-#define MINOR_VERSION 0
+#ifndef OPTIONSDIALOG_H
+#define OPTIONSDIALOG_H
+
+#include <qdialog.h>
+#include <qcheckbox.h>
+#include <qlineedit.h>
+
+struct OptionsResult {
+	bool darkMode;
+	bool sameViewer;
+	int cacheSize;
+	int multithreadTime;
+	int cacheTime;
+};
+class OptionsDialog : public QDialog
+{
+	Q_OBJECT
+public:
+	OptionsDialog(QWidget* parent = 0, bool darkMode=false, bool sameViewer=false, int cacheSize=200, int multithreadTime=400, int cacheTime=800);
+	OptionsResult getResult();
+private:
+	QCheckBox* darkModeBox;
+	QCheckBox* sameViewerBox;
+	QLineEdit* cacheEdit;
+	QLineEdit* multithreadTimeEdit;
+	QLineEdit* cacheTimeEdit;
+	QPushButton* saveExitButton;
+	QPushButton* cancelButton;
+	OptionsResult result;
+private slots:
+	void exitDialog();
+	void acceptDialog();
+
+};
+
+#endif

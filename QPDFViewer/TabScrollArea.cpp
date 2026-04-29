@@ -19,6 +19,7 @@
 
 #include "TabScrollArea.h"
 #include <QWheelEvent>
+#include <algorithm>
 
 TabScrollArea::TabScrollArea(QWidget* parent)
 {
@@ -71,7 +72,6 @@ void TabScrollArea::updateScrollArea(QVector <Page*> *pages, bool runItself)
              //If the horizontal scroll bar is enabled, use its value, otherwise just center all pages based on its width
              currentPages.at(k)->setGeometry(horizontalEnabled ? -horizontalScrollValue : ((viewport()->width() - currentPages.at(k)->width()) / 2), j, currentPages.at(k)->width(), currentPages.at(k)->height());
              currentPages.at(k)->show();
-
              //Update positioning variable and current page counter
              j += currentPages.at(k)->height() + 20;
              k++;
@@ -309,7 +309,12 @@ void TabScrollArea::wheelEvent(QWheelEvent* event)
 void TabScrollArea::resizeEvent(QResizeEvent* event)
 {
     QAbstractScrollArea::resizeEvent(event);
+    
+    refreshScrollArea();
+}
 
+void TabScrollArea::refreshScrollArea()
+{
     //Assume we dont need a scroll bar, will be enabled if required
     horizontalScrollBar()->setEnabled(false);
     horizontalScrollBar()->setVisible(false);
@@ -321,13 +326,11 @@ void TabScrollArea::resizeEvent(QResizeEvent* event)
     updateScrollArea(&currentPages, false);
 
     //Update vertical scroll bar
-    int newMax = (this->documentHeight - viewport()->height()) + 40;
+    long newMax = std::max((long)0, (this->documentHeight - viewport()->height()) + 40);
     verticalScrollBar()->setRange(0, newMax);
     verticalScrollBar()->setPageStep(viewport()->height());
-    if (verticalScrollValue > newMax)
-        verticalScrollValue = newMax;
+    verticalScrollValue = std::min(verticalScrollValue, newMax);
     verticalScrollBar()->setValue(verticalScrollValue);
 }
-
 
 

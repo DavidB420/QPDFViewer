@@ -36,6 +36,7 @@
 #include "DetachableTabBar.h"
 #include "DetachableTabWidget.h"
 #include "FindAllBox.h"
+#include "OptionsParser.h"
 
 struct MinMaxTuple {
 	int min = 0, max = 0;
@@ -58,6 +59,8 @@ public:
 	TabItem* getTab(int index);
 	void reloadFile(bool reload=true);
 	void closeWhenDetachMerge();
+	void addTabIfNecessary();
+	OptionsParser* getOptionsParser();
 protected:
 	void dropEvent(QDropEvent* event) override;
 	void dragMoveEvent(QDragMoveEvent* event) override;
@@ -89,6 +92,7 @@ private:
 	int currentTab;
 	bool deleteTab;
 	FindAllBox* fBox;
+	OptionsParser* parser;
 signals:
 	void tabMerged(int index, QObject* srcViewer);
 public slots:
@@ -107,6 +111,7 @@ private slots:
 	void rotatePage();
 	void onTabClicked(int index);
 	void onTabMoved(int from, int to);
+	void getOptionsDialog();
 	void getPrintDialog();
 	void checkIfPDFLoaded();
 	void updatePageNumber();

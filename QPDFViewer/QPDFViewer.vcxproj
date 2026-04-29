@@ -80,7 +80,7 @@
       <AdditionalLibraryDirectories>$(POPPLER_ROOT);$(POPPLER_ROOT)\qt5\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /Y /D "$(POPPLER_ROOT)Debug\poppler.dll" "$(TargetDir)"
+      <Command>xcopy /Y /D "$(POPPLER_ROOT)build\Debug\poppler.dll" "$(TargetDir)"
 
 </Command>
     </PostBuildEvent>
@@ -95,7 +95,7 @@
       <PreprocessorDefinitions>QT_NO_DEPRECATED_WARNINGS;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <PostBuildEvent>
-      <Command>xcopy /Y /D "$(POPPLER_ROOT)Release\poppler.dll" "$(TargetDir)"
+      <Command>xcopy /Y /D "$(POPPLER_ROOT)build\Release\poppler.dll" "$(TargetDir)"
 
 </Command>
     </PostBuildEvent>
@@ -135,7 +135,10 @@
     <ClCompile Include="FindAllWorker.cpp" />
     <ClCompile Include="HyperlinkObject.cpp" />
     <ClCompile Include="NavigationBar.cpp" />
+    <ClCompile Include="OptionsDialog.cpp" />
+    <ClCompile Include="OptionsParser.cpp" />
     <ClCompile Include="Page.cpp" />
+    <ClCompile Include="PageRendererWorker.cpp" />
     <ClCompile Include="PasswordBoxDialog.cpp" />
     <ClCompile Include="PDFEngine.cpp" />
     <ClCompile Include="PrintDialog.cpp">
@@ -155,6 +158,9 @@
     <QtMoc Include="Viewer.h" />
   </ItemGroup>
   <ItemGroup>
+    <QtMoc Include="PageRendererWorker.h" />
+    <QtMoc Include="OptionsDialog.h" />
+    <ClInclude Include="OptionsParser.h" />
     <ClInclude Include="VersionNumber.h" />
     <QtMoc Include="NavigationBar.h" />
     <QtMoc Include="DetachableTabBar.h" />
@@ -184,7 +190,9 @@
     <Image Include="assets\forwardsIcon.png" />
     <Image Include="assets\icon.ico" />
     <Image Include="assets\icon.png" />
+    <Image Include="assets\loadingIcon.png" />
     <Image Include="assets\openIcon.png" />
+    <Image Include="assets\optionIcon.png" />
     <Image Include="assets\pageTextIcon.png" />
     <Image Include="assets\printIcon.png" />
     <Image Include="assets\refreshIcon.png" />

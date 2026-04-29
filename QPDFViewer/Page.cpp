@@ -23,8 +23,8 @@
 
 Page::Page(QWidget* parent, PDFEngine* pdfParent, QImage *img)
 {
-	//Load pixmap from qimage and set values to defaults
-	pagePixmap = QPixmap::fromImage(*img);
+	//set values to defaults
+	loadPixmap(img);
 	this->parent = pdfParent;
 	dragging = false;
 	isDragging = false;
@@ -32,7 +32,12 @@ Page::Page(QWidget* parent, PDFEngine* pdfParent, QImage *img)
 
 	scale = this->parent->getScaleValue();
 	rotation = this->parent->getCurrentRotation();
+}
 
+void Page::loadPixmap(QImage* img)
+{
+	//Load pixmap from qimage
+	pagePixmap = QPixmap::fromImage(*img);
 	setFixedWidth(pagePixmap.width());
 	setFixedHeight(pagePixmap.height());
 }

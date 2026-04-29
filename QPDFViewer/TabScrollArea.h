@@ -61,6 +61,8 @@ signals:
 private slots:
 	void onVerticalScrollChanged(int value);
 	void onHorizontalScrollChanged(int value);
+public slots:
+	void refreshScrollArea();
 };
 
 #endif

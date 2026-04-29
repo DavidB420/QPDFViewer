@@ -76,6 +76,15 @@
     <ClCompile Include="FindAllWorker.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="PageRendererWorker.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="OptionsDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="OptionsParser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="Viewer.h">
@@ -105,6 +114,12 @@
     <QtMoc Include="FindAllWorker.h">
       <Filter>Header Files</Filter>
     </QtMoc>
+    <QtMoc Include="PageRendererWorker.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="OptionsDialog.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Page.h">
@@ -126,6 +141,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="VersionNumber.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OptionsParser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -181,6 +199,12 @@
       <Filter>Resource Files\assets</Filter>
     </Image>
     <Image Include="assets\refreshIcon.png">
+      <Filter>Resource Files\assets</Filter>
+    </Image>
+    <Image Include="assets\loadingIcon.png">
+      <Filter>Resource Files\assets</Filter>
+    </Image>
+    <Image Include="assets\optionIcon.png">
       <Filter>Resource Files\assets</Filter>
     </Image>
   </ItemGroup>

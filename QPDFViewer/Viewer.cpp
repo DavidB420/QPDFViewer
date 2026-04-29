@@ -38,13 +38,17 @@
 #include <vector>
 #include <QMimeData>
 #include "TabItem.h"
+#include "OptionsDialog.h"
 #include "PrintDialog.h"
 #include "FindAllBox.h"
 #include "VersionNumber.h"
+#include "OptionsParser.h"
 
 Viewer::Viewer(QWidget* parent)
 {
 	//Set basic window settings
+	parser = new OptionsParser();
+	parser->loadFromFile();
 	this->setWindowTitle("QPDFViewer");
 	this->resize(800, 600);
 
@@ -57,8 +61,8 @@ Viewer::Viewer(QWidget* parent)
 	pageMenu = mBar->addMenu(tr("&Page"));
 	QMenu* navMenu = new QMenu(this);
 	navMenu = mBar->addMenu(tr("&Navigation"));
-	QMenu* aboutmenu = new QMenu(this);
-	aboutmenu = mBar->addMenu(tr("&About"));
+	QMenu* helpmenu = new QMenu(this);
+	helpmenu = mBar->addMenu(tr("&Help"));
 	QAction* openAct = new QAction(tr("&Open..."), this);
 	connect(openAct, &QAction::triggered, this, &Viewer::openFileDialog);
 	openAct->setIcon(QIcon(":/images/assets/openIcon.png"));
@@ -104,8 +108,12 @@ Viewer::Viewer(QWidget* parent)
 	findAllBidirect->setIcon(QIcon(":/images/assets/bidirectIcon.png"));
 	connect(findAllBidirect, &QAction::triggered, this, &Viewer::findAllSearch);
 	navMenu->addAction(findAllBidirect);
+	QAction* optionAct = new QAction(tr("&Options"), this);
+	helpmenu->addAction(optionAct);
+	connect(optionAct, &QAction::triggered, this, &Viewer::getOptionsDialog);
+	optionAct->setIcon(QIcon(":/images/assets/optionIcon.png"));
 	QAction* aboutAct = new QAction(tr("&About"), this);
-	aboutmenu->addAction(aboutAct);
+	helpmenu->addAction(aboutAct);
 	connect(aboutAct, &QAction::triggered, this, &Viewer::aboutApp);
 	aboutAct->setIcon(QIcon(":/images/assets/aboutIcon.png"));
 
@@ -234,6 +242,7 @@ void Viewer::openFile(QStringList fileNames)
 					delete tmp;
 				connect(tabItems.at(currentTab)->getEngine(), &PDFEngine::pageChanged, this, &Viewer::updatePageNumber);
 				connect(tabItems.at(currentTab)->getEngine(), &PDFEngine::attentionNeeded, this, &Viewer::giveTabAttention);
+				connect(tabItems.at(currentTab)->getEngine(), &PDFEngine::pageFinished, tabItems.at(currentTab)->getScrollArea(), &TabScrollArea::refreshScrollArea);
 				tabItems.at(currentTab)->setFilePath(fileNames.at(i));
 				tabItems.at(currentTab)->updateScrollArea();
 				tWidget->setTabText(currentTab, QString::fromStdString(tabItems.at(currentTab)->getFileName()));
@@ -259,6 +268,7 @@ void Viewer::openFile(QStringList fileNames)
 					navBarShowAct->setChecked(true);
 					showNavBar();
 				}
+				tabItems.at(currentTab)->getEngine()->updateCustomValues(parser->returnCacheSize(), parser->returnMultithreadTime(), parser->returnCacheTime());
 			}
 		}
 
@@ -345,7 +355,7 @@ void Viewer::aboutApp()
 	//Display about box
 	QString minorVersion = QString("%1").arg(MINOR_VERSION, 2, 10, QChar('0'));
 	QMessageBox::about(this, tr("About QPDFViewer"),
-		tr("<b>QPDFViewer %1.%2</b><br>Written by David Badiei, 2026<br>Licensed under GNU General Public License v3 (GPL-3)").arg(MAJOR_VERSION).arg(minorVersion.replace("0", minorVersion.endsWith('0') ? "" : "0")));
+		tr("<b>QPDFViewer %1.%2</b><br>Written by David Badiei, 2026<br>Licensed under GNU General Public License v3 (GPL-3)").arg(MAJOR_VERSION).arg(minorVersion.replace(minorVersion.length()-1, 1, minorVersion.endsWith('0') ? "" : QString(minorVersion.at(minorVersion.length()-1)))));
 }
 
 bool Viewer::setPage() { 
@@ -412,10 +422,11 @@ void Viewer::reloadFile(bool reload)
 		onTabCloseRequested(tmp);
 }
 
-void Viewer::closeWhenDetachMerge()
-{
-	if (tabItems.size() <= 0) close();
-}
+void Viewer::closeWhenDetachMerge() { if (tabItems.size() <= 0) close(); }
+
+void Viewer::addTabIfNecessary() { if (tabItems.at(currentTab)->getEngine() != NULL) onTabClicked(tWidget->count() - 1); }
+
+OptionsParser* Viewer::getOptionsParser() { return parser; }
 
 void Viewer::dropEvent(QDropEvent* event)
 {
@@ -505,8 +516,7 @@ void Viewer::findPhrase()
 		tabItems.at(currentTab)->updateScrollArea(true);
 		pageNumber->setText(QString::number(tabItems.at(currentTab)->getEngine()->getCurrentPage()));
 	}
-	else
-		QMessageBox::warning(this, "Could not find phrase", "Could not find phrase: " + searchBox->text());
+	else QMessageBox::warning(this, "Could not find phrase", "Could not find phrase: " + searchBox->text());
 }
 
 void Viewer::getPageText()
@@ -519,17 +529,19 @@ void Viewer::showNavBar()
 {
 	//Show nav bar if the action is checked
 	if (navBarShowAct->isChecked()) {
-		if (navBar != NULL) {
-			delete navBar;
-			navBar = NULL;
-		}
-		navBar = new NavigationBar(this);
+		if (navBar == NULL) {
+			navBar = new NavigationBar(this);
 
-		//Update splitter with nav bar
-		hSplitter->insertWidget(0,navBar);
-		hSplitter->setSizes({ 200, INT_MAX-500 });
-		for (int i = 0; i < hSplitter->count(); i++)
-			hSplitter->setCollapsible(i, false);
+			//Update splitter with nav bar
+			hSplitter->insertWidget(0, navBar);
+			hSplitter->setSizes({ 200, INT_MAX - 500 });
+			for (int i = 0; i < hSplitter->count(); i++)
+				hSplitter->setCollapsible(i, false);
+			connect(navBar, &NavigationBar::itemClicked, this, &Viewer::updatePageNavBar);
+		}
+		
+		navBar->setVisible(true);
+		navBar->clearBar();
 
 		tabItems.at(currentTab)->getEngine()->addNavOutline(navBar);
 
@@ -538,7 +550,6 @@ void Viewer::showNavBar()
 			tabItems.at(currentTab)->setSplitterData(hSplitter->saveState());
 		hSplitter->restoreState(tabItems.at(currentTab)->getSplitterData());
 
-		connect(navBar, &NavigationBar::itemClicked, this, &Viewer::updatePageNavBar);
 		tabItems.at(currentTab)->setUseNavBar(true);
 		
 		//If the splitter is moved save the new state
@@ -549,8 +560,8 @@ void Viewer::showNavBar()
 			});
 	}
 	else {
-		delete navBar;
-		navBar = NULL;
+		if (navBar != NULL)
+			navBar->setVisible(false);
 		tabItems.at(currentTab)->setUseNavBar(false);
 	}
 }
@@ -592,7 +603,7 @@ void Viewer::onTabClicked(int index)
 	}
 
 	//Update current tab if we are not pressing the the plus buttton
-	if (index != tWidget->count() - 1)
+	if (index != tWidget->count() - 1) 
 		currentTab = index;
 
 	//Change window title depending on if a pdf has been loaded or not
@@ -607,7 +618,7 @@ void Viewer::onTabClicked(int index)
 	else
 		navBarShowAct->setChecked(false);
 	showNavBar();
-	
+
 	//Update some of the controls depending on if a pdf has been loaded or not
 	if (tabItems.at(currentTab)->getEngine() != NULL) {
 		pageNumber->setText(QString::number(tabItems.at(currentTab)->getEngine()->getCurrentPage()));
@@ -673,6 +684,18 @@ void Viewer::onTabCloseRequested(int index)
 	else {
 		onTabClicked(currentTab);
 	}
+}
+
+void Viewer::getOptionsDialog()
+{
+	OptionsDialog* oDialog = new OptionsDialog(this,parser->returnDarkMode(),parser->returnSameViewer(),parser->returnCacheSize(),parser->returnMultithreadTime(),parser->returnCacheTime());
+	if (oDialog->exec() == QDialog::Accepted) { 
+		parser->setValues(oDialog->getResult().darkMode, oDialog->getResult().sameViewer, oDialog->getResult().cacheSize, oDialog->getResult().multithreadTime, oDialog->getResult().cacheTime); 
+		parser->saveToFile(); 
+		for (int i = 0; i < tabItems.size(); i++)
+			if (tabItems.at(currentTab)->getEngine() != NULL) tabItems.at(currentTab)->getEngine()->updateCustomValues(parser->returnCacheSize(), parser->returnMultithreadTime(), parser->returnCacheTime());
+	}
+	delete oDialog;
 }
 
 void Viewer::getPrintDialog()
@@ -751,14 +774,19 @@ void Viewer::getPrintDialog()
 						for (int j = min; j <= max; j++) {
 							tabItems.at(currentTab)->getEngine()->setCurrentPage(j);
 							tabItems.at(currentTab)->updateScrollArea(true);
-							Page* printPage = tabItems.at(currentTab)->getEngine()->returnImage();
-							QPixmap pMap = printPage->getPagePixmap();
-							delete printPage;
-							QSize size = pMap.size();
-							size.scale(rect.size(), Qt::KeepAspectRatio);
-							painter.setViewport(rect.x(), rect.y(), size.width(), size.height());
-							painter.setWindow(pMap.rect());
-							painter.drawPixmap(0, 0, pMap);
+							if (tabItems.at(currentTab)->getEngine()->checkFileAvailable(tabItems.at(currentTab)->getFilePath().toStdString()) != "" && tabItems.at(currentTab)->getEngine()->reloadDocAndPage()) {
+								QImage printImg = PDFEngine::returnImage(tabItems.at(currentTab)->getFilePath(), tabItems.at(currentTab)->getEngine()->getPassword(), tabItems.at(currentTab)->getEngine()->getHasPassword(), tabItems.at(currentTab)->getEngine()->getCurrentPage(), tabItems.at(currentTab)->getEngine()->getScaleValue(), tabItems.at(currentTab)->getEngine()->getCurrentRotation(), NULL, NULL, NULL);
+								QPixmap pMap = QPixmap::fromImage(printImg);
+								QSize size = pMap.size();
+								size.scale(rect.size(), Qt::KeepAspectRatio);
+								painter.setViewport(rect.x(), rect.y(), size.width(), size.height());
+								painter.setWindow(pMap.rect());
+								painter.drawPixmap(0, 0, pMap);
+							}
+							else {
+								delete pDialog;
+								return;
+							}
 
 							if (j < max || numOfTuples < minMaxList.size() - 1) //create new page if we are on a new page or a new section
 								printer.newPage();
