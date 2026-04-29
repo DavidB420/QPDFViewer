@@ -11,6 +11,9 @@ A lightweight PDF viewer made using Qt5 and Poppler.
 - Printing
 - Password protected document support
 - Web hyperlink support
+- Multi threaded rendering and caching system for longer renders
+- Customizable options
+- Dark mode
 
 # Build notes
 This project has been built with VS2026, vcpkg, and Windows in mind, although ports to Linux and the Mac should be trivial.
