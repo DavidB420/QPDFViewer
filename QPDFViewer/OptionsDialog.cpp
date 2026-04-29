@@ -110,6 +110,7 @@ OptionsResult OptionsDialog::getResult()
 
 void OptionsDialog::acceptDialog()
 {
+	//Save result and accept
 	result.darkMode = darkModeBox->isChecked();
 	result.sameViewer = sameViewerBox->isChecked();
 	result.cacheSize = cacheEdit->text().toInt();

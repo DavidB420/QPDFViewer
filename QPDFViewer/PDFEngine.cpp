@@ -145,6 +145,7 @@ QImage PDFEngine::returnImage(QString fileName, QString password, bool hasPasswo
 
 Page* PDFEngine::returnDefaultImage(int h)
 {
+	//Load prexisting page if it exists and matches same requirements, otherwise return loading icon
 	QImage img(":/images/assets/loadingIcon.png");
 	
 	for (int i = 0; i < previousPages.length(); i++) {
@@ -324,7 +325,6 @@ void PDFEngine::addNavOutline(NavigationBar* navBar)
 		if (!outline.isEmpty()) {
 			QStandardItemModel* model = new QStandardItemModel;
 
-			//QDomElement currentItem  = docToc->documentElement();
 			QStandardItem* rootItem = model->invisibleRootItem();
 
 			recursivelyFillModel(outline, rootItem, navBar);
@@ -400,6 +400,7 @@ QVector<Page*> PDFEngine::getVisiblePages()
 				page = previousPages.at(m);
 		}
 		if (page == NULL) {
+			//Use multithreading if taking too long
 			if (useMultithreading) {
 				if (!renderThreadList.keys().contains(this->getCurrentPage())) {
 					if (doc->page(this->getCurrentPage() - 1) == NULL)
@@ -414,6 +415,7 @@ QVector<Page*> PDFEngine::getVisiblePages()
 							renderThreadList.remove(key);
 						}
 					}
+					//Grab page from cache if available
 					if (pageCache.contains(getCurrentPage()) && pageCache[getCurrentPage()]->pdfRotation == this->getCurrentRotation() && pageCache[getCurrentPage()]->scaleValue == this->getScaleValue())
 						page = new Page(this->parentWindow, this, &pageCache[getCurrentPage()]->image);
 					else {
@@ -448,11 +450,14 @@ QVector<Page*> PDFEngine::getVisiblePages()
 				if (page == NULL)	page = returnDefaultImage(allPageHeights.at(this->getCurrentPage() - 1));
 			}
 			else {
+				//Single threaded run, check elapsed time to see if multithreading is necessary
 				QElapsedTimer timer;
 				timer.start();
 				QImage img = PDFEngine::returnImage(QString::fromStdString(fileName), password, hasPassword, currentPage, scaleValue, pdfRotation, doc, &PDFEngine::check1Static, &PDFEngine::check1Static, this);
+				updateRenderTimeAvgs(timer.elapsed());
 				if (img.isNull()) return QVector<Page*>{};
 				page = new Page(this->parentWindow, this, &img);
+				addPageDecorations(page, this->getCurrentPage(), img);
 			}
 		}
 		if (page == NULL)
@@ -561,6 +566,20 @@ void PDFEngine::updateCustomValues(int cacheSize, int multithreadTime, int cache
 	this->cacheTime = cacheTime;
 }
 
+void PDFEngine::addPageDecorations(Page* pageObj, int pageNum, QImage renderedImg)
+{
+	//Add hyperlinks to page
+	Poppler::Page* page = doc->page(pageNum - 1);
+	addHyperlinksToPage(pageObj, page, renderedImg);
+	//If there has been a selection from searching in the past, be sure to show it
+	if (selectedRect.x() != 0 && selectedRect.y() != 0 && selectedRect.width() != 0 && selectedRect.height() != 0 && pageNum == foundPageNum) {
+		QRectF rect(selectedRect.x() * scaleValue / 75, selectedRect.y() * scaleValue / 75, selectedRect.width() * scaleValue / 75, selectedRect.height() * scaleValue / 75);
+		pageObj->drawSelection(rect);
+		selectedRect = QRectF(0, 0, 0, 0);
+		foundPageNum = -1;
+	}
+}
+
 void PDFEngine::cancelFindAllWorker()
 {
 	//If the user closes the find all dialog or starts another search
@@ -592,9 +611,9 @@ void PDFEngine::findAllResult(SearchResult result)
 
 void PDFEngine::onPageRendered(int pageNum, QImage renderedImg, int elapsedTime)
 {
-	if (doc == NULL)
-		return;
+	if (doc == NULL) return;
 	
+	//Update previous default page with newly rendered page, if it has been taking too long add it to cache
 	for (int i = 0; i < previousPages.length(); i++) {
 		if (previousPages.at(i)->getPageNumber() == pageNum) {
 			if (elapsedTime > cacheTime && pageCache.maxCost() != cacheSize * 1024 * 1024)
@@ -608,16 +627,7 @@ void PDFEngine::onPageRendered(int pageNum, QImage renderedImg, int elapsedTime)
 			}
 			previousPages.at(i)->loadPixmap(&renderedImg);
 			previousPages.at(i)->resize(renderedImg.width(), renderedImg.height());
-			//Add hyperlinks to page
-			Poppler::Page* page = doc->page(pageNum - 1);
-			addHyperlinksToPage(previousPages.at(i), page, renderedImg);
-			//If there has been a selection from searching in the past, be sure to show it
-			if (selectedRect.x() != 0 && selectedRect.y() != 0 && selectedRect.width() != 0 && selectedRect.height() != 0 && pageNum == foundPageNum) {
-				QRectF rect(selectedRect.x() * scaleValue / 75, selectedRect.y() * scaleValue / 75, selectedRect.width() * scaleValue / 75, selectedRect.height() * scaleValue / 75);
-				previousPages.at(i)->drawSelection(rect);
-				selectedRect = QRectF(0, 0, 0, 0);
-				foundPageNum = -1;
-			}
+			addPageDecorations(previousPages.at(i), pageNum, renderedImg);
 			updateRenderTimeAvgs(elapsedTime);
 			emit pageFinished();
 			break;
@@ -689,6 +699,9 @@ void PDFEngine::recursivelyFillModel(QVector<Poppler::OutlineItem> currentItem, 
 
 void PDFEngine::updateRenderTimeAvgs(qint64 elapsed)
 {
+	//Keep track of elapsed time for 5 most recent successful runs, use multithreading if taking too long
+	if (elapsed < 0) return;
+	
 	renderTimes.push_back(elapsed);
 
 	if (renderTimes.size() > 5)
@@ -793,6 +806,7 @@ void PDFEngine::addHyperlinksToPage(Page* page, Poppler::Page* popplerPage, QIma
 
 void PDFEngine::killThread(PageRenderThread thread)
 {
+	//If multihreading run is cancelled
 	thread.worker->cancel();
 	disconnect(thread.worker, &PageRendererWorker::finished, this, &PDFEngine::onPageRendered);
 	thread.renderThread->quit();
@@ -826,13 +840,13 @@ void PDFEngine::failedToLoad(){	success = false;}
 
 Poppler::Document* PDFEngine::check1()
 {
-		if (checkFileAvailable(fileName) == "")
-			return NULL;
-		Poppler::Document* doc = Poppler::Document::load(QString::fromStdString(fileName));
-		doc->setRenderHint(Poppler::Document::Antialiasing, true);
-		doc->setRenderHint(Poppler::Document::TextAntialiasing, true);
-		return doc;
-	return NULL;
+	//Reload document if issues crop up
+	if (checkFileAvailable(fileName) == "")
+		return NULL;
+	Poppler::Document* doc = Poppler::Document::load(QString::fromStdString(fileName));
+	doc->setRenderHint(Poppler::Document::Antialiasing, true);
+	doc->setRenderHint(Poppler::Document::TextAntialiasing, true);
+	return doc;
 }
 
 Poppler::Document* PDFEngine::check1Static(void* ctx)

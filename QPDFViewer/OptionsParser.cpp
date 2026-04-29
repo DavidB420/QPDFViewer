@@ -40,6 +40,7 @@ OptionsParser::OptionsParser()
 
 void OptionsParser::loadFromFile()
 {
+	//Load from the config file if it exists, otherwise intiialize the file with default values
 	QString path = QCoreApplication::applicationDirPath() + "/config.cfg";
 	QFile file(path);
 
@@ -82,6 +83,7 @@ void OptionsParser::loadFromFile()
 
 void OptionsParser::saveToFile()
 {
+	//Save config file with update values and update theme if necessary 
 	QString path = QCoreApplication::applicationDirPath() + "/config.cfg";
 	QFile file(path);
 
@@ -133,6 +135,7 @@ void OptionsParser::setValues(bool darkMode, bool sameViewer, int cacheSize, int
 
 void OptionsParser::changeTheme()
 {
+	//Apply custom dark theme, or restore default light theme
 	QApplication* a = static_cast<QApplication*>(QApplication::instance());
 
 	if (darkMode) {

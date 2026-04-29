@@ -71,6 +71,7 @@ public:
 	bool refreshEngine();
 	void rerenderAllPages();
 	void updateCustomValues(int cacheSize, int multithreadTime, int cacheTime);
+	void addPageDecorations(Page* pageObj, int pageNum, QImage renderedImg);
 	Poppler::Page* reloadDocAndPage();
 	std::string checkFileAvailable(std::string fileName);
 private:

@@ -24,6 +24,7 @@
 
 PageRendererWorker::PageRendererWorker(PageRenderTask renderTask)
 {
+	//Initialize default values
 	pageNum = renderTask.pageNum;
 	scale = renderTask.scale;
 	rotation = renderTask.rotation;
@@ -41,6 +42,7 @@ void PageRendererWorker::cancel() { cancelled = true; }
 
 void PageRendererWorker::run()
 {
+	//Run multithreaded run while keeping track of time taken
 	QElapsedTimer timer;
 	timer.start();
 
@@ -52,6 +54,7 @@ void PageRendererWorker::run()
 
 Poppler::Document* PageRendererWorker::check1() 
 {
+	//Failed run
 	emit finished(-1, QImage(), -1);
 	return NULL;
 }
