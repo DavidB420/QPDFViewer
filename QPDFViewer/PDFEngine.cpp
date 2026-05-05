@@ -159,30 +159,15 @@ Page* PDFEngine::returnDefaultImage(int h)
 	return loadingPage;
 }
 
-QString PDFEngine::getPassword()
-{
-	return password;
-}
+QString PDFEngine::getPassword() { 	return password; }
 
-bool PDFEngine::getHasPassword()
-{
-	return hasPassword;
-}
+bool PDFEngine::getHasPassword() { return hasPassword; }
 
-int PDFEngine::getTotalNumberOfPages()
-{
-	return doc->numPages();
-}
+int PDFEngine::getTotalNumberOfPages() { return doc->numPages(); }
 
-int PDFEngine::getCurrentPage()
-{
-	return currentPage;
-}
+int PDFEngine::getCurrentPage() { return currentPage; }
 
-int PDFEngine::getScaleValue()
-{
-	return scaleValue;
-}
+int PDFEngine::getScaleValue() { return scaleValue; }
 
 bool PDFEngine::setCurrentPage(int page)
 {
@@ -416,8 +401,10 @@ QVector<Page*> PDFEngine::getVisiblePages()
 						}
 					}
 					//Grab page from cache if available
-					if (pageCache.contains(getCurrentPage()) && pageCache[getCurrentPage()]->pdfRotation == this->getCurrentRotation() && pageCache[getCurrentPage()]->scaleValue == this->getScaleValue())
+					if (pageCache.contains(getCurrentPage()) && pageCache[getCurrentPage()]->pdfRotation == this->getCurrentRotation() && pageCache[getCurrentPage()]->scaleValue == this->getScaleValue()) {
 						page = new Page(this->parentWindow, this, &pageCache[getCurrentPage()]->image);
+						addPageDecorations(page, this->getCurrentPage(), pageCache[getCurrentPage()]->image);
+					}
 					else {
 						struct PageRenderTask renderTask;
 						renderTask.fileName = QString::fromStdString(this->fileName);
@@ -578,6 +565,7 @@ void PDFEngine::addPageDecorations(Page* pageObj, int pageNum, QImage renderedIm
 		selectedRect = QRectF(0, 0, 0, 0);
 		foundPageNum = -1;
 	}
+	delete page;
 }
 
 void PDFEngine::cancelFindAllWorker()
@@ -769,39 +757,20 @@ void PDFEngine::addHyperlinksToPage(Page* page, Poppler::Page* popplerPage, QIma
 	//Add all necessary web hyperlink objects
 	for (int i = 0; i < links.length(); i++) {
 		if (links.at(i)->linkType() == Poppler::Link::Browse) {
-			double linkScale = 72 * scaleValue / 75.0;
-			Poppler::LinkBrowse* link = static_cast<Poppler::LinkBrowse*>(links.at(i));
-			double x, y, width, height = link->linkArea().height() * -1;
-			switch (pdfRotation) {
-			case Poppler::Page::Rotate0:
-			default:
-				x = link->linkArea().x() * image.width();
-				y = (link->linkArea().y() + link->linkArea().height()) * image.height();
-				width = link->linkArea().width() * image.width();
-				height = height * image.height();
-				break;
-			case Poppler::Page::Rotate90:
-				x = (1.0 - link->linkArea().y()) * image.width();
-				y = (link->linkArea().x()) * image.height();
-				width = height * image.width();
-				height = link->linkArea().width() * image.height();
-				break;
-			case Poppler::Page::Rotate180:
-				x = (1.0 - link->linkArea().x() - link->linkArea().width()) * image.width();
-				y = (1.0 - link->linkArea().y()) * image.height();
-				width = link->linkArea().width() * image.width();
-				height = height * image.height();
-				break;
-			case Poppler::Page::Rotate270:
-				x = (link->linkArea().y() - height) * image.width();
-				y = (1.0 - link->linkArea().x() - link->linkArea().width()) * image.height();
-				width = height * image.width();
-				height = link->linkArea().width() * image.height();
-				break;
-			}
-			page->addHyperlink(new HyperlinkObject(page, QRectF(x, y, width, height), link->url()));
+			auto* lb = static_cast<Poppler::LinkBrowse*>(links.at(i));
+			QRectF r = lb->linkArea().normalized();
+			page->addHyperlink(new HyperlinkObject(page, toImageRect(QRectF(r.x() * popplerPage->pageSizeF().width(), r.y() * popplerPage->pageSizeF().height(), r.width() * popplerPage->pageSizeF().width(), r.height() * popplerPage->pageSizeF().height()),image,popplerPage), lb->url()));
 		}
 	}
+	QList<Poppler::TextBox*> textBoxes = popplerPage->textList();
+	for (int i = 0; i < textBoxes.length(); i++) {
+		QString word = textBoxes.at(i)->text().trimmed();
+		if (word.contains("http", Qt::CaseInsensitive) || word.contains("www.", Qt::CaseInsensitive)) {
+			if (!word.startsWith("http", Qt::CaseInsensitive)) word.prepend("https://");
+			page->addHyperlink(new HyperlinkObject(page, toImageRect(textBoxes.at(i)->boundingBox(),image,popplerPage), word));
+		}
+	}
+	for (int i = 0; i < textBoxes.length(); i++) delete textBoxes.at(i);
 }
 
 void PDFEngine::killThread(PageRenderThread thread)
@@ -837,6 +806,25 @@ void PDFEngine::unlockDocument()
 }
 
 void PDFEngine::failedToLoad(){	success = false;}
+
+QRectF PDFEngine::toImageRect(QRectF r, QImage image, Poppler::Page* popplerPage)
+{
+	switch (pdfRotation) {
+	default:
+	case Poppler::Page::Rotate0:
+		return QRectF(r.x() / popplerPage->pageSizeF().width() * image.width(), r.y() / popplerPage->pageSizeF().height() * image.height(),
+			r.width() / popplerPage->pageSizeF().width() * image.width(), r.height() / popplerPage->pageSizeF().height() * image.height());
+	case Poppler::Page::Rotate90:
+		return QRectF((1.0 - (r.y() + r.height()) / popplerPage->pageSizeF().height()) * image.width(), r.x() / popplerPage->pageSizeF().width() * image.height(),
+			r.height() / popplerPage->pageSizeF().height() * image.width(), r.width() / popplerPage->pageSizeF().width() * image.height());
+	case Poppler::Page::Rotate180:
+		return QRectF((1.0 - (r.x() + r.width()) / popplerPage->pageSizeF().width()) * image.width(), (1.0 - (r.y() + r.height()) / popplerPage->pageSizeF().height()) * image.height(),
+			r.width() / popplerPage->pageSizeF().width() * image.width(), r.height() / popplerPage->pageSizeF().height() * image.height());
+	case Poppler::Page::Rotate270:
+		return QRectF(r.y() / popplerPage->pageSizeF().height() * image.width(), (1.0 - (r.x() + r.width()) / popplerPage->pageSizeF().width()) * image.height(),
+			r.height() / popplerPage->pageSizeF().height() * image.width(), r.width() / popplerPage->pageSizeF().width() * image.height());
+	}
+}
 
 Poppler::Document* PDFEngine::check1()
 {

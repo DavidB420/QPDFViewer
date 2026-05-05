@@ -110,6 +110,7 @@ private:
 	void killThread(PageRenderThread thread);
 	void unlockDocument();
 	void failedToLoad();
+	QRectF toImageRect(QRectF r, QImage image, Poppler::Page* popplerPage);
 	Poppler::Document* check1();
 	static Poppler::Document* check1Static(void* ctx);
 signals:
