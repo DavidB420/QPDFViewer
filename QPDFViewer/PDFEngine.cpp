@@ -767,7 +767,7 @@ void PDFEngine::addHyperlinksToPage(Page* page, Poppler::Page* popplerPage, QIma
 		QString word = textBoxes.at(i)->text().trimmed();
 		if (word.contains("http", Qt::CaseInsensitive) || word.contains("www.", Qt::CaseInsensitive)) {
 			if (!word.startsWith("http", Qt::CaseInsensitive)) word.prepend("https://");
-			page->addHyperlink(new HyperlinkObject(page, toImageRect(textBoxes.at(i)->boundingBox(),image,popplerPage), word));
+			page->addHyperlink(new HyperlinkObject(page, toImageRect(textBoxes.at(i)->boundingBox(),image,popplerPage), word,true));
 		}
 	}
 	for (int i = 0; i < textBoxes.length(); i++) delete textBoxes.at(i);

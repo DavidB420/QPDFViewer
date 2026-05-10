@@ -27,9 +27,11 @@
 class HyperlinkObject : public QPushButton
 {
 public:
-	HyperlinkObject(QWidget* parent = 0, QRectF dimSize = QRectF(0, 0, 0, 0), QString url = "");
+	HyperlinkObject(QWidget* parent = 0, QRectF dimSize = QRectF(0, 0, 0, 0), QString url = "", bool isPlainText=false);
+	bool getIsPlainText();
 private:
 	QString url;
+	bool isPlainText;
 private slots:
 	void hyperlinkClicked();
 };

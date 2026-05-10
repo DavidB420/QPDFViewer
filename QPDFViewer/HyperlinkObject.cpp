@@ -23,10 +23,11 @@
 #include <qurl.h>
 #include <qobject.h>
 
-HyperlinkObject::HyperlinkObject(QWidget* parent, QRectF dimSize, QString url): QPushButton(parent)
+HyperlinkObject::HyperlinkObject(QWidget* parent, QRectF dimSize, QString url, bool isPlainText): QPushButton(parent)
 {
     //Make push button invisible and set default values
     this->setText("");
+    this->isPlainText = isPlainText;
     this->setStyleSheet("QPushButton {background-color: transparent;border: none;}");
 
     this->url = url;
@@ -37,6 +38,11 @@ HyperlinkObject::HyperlinkObject(QWidget* parent, QRectF dimSize, QString url): 
     connect(this, &QPushButton::clicked, this, &HyperlinkObject::hyperlinkClicked);
 
     this->show();
+}
+
+bool HyperlinkObject::getIsPlainText()
+{
+    return isPlainText;
 }
 
 void HyperlinkObject::hyperlinkClicked()
