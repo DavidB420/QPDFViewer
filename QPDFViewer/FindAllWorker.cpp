@@ -71,22 +71,47 @@ void FindAllWorker::run()
 			break;
 		Poppler::Page* page = doc->page(i-1);
 
-		QList<QRectF> rects = page->search(qPhrase, Poppler::Page::IgnoreCase, pdfRotation);
+		QList<Poppler::TextBox*> words = page->textList(pdfRotation);
 
 		//Check if there any actual results before continuing with the rest of search
-		if (!rects.isEmpty()) {
+		if (!words.isEmpty()) {
 			//Save page text for snippet
-			QString text = page->text(QRectF());
+			QString text = "";
+			QList<int> wordLengthLookup;
+			int pos = 0;
+			for (int j = 0; j < words.length(); j++) {
+				QString wordStr = words.at(j)->text();
+				for (int k = 0; k < wordStr.length(); k++) {
+					text.append(wordStr.at(k));
+				}
+				wordLengthLookup.append(pos);
+				pos += wordStr.length();
+				if (words.at(j)->hasSpaceAfter()) {
+					text.append(' ');
+					pos++;
+				}
+			}
 			QString textTmp = text;
 
 			//Get all results in the page
-			int index = direction == 2 ? text.length()-1 : 0, j = direction == 2 ? rects.length() - 1 : 0;
-			while ((direction == 2 && (index = text.lastIndexOf(qPhrase, index, Qt::CaseInsensitive)) != -1) || (direction != 2 && (index = text.indexOf(qPhrase, index, Qt::CaseInsensitive)) != -1)) {	
+			int index = direction == 2 ? text.length()-1 : 0, j = direction == 2 ? words.length() - 1 : 0;
+			while ((direction == 2 && index >= 0 && (index = text.lastIndexOf(qPhrase, index, Qt::CaseInsensitive)) != -1) || (direction != 2 && index < text.length() && (index = text.indexOf(qPhrase, index, Qt::CaseInsensitive)) != -1)) {	
 				//Get new copy of text and save rect and page number in result
 				textTmp = text;
 				SearchResult newResult;
 				newResult.page = i;
-				newResult.foundRect = rects.at(j);
+				newResult.foundRect = QRectF(0, 0, 0, 0);
+				for (int k = j; direction == 2 ? k >= 0 : k < words.length(); direction == 2 ? k-- : k++){
+					int wordStart = wordLengthLookup.at(k);
+					int wordEnd = wordStart + words.at(k)->text().length();
+					if (index >= wordStart && index < wordEnd) {
+						newResult.foundRect = words.at(k)->charBoundingBox(index - wordStart);
+						for (int l = (index - wordStart) + 1; l < (index - wordStart) + phrase.length() && l < words.at(k)->text().length(); l++)
+							newResult.foundRect = newResult.foundRect.united(words.at(k)->charBoundingBox(l));
+						j = k;
+						break;
+					}
+				}
 				newResult.done = cancelled;
 
 				//Insert HTML header and footer around found phrase
@@ -102,13 +127,13 @@ void FindAllWorker::run()
 				index -= highlightHTMLHeader.size();
 
 				index += direction == 2 ? -1 : qPhraseLength;
-				j+=direction == 2 ? -1 : 1;
+				//j+=direction == 2 ? -1 : 1;
 
 				//Finished one result, send it to engine so it can send it to dialog box
 				emit finishedResult(newResult);
 			}
 		}
-
+		qDeleteAll(words);
 		delete page;
 	}
 
