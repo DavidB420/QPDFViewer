@@ -296,7 +296,7 @@ void PDFEngine::displayAllText()
 {
 	//Display entire text contents of a page
 	Poppler::Page* page = doc->page(getCurrentPage() - 1);
-	QRectF rect(0, 0, page->pageSizeF().width(), page->pageSizeF().height());
+	QRectF rect(0, 0, ((pdfRotation == Poppler::Page::Rotate0 || pdfRotation == Poppler::Page::Rotate180) ? page->pageSizeF().width() : page->pageSizeF().height()) * (72.0 * scaleValue / 75.0) / 72.0, ((pdfRotation == Poppler::Page::Rotate0 || pdfRotation == Poppler::Page::Rotate180) ? page->pageSizeF().height() : page->pageSizeF().width()) * (72.0 * scaleValue / 75.0) / 72.0);
 	delete page;
 	displayTextBox(rect);
 }
@@ -444,6 +444,7 @@ QVector<Page*> PDFEngine::getVisiblePages()
 				updateRenderTimeAvgs(timer.elapsed());
 				if (img.isNull()) return QVector<Page*>{};
 				page = new Page(this->parentWindow, this, &img);
+				page->resize(img.width(), img.height());
 				addPageDecorations(page, this->getCurrentPage(), img);
 			}
 		}
