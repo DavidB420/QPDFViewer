@@ -767,8 +767,21 @@ void PDFEngine::addHyperlinksToPage(Page* page, Poppler::Page* popplerPage, QIma
 	for (int i = 0; i < textBoxes.length(); i++) {
 		QString word = textBoxes.at(i)->text().trimmed();
 		if (word.contains("http", Qt::CaseInsensitive) || word.contains("www.", Qt::CaseInsensitive)) {
+			int lastIdx = i;
+			//Add other possible text boxes
+			for (int j = i + 1; j < textBoxes.length(); j++) {
+				QString next = textBoxes.at(j)->text();
+				QString nextTrim = next.trimmed();
+				if (nextTrim.isEmpty() || next.contains(' ') || next.contains('\t')) break;
+				if (nextTrim.startsWith("http", Qt::CaseInsensitive) ||	nextTrim.startsWith("www.", Qt::CaseInsensitive)) break;
+				word += nextTrim;
+				lastIdx = j;
+			}
+			//Remove possible illegal characters from end of url
+			while (!word.isEmpty() && QString(".,;:!?)]}>\"'").contains(word.back())) word.chop(1);
 			if (!word.startsWith("http", Qt::CaseInsensitive)) word.prepend("https://");
-			page->addHyperlink(new HyperlinkObject(page, toImageRect(textBoxes.at(i)->boundingBox(),image,popplerPage), word,true));
+			for (int k = i; k <= lastIdx; k++)	page->addHyperlink(new HyperlinkObject(page, toImageRect(textBoxes.at(k)->boundingBox(), image, popplerPage), word, true));
+			i = lastIdx;
 		}
 	}
 	for (int i = 0; i < textBoxes.length(); i++) delete textBoxes.at(i);
