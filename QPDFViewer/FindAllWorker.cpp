@@ -101,15 +101,18 @@ void FindAllWorker::run()
 				SearchResult newResult;
 				newResult.page = i;
 				newResult.foundRect = QRectF(0, 0, 0, 0);
-				for (int k = j; direction == 2 ? k >= 0 : k < words.length(); direction == 2 ? k-- : k++){
+				//Create found rect, use multiple words if necessary
+				for (int k = j, rectIndex = index, m = phrase.count(' '); direction == 2 ? k >= 0 : k < words.length(); direction == 2 ? k-- : k++) {
 					int wordStart = wordLengthLookup.at(k);
 					int wordEnd = wordStart + words.at(k)->text().length();
-					if (index >= wordStart && index < wordEnd) {
-						newResult.foundRect = words.at(k)->charBoundingBox(index - wordStart);
-						for (int l = (index - wordStart) + 1; l < (index - wordStart) + phrase.length() && l < words.at(k)->text().length(); l++)
+					if (rectIndex >= wordStart && rectIndex < wordEnd) {
+						if (newResult.foundRect == QRectF(0,0,0,0)) newResult.foundRect = words.at(k)->charBoundingBox(rectIndex - wordStart);
+						for (int l = (rectIndex - wordStart) + 1; l < (rectIndex - wordStart) + phrase.length(); l++)
 							newResult.foundRect = newResult.foundRect.united(words.at(k)->charBoundingBox(l));
 						j = k;
-						break;
+						m += words.at(k)->text().length();
+						if (m < phrase.length())
+							rectIndex += words.at(k)->text().length()+1;
 					}
 				}
 				newResult.done = cancelled;
