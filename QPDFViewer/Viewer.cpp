@@ -510,7 +510,9 @@ void Viewer::findPhrase()
 	//Search for phrase either forwards or backwards
 	bool result = false;
 
-	if (forwardsSearch == sender())
+	if (searchBox->text().isEmpty())
+		result = false;
+	else if (forwardsSearch == sender())
 		result = tabItems.at(currentTab)->getEngine()->findPhraseInDocument(searchBox->text().toStdString(), Poppler::Page::SearchDirection::NextResult);
 	else if (backwardsSearch == sender())
 		result = tabItems.at(currentTab)->getEngine()->findPhraseInDocument(searchBox->text().toStdString(), Poppler::Page::SearchDirection::PreviousResult);

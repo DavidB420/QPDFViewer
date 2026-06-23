@@ -162,6 +162,11 @@ void FindAllWorker::cancel()
 
 void FindAllWorker::run()
 {
+	if (phrase.isEmpty()) {
+		emit finished();
+		return;
+	}
+	
 	//Save start, stop, step of for loop
 	int start = direction == 0 ? 1 : currentPage;
 	int stop = direction == 2 ? 0 : totalNumberOfPages;
