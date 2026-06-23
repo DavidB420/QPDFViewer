@@ -591,6 +591,8 @@ void PDFEngine::cancelFindAllWorker()
 
 	currentFindAllWorker = nullptr;
 	currentFindAllThread = nullptr;
+
+	emit findAllBoxMsg("Completed");
 }
 
 void PDFEngine::findAllResult(SearchResult result)

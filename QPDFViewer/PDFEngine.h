@@ -118,6 +118,7 @@ signals:
 	void sendFindAllResult(SearchResult result);
 	void attentionNeeded();
 	void pageFinished();
+	void findAllBoxMsg(QString msg);
 public slots:
 	void goToPhrase(int page, QList<QRectF> rect);
 	void cancelFindAllWorker();

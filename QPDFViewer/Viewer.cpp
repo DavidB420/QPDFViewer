@@ -299,12 +299,15 @@ void Viewer::findAllSearch()
 	//Open find all box and start search, end search if dialog is destroyed
 	if (fBox != NULL) {
 		disconnect(tabItems.at(currentTab)->getEngine(), &PDFEngine::sendFindAllResult, fBox, &FindAllBox::addItemToBox);
+		emit tabItems.at(currentTab)->getEngine()->findAllBoxMsg("Interrupted");
+		disconnect(tabItems.at(currentTab)->getEngine(), &PDFEngine::findAllBoxMsg, fBox, &FindAllBox::updateMsg);
 		disconnect(fBox, &QObject::destroyed, tabItems.at(currentTab)->getEngine(), &PDFEngine::cancelFindAllWorker);
 	}
 
 	if (tabItems.at(currentTab)->getEngine()->getAllSearchResults(direction, searchBox->text().toStdString())) {
 		fBox = new FindAllBox(this, searchBox->text(), direction);
 		connect(tabItems.at(currentTab)->getEngine(), &PDFEngine::sendFindAllResult, fBox, &FindAllBox::addItemToBox);
+		connect(tabItems.at(currentTab)->getEngine(), &PDFEngine::findAllBoxMsg, fBox, &FindAllBox::updateMsg);
 		connect(fBox, &QObject::destroyed, tabItems.at(currentTab)->getEngine(), &PDFEngine::cancelFindAllWorker);
 		connect(fBox, &QObject::destroyed, this, &Viewer::findAllBoxDeleted);
 		connect(fBox, &FindAllBox::itemClicked, tabItems.at(currentTab)->getEngine(), &PDFEngine::goToPhrase);
