@@ -34,13 +34,15 @@ public:
 	void saveToFile();
 	bool returnDarkMode();
 	bool returnSameViewer();
+	bool returnUnwrappedCopy();
 	int returnCacheSize();
 	int returnMultithreadTime();
 	int returnCacheTime();
-	void setValues(bool darkMode, bool sameViewer, int cacheSize, int multithreadTime, int cacheTime);
+	void setValues(bool darkMode, bool sameViewer, bool unwrappedCopy, int cacheSize, int multithreadTime, int cacheTime);
 private:
 	bool darkMode;
 	bool sameViewer;
+	bool unwrappedCopy;
 	int cacheSize;
 	int multithreadTime;
 	int cacheTime;

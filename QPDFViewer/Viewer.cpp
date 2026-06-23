@@ -268,7 +268,7 @@ void Viewer::openFile(QStringList fileNames)
 					navBarShowAct->setChecked(true);
 					showNavBar();
 				}
-				tabItems.at(currentTab)->getEngine()->updateCustomValues(parser->returnCacheSize(), parser->returnMultithreadTime(), parser->returnCacheTime());
+				tabItems.at(currentTab)->getEngine()->updateCustomValues(parser->returnUnwrappedCopy(), parser->returnCacheSize(), parser->returnMultithreadTime(), parser->returnCacheTime());
 			}
 		}
 
@@ -299,12 +299,15 @@ void Viewer::findAllSearch()
 	//Open find all box and start search, end search if dialog is destroyed
 	if (fBox != NULL) {
 		disconnect(tabItems.at(currentTab)->getEngine(), &PDFEngine::sendFindAllResult, fBox, &FindAllBox::addItemToBox);
+		emit tabItems.at(currentTab)->getEngine()->findAllBoxMsg("Interrupted");
+		disconnect(tabItems.at(currentTab)->getEngine(), &PDFEngine::findAllBoxMsg, fBox, &FindAllBox::updateMsg);
 		disconnect(fBox, &QObject::destroyed, tabItems.at(currentTab)->getEngine(), &PDFEngine::cancelFindAllWorker);
 	}
 
 	if (tabItems.at(currentTab)->getEngine()->getAllSearchResults(direction, searchBox->text().toStdString())) {
 		fBox = new FindAllBox(this, searchBox->text(), direction);
 		connect(tabItems.at(currentTab)->getEngine(), &PDFEngine::sendFindAllResult, fBox, &FindAllBox::addItemToBox);
+		connect(tabItems.at(currentTab)->getEngine(), &PDFEngine::findAllBoxMsg, fBox, &FindAllBox::updateMsg);
 		connect(fBox, &QObject::destroyed, tabItems.at(currentTab)->getEngine(), &PDFEngine::cancelFindAllWorker);
 		connect(fBox, &QObject::destroyed, this, &Viewer::findAllBoxDeleted);
 		connect(fBox, &FindAllBox::itemClicked, tabItems.at(currentTab)->getEngine(), &PDFEngine::goToPhrase);
@@ -507,7 +510,9 @@ void Viewer::findPhrase()
 	//Search for phrase either forwards or backwards
 	bool result = false;
 
-	if (forwardsSearch == sender())
+	if (searchBox->text().isEmpty())
+		result = false;
+	else if (forwardsSearch == sender())
 		result = tabItems.at(currentTab)->getEngine()->findPhraseInDocument(searchBox->text().toStdString(), Poppler::Page::SearchDirection::NextResult);
 	else if (backwardsSearch == sender())
 		result = tabItems.at(currentTab)->getEngine()->findPhraseInDocument(searchBox->text().toStdString(), Poppler::Page::SearchDirection::PreviousResult);
@@ -688,12 +693,12 @@ void Viewer::onTabCloseRequested(int index)
 
 void Viewer::getOptionsDialog()
 {
-	OptionsDialog* oDialog = new OptionsDialog(this,parser->returnDarkMode(),parser->returnSameViewer(),parser->returnCacheSize(),parser->returnMultithreadTime(),parser->returnCacheTime());
+	OptionsDialog* oDialog = new OptionsDialog(this,parser->returnDarkMode(),parser->returnSameViewer(), parser->returnUnwrappedCopy(), parser->returnCacheSize(),parser->returnMultithreadTime(),parser->returnCacheTime());
 	if (oDialog->exec() == QDialog::Accepted) { 
-		parser->setValues(oDialog->getResult().darkMode, oDialog->getResult().sameViewer, oDialog->getResult().cacheSize, oDialog->getResult().multithreadTime, oDialog->getResult().cacheTime); 
+		parser->setValues(oDialog->getResult().darkMode, oDialog->getResult().sameViewer, oDialog->getResult().unwrappedCopy, oDialog->getResult().cacheSize, oDialog->getResult().multithreadTime, oDialog->getResult().cacheTime); 
 		parser->saveToFile(); 
 		for (int i = 0; i < tabItems.size(); i++)
-			if (tabItems.at(currentTab)->getEngine() != NULL) tabItems.at(currentTab)->getEngine()->updateCustomValues(parser->returnCacheSize(), parser->returnMultithreadTime(), parser->returnCacheTime());
+			if (tabItems.at(currentTab)->getEngine() != NULL) tabItems.at(currentTab)->getEngine()->updateCustomValues(parser->returnUnwrappedCopy(), parser->returnCacheSize(), parser->returnMultithreadTime(), parser->returnCacheTime());
 	}
 	delete oDialog;
 }

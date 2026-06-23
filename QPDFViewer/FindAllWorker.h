@@ -22,14 +22,16 @@
 
 #include <qobject.h>
 #include <poppler-qt5.h>
+#include <qmetatype.h>
 
 struct SearchResult {
 	QString snippet;
-	QRectF foundRect;
+	QList <QRectF> foundRect;
 	int page;
 	bool done;
 };
 
+Q_DECLARE_METATYPE(QList<QRectF>)
 Q_DECLARE_METATYPE(SearchResult)
 
 class FindAllWorker: public QObject
@@ -38,6 +40,7 @@ class FindAllWorker: public QObject
 public:
 	FindAllWorker(QString fn="", QString phrase="", QString password="", bool hasPassword=false, int currentPage = 0, int totalNumberOfPages = 0, int direction = 0, Poppler::Page::Rotation pdfRotation = Poppler::Page::Rotate0);
 	~FindAllWorker();
+	static QList<SearchResult> wordBoxSearch(QList<Poppler::TextBox*> words, int direction, int pageNum, QString qPhrase, QString highlightHTMLHeader = "", QString higlightHTMLFooter = "", bool (*functioning)(void*) = NULL, void (*emitter)(void*, SearchResult) = NULL, void* ctx = NULL);
 private:
 	QString fn;
 	QString phrase;
@@ -47,6 +50,10 @@ private:
 	bool cancelled;
 	Poppler::Document* doc;
 	Poppler::Page::Rotation pdfRotation;
+	void emitterItem(SearchResult newResult);
+	static void emitterItemStatic(void* ctx, SearchResult newResult);
+	bool isCancelled();
+	static bool isCancelledStatic(void* ctx);
 signals:
 	void finishedResult(SearchResult result);
 	void finished();

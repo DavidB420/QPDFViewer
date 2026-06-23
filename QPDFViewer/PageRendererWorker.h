@@ -32,7 +32,7 @@ struct PageRenderTask {
     QString fileName;
     QString password;
     bool hasPassword;
-    QRectF selectedRect;
+    QList<QRectF> selectedRect;
 };
 
 class PageRendererWorker: public QObject
@@ -49,7 +49,7 @@ private:
     QString fileName;
     QString password;
     bool hasPassword, cancelled;
-    QRectF selectedRect;
+    QList<QRectF> selectedRect;
     int foundPageNum;
     volatile int reloadResult;
     Poppler::Document* check1();

@@ -70,7 +70,7 @@ public:
 	void updateParentWindow(QWidget* parent);
 	bool refreshEngine();
 	void rerenderAllPages();
-	void updateCustomValues(int cacheSize, int multithreadTime, int cacheTime);
+	void updateCustomValues(bool unwrappedCopy, int cacheSize, int multithreadTime, int cacheTime);
 	void addPageDecorations(Page* pageObj, int pageNum, QImage renderedImg);
 	Poppler::Page* reloadDocAndPage();
 	std::string checkFileAvailable(std::string fileName);
@@ -78,8 +78,8 @@ private:
 	QWidget *parentWindow;
 	Page* outputLabel;
 	Poppler::Document* doc;
-	QRectF selectedRect;
-	QRectF foundRect;
+	QList<QRectF> selectedRect;
+	QList <QRectF> foundRect;
 	Poppler::Page::Rotation pdfRotation;
 	int currentPage;
 	int scaleValue;
@@ -88,6 +88,7 @@ private:
 	int cacheSize;
 	int multithreadTime;
 	int cacheTime;
+	bool unwrappedCopy;
 	bool success;
 	unsigned long documentHeight;
 	void recursivelyFillModel(QVector<Poppler::OutlineItem> currentItem, QStandardItem* rootItem, NavigationBar *navBar);
@@ -105,7 +106,7 @@ private:
 	bool useMultithreading;
 	void updateRenderTimeAvgs(qint64 elapsed);
 	void updateHeightValues(bool total);
-	bool documentSearch(Poppler::Page *page, int pageNum, std::string phrase, QRectF* foundRect, Poppler::Page::SearchDirection direction, Poppler::Page::Rotation rotation);
+	bool documentSearch(Poppler::Page *page, int pageNum, std::string phrase, QList <QRectF>* foundRect, Poppler::Page::SearchDirection direction, Poppler::Page::Rotation rotation);
 	void addHyperlinksToPage(Page* page, Poppler::Page* popplerPage, QImage image);
 	void killThread(PageRenderThread thread);
 	void unlockDocument();
@@ -118,9 +119,11 @@ signals:
 	void sendFindAllResult(SearchResult result);
 	void attentionNeeded();
 	void pageFinished();
+	void findAllBoxMsg(QString msg);
 public slots:
-	void goToPhrase(int page, QRectF rect);
+	void goToPhrase(int page, QList<QRectF> rect);
 	void cancelFindAllWorker();
+	void cancelFindAllWorkerGracefully();
 	void findAllResult(SearchResult result);
 	void onPageRendered(int pageNum, QImage renderedImg, int elapsedTime);
 };

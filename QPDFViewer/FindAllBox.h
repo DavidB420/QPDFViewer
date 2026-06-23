@@ -34,10 +34,12 @@ public:
 	~FindAllBox();
 private:
 	QTreeWidget* results;
+	QString baseTitle;
 signals:
-	void itemClicked(int page, QRectF rect);
+	void itemClicked(int page, QList<QRectF> rect);
 public slots:
 	void addItemToBox(SearchResult result);
+	void updateMsg(QString msg);
 private slots:
 	void selectResult(QTreeWidgetItem* item, int column);
 };

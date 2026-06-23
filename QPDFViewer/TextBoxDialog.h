@@ -22,17 +22,27 @@
 
 #include <qdialog.h>
 #include <qplaintextedit.h>
+#include <qcheckbox.h>
 #include <string>
 
 class TextBoxDialog : public QDialog
 {
 public:
-	TextBoxDialog(QWidget* parent = 0, std::string *txt = 0);
+	TextBoxDialog(QWidget* parent = 0, bool unwrappedCopy=true, std::string *txt = 0);
 private:
 	QPlainTextEdit* tBox;
+	QCheckBox* unwrappedChkBx;
+	QString generateUnwrapped();
+	QString txt;
+	bool unwrappedCopyEnable;
+	void wrappedCopy();
+	void unwrappedCopy();
+protected:
+	bool eventFilter(QObject* obj, QEvent* event) override;
 private slots:
 	void exitDialog();
 	void copyAllClipboard();
+	void toggleUnwrapped();
 };
 
 #endif

@@ -66,8 +66,6 @@ PDFEngine::PDFEngine(std::string fileName, QWidget *parentWindow)
 	currentPage = 1;
 	scaleValue = 100;
 
-	selectedRect = QRectF(0, 0, 0, 0);
-
 	pdfRotation = Poppler::Page::Rotate0;
 
 	documentHeight = 0;
@@ -194,14 +192,14 @@ bool PDFEngine::findPhraseInDocument(std::string phrase, Poppler::Page::SearchDi
 	//Start with defaults
 	int currentSearch = currentPage;
 	bool result = false;
-	selectedRect = QRectF(0, 0, 0, 0);
+	selectedRect.clear();
 
 	while (currentSearch >= 1 && currentSearch <= getTotalNumberOfPages()) {
 		Poppler::Page* page = doc->page(currentSearch - 1);
 
 		//If its a new page reset the page rect, otherwise do not so the search picks more than just the first item on the page
 		if (currentPage != currentSearch)
-			foundRect = QRectF(0.0, 0.0, page->pageSizeF().width(), page->pageSizeF().height());
+			foundRect.clear();
 
 		//If we are searching backwards and are on a new page we have search all the way forward on that page to search backwards
 		if (direction == Poppler::Page::SearchDirection::PreviousResult && currentPage != currentSearch) {
@@ -222,7 +220,7 @@ bool PDFEngine::findPhraseInDocument(std::string phrase, Poppler::Page::SearchDi
 
 		//If a result has been found, select it, then break out of the loop
 		if (result) {
-			selectedRect = QRectF(foundRect.x(), foundRect.y(), foundRect.width(), foundRect.height());
+			selectedRect.append(foundRect);
 			currentPage = currentSearch;
 			foundPageNum = currentSearch;
 			currentSearch = -1;
@@ -287,7 +285,7 @@ void PDFEngine::displayTextBox(QRectF dim)
 
 	std::string foundText = page->text(grabRect).toStdString();
 	delete page;
-	TextBoxDialog* dialog = new TextBoxDialog(this->parentWindow, &foundText);
+	TextBoxDialog* dialog = new TextBoxDialog(this->parentWindow, unwrappedCopy, &foundText);
 	dialog->setAttribute(Qt::WA_DeleteOnClose);
 	dialog->show();
 }
@@ -508,7 +506,7 @@ bool PDFEngine::getAllSearchResults(int direction, std::string phrase)
 		//Set up all signals for running the worker, checking when a result is ready, and when the worker is finished
 		connect(currentFindAllThread, &QThread::started, currentFindAllWorker, &FindAllWorker::run);
 		connect(currentFindAllWorker, &FindAllWorker::finishedResult, this, &PDFEngine::findAllResult);
-		connect(currentFindAllWorker, &FindAllWorker::finished, this, &PDFEngine::cancelFindAllWorker);
+		connect(currentFindAllWorker, &FindAllWorker::finished, this, &PDFEngine::cancelFindAllWorkerGracefully);
 
 		currentFindAllThread->start();
 		return true;
@@ -547,8 +545,9 @@ void PDFEngine::rerenderAllPages()
 	pageCache.clear();
 }
 
-void PDFEngine::updateCustomValues(int cacheSize, int multithreadTime, int cacheTime)
+void PDFEngine::updateCustomValues(bool unwrappedCopy, int cacheSize, int multithreadTime, int cacheTime)
 {
+	this->unwrappedCopy = unwrappedCopy;
 	this->cacheSize = cacheSize;
 	this->multithreadTime = multithreadTime;
 	this->cacheTime = cacheTime;
@@ -560,11 +559,13 @@ void PDFEngine::addPageDecorations(Page* pageObj, int pageNum, QImage renderedIm
 	Poppler::Page* page = doc->page(pageNum - 1);
 	addHyperlinksToPage(pageObj, page, renderedImg);
 	//If there has been a selection from searching in the past, be sure to show it
-	if (selectedRect.x() != 0 && selectedRect.y() != 0 && selectedRect.width() != 0 && selectedRect.height() != 0 && pageNum == foundPageNum) {
-		QRectF rect(selectedRect.x() * scaleValue / 75, selectedRect.y() * scaleValue / 75, selectedRect.width() * scaleValue / 75, selectedRect.height() * scaleValue / 75);
-		pageObj->drawSelection(rect);
-		selectedRect = QRectF(0, 0, 0, 0);
+	if (selectedRect.length() > 0 && selectedRect.at(0).x() != 0 && selectedRect.at(0).y() != 0 && selectedRect.at(0).width() != 0 && selectedRect.at(0).height() != 0 && pageNum == foundPageNum) {
+		QList<QRectF> pageRects;
+		for (int i = 0; i < selectedRect.length(); i++)
+			pageRects.append(QRectF(selectedRect.at(i).x() * scaleValue / 75, selectedRect.at(i).y() * scaleValue / 75, selectedRect.at(i).width() * scaleValue / 75, selectedRect.at(i).height() * scaleValue / 75));
+		pageObj->drawSelection(pageRects);
 		foundPageNum = -1;
+		selectedRect.clear();
 	}
 	delete page;
 }
@@ -591,6 +592,12 @@ void PDFEngine::cancelFindAllWorker()
 
 	currentFindAllWorker = nullptr;
 	currentFindAllThread = nullptr;
+}
+
+void PDFEngine::cancelFindAllWorkerGracefully()
+{
+	cancelFindAllWorker();
+	emit findAllBoxMsg("Completed");
 }
 
 void PDFEngine::findAllResult(SearchResult result)
@@ -630,7 +637,7 @@ void PDFEngine::onPageRendered(int pageNum, QImage renderedImg, int elapsedTime)
 	}
 }
 
-void PDFEngine::goToPhrase(int page, QRectF rect)
+void PDFEngine::goToPhrase(int page, QList<QRectF> rect)
 {
 	//Go to specific phrase the user selects regardless of whatever tab is open in the viewer
 	setCurrentPage(page);
@@ -649,8 +656,7 @@ bool PDFEngine::setCurrentPageSignal(int page)
 	if (result) {
 		for (int i = 0; i < previousPages.length(); i++) {
 			if (previousPages.at(i)->getPageNumber() != page) {
-				QRectF rect(0, 0, 0, 0);
-				previousPages.at(i)->drawSelection(rect);
+				previousPages.at(i)->drawSelection({ QRectF(0, 0, 0, 0) });
 			}
 		}
 		emit pageChanged();
@@ -724,7 +730,7 @@ void PDFEngine::updateHeightValues(bool total)
 	}
 }
 
-bool PDFEngine::documentSearch(Poppler::Page* page, int pageNum, std::string phrase, QRectF* foundRect, Poppler::Page::SearchDirection direction, Poppler::Page::Rotation rotation)
+bool PDFEngine::documentSearch(Poppler::Page* page, int pageNum, std::string phrase, QList <QRectF>* foundRect, Poppler::Page::SearchDirection direction, Poppler::Page::Rotation rotation)
 {
 	//Index is saved throughout runs
 	static int vectorIndex = -1;
@@ -732,8 +738,11 @@ bool PDFEngine::documentSearch(Poppler::Page* page, int pageNum, std::string phr
 	bool result = false;
 
 	//Returns list of all results found for the page
-	QList<QRectF> pageResults = page->search(QString::fromStdString(phrase), Poppler::Page::IgnoreCase, rotation);
-	
+	QList<Poppler::TextBox*> words = page->textList(pdfRotation);
+	QList <SearchResult> results = FindAllWorker::wordBoxSearch(words, Poppler::Page::SearchDirection::NextResult, pageNum, QString::fromStdString(phrase), NULL, NULL, NULL, NULL, NULL);
+	QList <QList<QRectF>> pageResults;
+	for (int i = 0; i < results.length(); i++) pageResults.append(results.at(i).foundRect);
+
 	//If we are on a new page or the index fell outside of the bounds reset it back to default
 	if (pageNum != searchPos || vectorIndex < -1)
 		vectorIndex = -1;
@@ -774,6 +783,9 @@ void PDFEngine::addHyperlinksToPage(Page* page, Poppler::Page* popplerPage, QIma
 				QString nextTrim = next.trimmed();
 				if (nextTrim.isEmpty() || next.contains(' ') || next.contains('\t')) break;
 				if (nextTrim.startsWith("http", Qt::CaseInsensitive) ||	nextTrim.startsWith("www.", Qt::CaseInsensitive)) break;
+				if (word.endsWith('/')) break;
+				if (nextTrim.contains(':')) break;
+				if (!nextTrim.isEmpty() && nextTrim.at(0).isUpper()) break;
 				word += nextTrim;
 				lastIdx = j;
 			}

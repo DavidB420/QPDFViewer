@@ -33,6 +33,7 @@ OptionsParser::OptionsParser()
 	//Initialize with default values 
 	darkMode = false;
 	sameViewer = false;
+	unwrappedCopy = true;
 	cacheSize = 200;
 	multithreadTime = 400;
 	cacheTime = 800;
@@ -78,6 +79,8 @@ void OptionsParser::loadFromFile()
 			}
 			else if (key == "sameViewer")
 				sameViewer = value.toInt();
+			else if (key == "unwrappedCopy")
+				unwrappedCopy = value.toInt();
 			else if (key == "cacheSize")
 				cacheSize = value.toInt();
 			else if (key == "multithreadTime")
@@ -106,6 +109,7 @@ void OptionsParser::saveToFile()
 		out << "QPDFViewer_MinorVersion=" << MINOR_VERSION << "\n";
 		out << "darkMode=" << darkMode << "\n";
 		out << "sameViewer=" << sameViewer << "\n";
+		out << "unwrappedCopy=" << unwrappedCopy << "\n";
 		out << "cacheSize=" << cacheSize << "\n";
 		out << "multithreadTime=" << multithreadTime << "\n";
 		out << "cacheTime=" << cacheTime << "\n";
@@ -123,6 +127,11 @@ bool OptionsParser::returnSameViewer()
 	return sameViewer;
 }
 
+bool OptionsParser::returnUnwrappedCopy()
+{
+	return unwrappedCopy;
+}
+
 int OptionsParser::returnCacheSize()
 {
 	return cacheSize;
@@ -138,10 +147,11 @@ int OptionsParser::returnCacheTime()
 	return cacheTime;
 }
 
-void OptionsParser::setValues(bool darkMode, bool sameViewer, int cacheSize, int multithreadTime, int cacheTime)
+void OptionsParser::setValues(bool darkMode, bool sameViewer, bool unwrappedCopy, int cacheSize, int multithreadTime, int cacheTime)
 {
 	this->darkMode = darkMode;
 	this->sameViewer = sameViewer;
+	this->unwrappedCopy = unwrappedCopy;
 	this->cacheSize = cacheSize;
 	this->multithreadTime = multithreadTime;
 	this->cacheTime = cacheTime;

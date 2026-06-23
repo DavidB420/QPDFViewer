@@ -42,6 +42,12 @@ void Page::loadPixmap(QImage* img)
 	setFixedHeight(pagePixmap.height());
 }
 
+void Page::drawRect(QPainter* painter, QRectF rect)
+{
+	painter->setBrush(QBrush(Qt::blue, Qt::Dense4Pattern));
+	painter->drawRect(rect);
+}
+
 QPixmap Page::getPagePixmap()
 {
 	return pagePixmap;
@@ -84,6 +90,7 @@ void Page::mousePressEvent(QMouseEvent* event)
 		this->parent->setCurrentPageSignal(this->getPageNumber());
 		dragging = true;
 		firstPoint = event->pos();
+		currentPoint = event->pos();
 	}
 }
 
@@ -122,19 +129,17 @@ void Page::paintEvent(QPaintEvent* event)
 
 	if (dragging) {
 		QRectF dragRect(firstPoint, currentPoint);
-		painter.setBrush(QBrush(Qt::blue, Qt::Dense4Pattern));
-		painter.drawRect(dragRect);
+		drawRect(&painter,dragRect);
 	}
+
+	for (int i = 0; i < rects.length(); i++)
+		drawRect(&painter, rects.at(i));
+	rects.clear();
 }
 
-void Page::drawSelection(QRectF rect)
+void Page::drawSelection(QList<QRectF> rect)
 {
-	//Draw selection for searches
-	dragging = true;
-	firstPoint.setX(rect.x());
-	firstPoint.setY(rect.y());
-	currentPoint.setX(firstPoint.x() + rect.width());
-	currentPoint.setY(firstPoint.y() + rect.height());
+	rects = rect;
 	update();
 }
 

@@ -36,6 +36,8 @@ FindAllBox::FindAllBox(QWidget* parent, QString phrase, int direction)
 		break;
 	}
 
+	baseTitle = this->windowTitle();
+
 	this->resize(640, 480);
 	this->setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
@@ -65,6 +67,11 @@ FindAllBox::~FindAllBox()
 	results->clear();
 }
 
+void FindAllBox::updateMsg(QString msg)
+{
+	this->setWindowTitle(baseTitle + " - " + msg);
+}
+
 void FindAllBox::addItemToBox(SearchResult result)
 {
 	//Add item sent from pdf engine
@@ -72,13 +79,14 @@ void FindAllBox::addItemToBox(SearchResult result)
 	newItem->setText(0, QString::number(result.page));
 	newItem->setText(1, result.snippet);
 	newItem->setData(0, Qt::UserRole, result.page);
-	newItem->setData(1, Qt::UserRole, result.foundRect);
+	newItem->setData(1, Qt::UserRole, QVariant::fromValue(result.foundRect));
+	this->updateMsg("Page: " + QString::number(result.page));
 }
 
 void FindAllBox::selectResult(QTreeWidgetItem* item, int column)
 {
 	//Emit item clicked which is sent back to pdf engine
-	emit itemClicked(item->data(0, Qt::UserRole).toInt(), item->data(1, Qt::UserRole).toRectF());
+	emit itemClicked(item->data(0, Qt::UserRole).toInt(), item->data(1, Qt::UserRole).value<QList<QRectF>>());
 }
 
 void HtmlItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const
