@@ -78,7 +78,7 @@ private:
 	QWidget *parentWindow;
 	Page* outputLabel;
 	Poppler::Document* doc;
-	QRectF selectedRect;
+	QList<QRectF> selectedRect;
 	QRectF foundRect;
 	Poppler::Page::Rotation pdfRotation;
 	int currentPage;
@@ -119,7 +119,7 @@ signals:
 	void attentionNeeded();
 	void pageFinished();
 public slots:
-	void goToPhrase(int page, QRectF rect);
+	void goToPhrase(int page, QList<QRectF> rect);
 	void cancelFindAllWorker();
 	void findAllResult(SearchResult result);
 	void onPageRendered(int pageNum, QImage renderedImg, int elapsedTime);

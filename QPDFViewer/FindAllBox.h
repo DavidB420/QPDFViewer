@@ -35,7 +35,7 @@ public:
 private:
 	QTreeWidget* results;
 signals:
-	void itemClicked(int page, QRectF rect);
+	void itemClicked(int page, QList<QRectF> rect);
 public slots:
 	void addItemToBox(SearchResult result);
 private slots:

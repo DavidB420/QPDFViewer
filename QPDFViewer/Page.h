@@ -46,17 +46,19 @@ public:
 	void mouseMoveEvent(QMouseEvent* event);
 	void mouseReleaseEvent(QMouseEvent* event);
 	void paintEvent(QPaintEvent* event);
-	void drawSelection(QRectF rect);
+	void drawSelection(QList<QRectF> rect);
 	void addHyperlink(HyperlinkObject* obj);
 	void loadPixmap(QImage* img);
 private:
 	bool dragging, isDragging;
 	QPixmap pagePixmap;
 	QPointF firstPoint, currentPoint;
+	QList <QRectF> rects;
 	PDFEngine* parent;
 	int pageNumber, scale;
 	Poppler::Page::Rotation rotation;
 	QVector <HyperlinkObject*> hyperlinks;
+	void drawRect(QPainter* painter, QRectF rect);
 };
 
 #endif

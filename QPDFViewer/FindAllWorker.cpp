@@ -90,6 +90,13 @@ void FindAllWorker::run()
 					text.append(' ');
 					pos++;
 				}
+				else if (j + 1 < words.length()) {
+					//Check if next word is on a different line by comparing Y position
+					if (!qFuzzyCompare(words.at(j)->boundingBox().y(), words.at(j + 1)->boundingBox().y())) {
+						text.append(' ');
+						pos++;
+					}
+				}
 			}
 			QString textTmp = text;
 
@@ -100,21 +107,28 @@ void FindAllWorker::run()
 				textTmp = text;
 				SearchResult newResult;
 				newResult.page = i;
-				newResult.foundRect = QRectF(0, 0, 0, 0);
+				QRectF currentLineRect = QRectF(0,0,0,0);
 				//Create found rect, use multiple words if necessary
 				for (int k = j, rectIndex = index, m = phrase.count(' '); direction == 2 ? k >= 0 : k < words.length(); direction == 2 ? k-- : k++) {
 					int wordStart = wordLengthLookup.at(k);
 					int wordEnd = wordStart + words.at(k)->text().length();
 					if (rectIndex >= wordStart && rectIndex < wordEnd) {
-						if (newResult.foundRect == QRectF(0,0,0,0)) newResult.foundRect = words.at(k)->charBoundingBox(rectIndex - wordStart);
+						if (currentLineRect == QRectF(0, 0, 0, 0)) currentLineRect = words.at(k)->charBoundingBox(rectIndex - wordStart);
 						for (int l = (rectIndex - wordStart) + 1; l < (rectIndex - wordStart) + phrase.length(); l++)
-							newResult.foundRect = newResult.foundRect.united(words.at(k)->charBoundingBox(l));
+							currentLineRect = currentLineRect.united(words.at(k)->charBoundingBox(l));
 						j = k;
 						m += words.at(k)->text().length();
-						if (m < phrase.length())
-							rectIndex += words.at(k)->text().length()+1;
+						if (m < phrase.length()) {
+							rectIndex += words.at(k)->text().length() + 1;
+							if (!qFuzzyCompare(words.at(k)->boundingBox().y(), words.at(k + 1)->boundingBox().y())) {
+								newResult.foundRect.append(currentLineRect);
+								currentLineRect = QRectF(0, 0, 0, 0);
+							}
+						}
 					}
 				}
+				newResult.foundRect.append(currentLineRect);
+
 				newResult.done = cancelled;
 
 				//Insert HTML header and footer around found phrase
@@ -130,7 +144,6 @@ void FindAllWorker::run()
 				index -= highlightHTMLHeader.size();
 
 				index += direction == 2 ? -1 : qPhraseLength;
-				//j+=direction == 2 ? -1 : 1;
 
 				//Finished one result, send it to engine so it can send it to dialog box
 				emit finishedResult(newResult);

@@ -22,14 +22,16 @@
 
 #include <qobject.h>
 #include <poppler-qt5.h>
+#include <qmetatype.h>
 
 struct SearchResult {
 	QString snippet;
-	QRectF foundRect;
+	QList <QRectF> foundRect;
 	int page;
 	bool done;
 };
 
+Q_DECLARE_METATYPE(QList<QRectF>)
 Q_DECLARE_METATYPE(SearchResult)
 
 class FindAllWorker: public QObject

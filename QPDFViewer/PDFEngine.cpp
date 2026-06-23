@@ -66,8 +66,6 @@ PDFEngine::PDFEngine(std::string fileName, QWidget *parentWindow)
 	currentPage = 1;
 	scaleValue = 100;
 
-	selectedRect = QRectF(0, 0, 0, 0);
-
 	pdfRotation = Poppler::Page::Rotate0;
 
 	documentHeight = 0;
@@ -194,7 +192,7 @@ bool PDFEngine::findPhraseInDocument(std::string phrase, Poppler::Page::SearchDi
 	//Start with defaults
 	int currentSearch = currentPage;
 	bool result = false;
-	selectedRect = QRectF(0, 0, 0, 0);
+	selectedRect.clear();
 
 	while (currentSearch >= 1 && currentSearch <= getTotalNumberOfPages()) {
 		Poppler::Page* page = doc->page(currentSearch - 1);
@@ -222,7 +220,7 @@ bool PDFEngine::findPhraseInDocument(std::string phrase, Poppler::Page::SearchDi
 
 		//If a result has been found, select it, then break out of the loop
 		if (result) {
-			selectedRect = QRectF(foundRect.x(), foundRect.y(), foundRect.width(), foundRect.height());
+			selectedRect.append(QRectF(foundRect.x(), foundRect.y(), foundRect.width(), foundRect.height()));
 			currentPage = currentSearch;
 			foundPageNum = currentSearch;
 			currentSearch = -1;
@@ -560,11 +558,13 @@ void PDFEngine::addPageDecorations(Page* pageObj, int pageNum, QImage renderedIm
 	Poppler::Page* page = doc->page(pageNum - 1);
 	addHyperlinksToPage(pageObj, page, renderedImg);
 	//If there has been a selection from searching in the past, be sure to show it
-	if (selectedRect.x() != 0 && selectedRect.y() != 0 && selectedRect.width() != 0 && selectedRect.height() != 0 && pageNum == foundPageNum) {
-		QRectF rect(selectedRect.x() * scaleValue / 75, selectedRect.y() * scaleValue / 75, selectedRect.width() * scaleValue / 75, selectedRect.height() * scaleValue / 75);
-		pageObj->drawSelection(rect);
-		selectedRect = QRectF(0, 0, 0, 0);
+	if (selectedRect.length() > 0 && selectedRect.at(0).x() != 0 && selectedRect.at(0).y() != 0 && selectedRect.at(0).width() != 0 && selectedRect.at(0).height() != 0 && pageNum == foundPageNum) {
+		QList<QRectF> pageRects;
+		for (int i = 0; i < selectedRect.length(); i++)
+			pageRects.append(QRectF(selectedRect.at(i).x() * scaleValue / 75, selectedRect.at(i).y() * scaleValue / 75, selectedRect.at(i).width() * scaleValue / 75, selectedRect.at(i).height() * scaleValue / 75));
+		pageObj->drawSelection(pageRects);
 		foundPageNum = -1;
+		selectedRect.clear();
 	}
 	delete page;
 }
@@ -630,7 +630,7 @@ void PDFEngine::onPageRendered(int pageNum, QImage renderedImg, int elapsedTime)
 	}
 }
 
-void PDFEngine::goToPhrase(int page, QRectF rect)
+void PDFEngine::goToPhrase(int page, QList<QRectF> rect)
 {
 	//Go to specific phrase the user selects regardless of whatever tab is open in the viewer
 	setCurrentPage(page);
@@ -649,8 +649,7 @@ bool PDFEngine::setCurrentPageSignal(int page)
 	if (result) {
 		for (int i = 0; i < previousPages.length(); i++) {
 			if (previousPages.at(i)->getPageNumber() != page) {
-				QRectF rect(0, 0, 0, 0);
-				previousPages.at(i)->drawSelection(rect);
+				previousPages.at(i)->drawSelection({ QRectF(0, 0, 0, 0) });
 			}
 		}
 		emit pageChanged();
