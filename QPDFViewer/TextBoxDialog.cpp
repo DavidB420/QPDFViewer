@@ -22,6 +22,8 @@
 #include <qplaintextedit.h>
 #include <qpushbutton.h>
 #include <qlayout.h>
+#include <qclipboard.h>
+#include <qapplication.h>
 
 TextBoxDialog::TextBoxDialog(QWidget* parent, bool unwrappedCopy, std::string *txt)
 {
@@ -67,21 +69,17 @@ TextBoxDialog::TextBoxDialog(QWidget* parent, bool unwrappedCopy, std::string *t
 
 QString TextBoxDialog::generateUnwrapped()
 {	
-	return txt.replace('\n',' ');
+	return QString(txt).replace('\n',' ');
 }
 
-void TextBoxDialog::wrappedCopy()
+void TextBoxDialog::wrapHandledCopy(bool wrapped)
 {
-	unwrappedChkBx->setChecked(false);
+	QTextCursor cursor = tBox->textCursor();
+	QString copyTxt = wrapped ? txt : generateUnwrapped();
+	QString selected = cursor.hasSelection() ? copyTxt.mid(cursor.selectionStart(),	cursor.selectionEnd() - cursor.selectionStart()) : copyTxt;
+	QApplication::clipboard()->setText(selected);
+	unwrappedChkBx->setChecked(!wrapped);
 	toggleUnwrapped();
-	copyAllClipboard();
-}
-
-void TextBoxDialog::unwrappedCopy()
-{
-	unwrappedChkBx->setChecked(true);
-	toggleUnwrapped();
-	copyAllClipboard();
 }
 
 bool TextBoxDialog::eventFilter(QObject* obj, QEvent* event)
@@ -89,13 +87,13 @@ bool TextBoxDialog::eventFilter(QObject* obj, QEvent* event)
 	if (obj == tBox && event->type() == QEvent::KeyPress) {
 		QKeyEvent* keyEvent = static_cast<QKeyEvent*>(event);
 		if (keyEvent->matches(QKeySequence::Copy)) {
-			if (unwrappedCopyEnable) unwrappedCopy();
-			else wrappedCopy();
+			if (unwrappedCopyEnable) wrapHandledCopy(false);
+			else wrapHandledCopy(true);
 			return true;
 		}
 		else if (keyEvent->key() == Qt::Key_C && keyEvent->modifiers() == (Qt::ControlModifier | Qt::ShiftModifier)) {
-			if (unwrappedCopyEnable) wrappedCopy();
-			else unwrappedCopy();
+			if (unwrappedCopyEnable) wrapHandledCopy(true);
+			else wrapHandledCopy(false);
 			return true;
 		}
 	}

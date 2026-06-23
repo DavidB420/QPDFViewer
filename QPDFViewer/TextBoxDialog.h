@@ -35,8 +35,7 @@ private:
 	QString generateUnwrapped();
 	QString txt;
 	bool unwrappedCopyEnable;
-	void wrappedCopy();
-	void unwrappedCopy();
+	void wrapHandledCopy(bool wrapped);
 protected:
 	bool eventFilter(QObject* obj, QEvent* event) override;
 private slots:
