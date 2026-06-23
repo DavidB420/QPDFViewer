@@ -91,13 +91,14 @@ QList <SearchResult> FindAllWorker::wordBoxSearch(QList<Poppler::TextBox*> words
 				int wordStart = wordLengthLookup.at(k);
 				int wordEnd = wordStart + words.at(k)->text().length();
 				if (rectIndex >= wordStart && rectIndex < wordEnd) {
+					QString str = words.at(k)->text();
 					if (currentLineRect == QRectF(0, 0, 0, 0)) currentLineRect = words.at(k)->charBoundingBox(rectIndex - wordStart);
-					for (int l = (rectIndex - wordStart) + 1; l < (rectIndex - wordStart) + qPhrase.length(); l++)
+					for (int l = (rectIndex - wordStart); l < (rectIndex - wordStart) + qPhrase.length() - m; l++)
 						currentLineRect = currentLineRect.united(words.at(k)->charBoundingBox(l));
 					j = k;
-					m += words.at(k)->text().length();
+					m += words.at(k)->text().length() - (rectIndex - wordStart);
 					if (m < qPhrase.length()) {
-						rectIndex += words.at(k)->text().length() + 1;
+						rectIndex += words.at(k)->text().length() - (rectIndex - wordStart) + 1;
 						if (!qFuzzyCompare(words.at(k)->boundingBox().y(), words.at(k + 1)->boundingBox().y())) {
 							newResult.foundRect.append(currentLineRect);
 							currentLineRect = QRectF(0, 0, 0, 0);

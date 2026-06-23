@@ -123,6 +123,7 @@ signals:
 public slots:
 	void goToPhrase(int page, QList<QRectF> rect);
 	void cancelFindAllWorker();
+	void cancelFindAllWorkerGracefully();
 	void findAllResult(SearchResult result);
 	void onPageRendered(int pageNum, QImage renderedImg, int elapsedTime);
 };

@@ -506,7 +506,7 @@ bool PDFEngine::getAllSearchResults(int direction, std::string phrase)
 		//Set up all signals for running the worker, checking when a result is ready, and when the worker is finished
 		connect(currentFindAllThread, &QThread::started, currentFindAllWorker, &FindAllWorker::run);
 		connect(currentFindAllWorker, &FindAllWorker::finishedResult, this, &PDFEngine::findAllResult);
-		connect(currentFindAllWorker, &FindAllWorker::finished, this, &PDFEngine::cancelFindAllWorker);
+		connect(currentFindAllWorker, &FindAllWorker::finished, this, &PDFEngine::cancelFindAllWorkerGracefully);
 
 		currentFindAllThread->start();
 		return true;
@@ -592,7 +592,11 @@ void PDFEngine::cancelFindAllWorker()
 
 	currentFindAllWorker = nullptr;
 	currentFindAllThread = nullptr;
+}
 
+void PDFEngine::cancelFindAllWorkerGracefully()
+{
+	cancelFindAllWorker();
 	emit findAllBoxMsg("Completed");
 }
 
@@ -779,6 +783,9 @@ void PDFEngine::addHyperlinksToPage(Page* page, Poppler::Page* popplerPage, QIma
 				QString nextTrim = next.trimmed();
 				if (nextTrim.isEmpty() || next.contains(' ') || next.contains('\t')) break;
 				if (nextTrim.startsWith("http", Qt::CaseInsensitive) ||	nextTrim.startsWith("www.", Qt::CaseInsensitive)) break;
+				if (word.endsWith('/')) break;
+				if (nextTrim.contains(':')) break;
+				if (!nextTrim.isEmpty() && nextTrim.at(0).isUpper()) break;
 				word += nextTrim;
 				lastIdx = j;
 			}
