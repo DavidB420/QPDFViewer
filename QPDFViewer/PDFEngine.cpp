@@ -285,7 +285,7 @@ void PDFEngine::displayTextBox(QRectF dim)
 
 	std::string foundText = page->text(grabRect).toStdString();
 	delete page;
-	TextBoxDialog* dialog = new TextBoxDialog(this->parentWindow, &foundText);
+	TextBoxDialog* dialog = new TextBoxDialog(this->parentWindow, unwrappedCopy, &foundText);
 	dialog->setAttribute(Qt::WA_DeleteOnClose);
 	dialog->show();
 }
@@ -545,8 +545,9 @@ void PDFEngine::rerenderAllPages()
 	pageCache.clear();
 }
 
-void PDFEngine::updateCustomValues(int cacheSize, int multithreadTime, int cacheTime)
+void PDFEngine::updateCustomValues(bool unwrappedCopy, int cacheSize, int multithreadTime, int cacheTime)
 {
+	this->unwrappedCopy = unwrappedCopy;
 	this->cacheSize = cacheSize;
 	this->multithreadTime = multithreadTime;
 	this->cacheTime = cacheTime;

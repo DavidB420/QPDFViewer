@@ -25,7 +25,7 @@
 #include <qpushbutton.h>
 #include <QIntValidator>
 
-OptionsDialog::OptionsDialog(QWidget* parent, bool darkMode, bool sameViewer, int cacheSize, int multithreadTime, int cacheTime)
+OptionsDialog::OptionsDialog(QWidget* parent, bool darkMode, bool sameViewer, bool unwrappedCopy, int cacheSize, int multithreadTime, int cacheTime)
 {
 	//Create options dialog
 	this->setWindowTitle("Options");
@@ -43,6 +43,12 @@ OptionsDialog::OptionsDialog(QWidget* parent, bool darkMode, bool sameViewer, in
 	QHBoxLayout* sameViewerLayout = new QHBoxLayout;
 	sameViewerLayout->addWidget(new QLabel("Add opened PDFs to existing QPDFViewer window",this), 1);
 	sameViewerLayout->addWidget(sameViewerBox, 3);
+
+	unwrappedCopyBox = new QCheckBox(this);
+	unwrappedCopyBox->setChecked(unwrappedCopy);
+	QHBoxLayout* unwrappedCopyLayout = new QHBoxLayout;
+	unwrappedCopyLayout->addWidget(new QLabel("Use unwrapped copy for CTRL+C", this), 1);
+	unwrappedCopyLayout->addWidget(unwrappedCopyBox, 3);
 
 	cacheEdit = new QLineEdit(this);
 	cacheEdit->setText(QString::number(cacheSize));
@@ -79,6 +85,7 @@ OptionsDialog::OptionsDialog(QWidget* parent, bool darkMode, bool sameViewer, in
 	QVBoxLayout* contentLayout = new QVBoxLayout;
 	contentLayout->addLayout(darkModeLayout, 4);
 	contentLayout->addLayout(sameViewerLayout, 4);
+	contentLayout->addLayout(unwrappedCopyLayout, 4);
 	contentLayout->addLayout(cacheSizeLayout, 4);
 	contentLayout->addLayout(multithreadTimeLayout, 4);
 	contentLayout->addLayout(cacheTimeLayout, 4);
@@ -100,7 +107,7 @@ OptionsDialog::OptionsDialog(QWidget* parent, bool darkMode, bool sameViewer, in
 	connect(cancelButton, &QPushButton::clicked, this, &OptionsDialog::exitDialog);
 	connect(saveExitButton, &QPushButton::clicked, this, &OptionsDialog::acceptDialog);
 
-	result = { false,false,200,400,800 };
+	result = { false,false, true, 200,400,800 };
 }
 
 OptionsResult OptionsDialog::getResult()
@@ -113,6 +120,7 @@ void OptionsDialog::acceptDialog()
 	//Save result and accept
 	result.darkMode = darkModeBox->isChecked();
 	result.sameViewer = sameViewerBox->isChecked();
+	result.unwrappedCopy = unwrappedCopyBox->isChecked();
 	result.cacheSize = cacheEdit->text().toInt();
 	result.multithreadTime = multithreadTimeEdit->text().toInt();
 	result.cacheTime = cacheTimeEdit->text().toInt();

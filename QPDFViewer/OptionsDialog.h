@@ -27,6 +27,7 @@
 struct OptionsResult {
 	bool darkMode;
 	bool sameViewer;
+	bool unwrappedCopy;
 	int cacheSize;
 	int multithreadTime;
 	int cacheTime;
@@ -35,11 +36,12 @@ class OptionsDialog : public QDialog
 {
 	Q_OBJECT
 public:
-	OptionsDialog(QWidget* parent = 0, bool darkMode=false, bool sameViewer=false, int cacheSize=200, int multithreadTime=400, int cacheTime=800);
+	OptionsDialog(QWidget* parent = 0, bool darkMode=false, bool sameViewer=false, bool unwrappedCopy=true, int cacheSize=200, int multithreadTime=400, int cacheTime=800);
 	OptionsResult getResult();
 private:
 	QCheckBox* darkModeBox;
 	QCheckBox* sameViewerBox;
+	QCheckBox* unwrappedCopyBox;
 	QLineEdit* cacheEdit;
 	QLineEdit* multithreadTimeEdit;
 	QLineEdit* cacheTimeEdit;

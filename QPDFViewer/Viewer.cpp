@@ -268,7 +268,7 @@ void Viewer::openFile(QStringList fileNames)
 					navBarShowAct->setChecked(true);
 					showNavBar();
 				}
-				tabItems.at(currentTab)->getEngine()->updateCustomValues(parser->returnCacheSize(), parser->returnMultithreadTime(), parser->returnCacheTime());
+				tabItems.at(currentTab)->getEngine()->updateCustomValues(parser->returnUnwrappedCopy(), parser->returnCacheSize(), parser->returnMultithreadTime(), parser->returnCacheTime());
 			}
 		}
 
@@ -691,12 +691,12 @@ void Viewer::onTabCloseRequested(int index)
 
 void Viewer::getOptionsDialog()
 {
-	OptionsDialog* oDialog = new OptionsDialog(this,parser->returnDarkMode(),parser->returnSameViewer(),parser->returnCacheSize(),parser->returnMultithreadTime(),parser->returnCacheTime());
+	OptionsDialog* oDialog = new OptionsDialog(this,parser->returnDarkMode(),parser->returnSameViewer(), parser->returnUnwrappedCopy(), parser->returnCacheSize(),parser->returnMultithreadTime(),parser->returnCacheTime());
 	if (oDialog->exec() == QDialog::Accepted) { 
-		parser->setValues(oDialog->getResult().darkMode, oDialog->getResult().sameViewer, oDialog->getResult().cacheSize, oDialog->getResult().multithreadTime, oDialog->getResult().cacheTime); 
+		parser->setValues(oDialog->getResult().darkMode, oDialog->getResult().sameViewer, oDialog->getResult().unwrappedCopy, oDialog->getResult().cacheSize, oDialog->getResult().multithreadTime, oDialog->getResult().cacheTime); 
 		parser->saveToFile(); 
 		for (int i = 0; i < tabItems.size(); i++)
-			if (tabItems.at(currentTab)->getEngine() != NULL) tabItems.at(currentTab)->getEngine()->updateCustomValues(parser->returnCacheSize(), parser->returnMultithreadTime(), parser->returnCacheTime());
+			if (tabItems.at(currentTab)->getEngine() != NULL) tabItems.at(currentTab)->getEngine()->updateCustomValues(parser->returnUnwrappedCopy(), parser->returnCacheSize(), parser->returnMultithreadTime(), parser->returnCacheTime());
 	}
 	delete oDialog;
 }
