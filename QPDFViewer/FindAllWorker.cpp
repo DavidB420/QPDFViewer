@@ -44,6 +44,116 @@ FindAllWorker::~FindAllWorker()
 	delete doc;
 }
 
+QList <SearchResult> FindAllWorker::wordBoxSearch(QList<Poppler::TextBox*> words, int direction, int pageNum, QString qPhrase, QString highlightHTMLHeader, QString highlightHTMLFooter, bool (*functioning)(void*), void (*emitter)(void*,SearchResult), void* ctx)
+{	
+	QList<SearchResult> results;
+
+	//Check if there any actual results before continuing with the rest of search
+	if (!words.isEmpty()) {
+		int headerSize = highlightHTMLHeader.length();
+		int footerSize = highlightHTMLFooter.length();
+		int qPhraseLength = qPhrase.length();
+		//Save page text for snippet
+		QString text = "";
+		QList<int> wordLengthLookup;
+		int pos = 0;
+		for (int j = 0; j < words.length(); j++) {
+			QString wordStr = words.at(j)->text();
+			for (int k = 0; k < wordStr.length(); k++) {
+				text.append(wordStr.at(k));
+			}
+			wordLengthLookup.append(pos);
+			pos += wordStr.length();
+			if (words.at(j)->hasSpaceAfter()) {
+				text.append(' ');
+				pos++;
+			}
+			else if (j + 1 < words.length()) {
+				//Check if next word is on a different line by comparing Y position
+				if (!qFuzzyCompare(words.at(j)->boundingBox().y(), words.at(j + 1)->boundingBox().y())) {
+					text.append(' ');
+					pos++;
+				}
+			}
+		}
+		QString textTmp = text;
+
+		//Get all results in the page
+		int index = direction == 2 ? text.length() - 1 : 0, j = direction == 2 ? words.length() - 1 : 0;
+		while ((direction == 2 && index >= 0 && (index = text.lastIndexOf(qPhrase, index, Qt::CaseInsensitive)) != -1) || (direction != 2 && index < text.length() && (index = text.indexOf(qPhrase, index, Qt::CaseInsensitive)) != -1)) {
+			//Get new copy of text and save rect and page number in result
+			textTmp = text;
+			SearchResult newResult;
+			newResult.page = pageNum;
+			QRectF currentLineRect = QRectF(0, 0, 0, 0);
+			//Create found rect, use multiple words if necessary
+			for (int k = j, rectIndex = index, m = qPhrase.count(' '); direction == 2 ? k >= 0 : k < words.length(); direction == 2 ? k-- : k++) {
+				int wordStart = wordLengthLookup.at(k);
+				int wordEnd = wordStart + words.at(k)->text().length();
+				if (rectIndex >= wordStart && rectIndex < wordEnd) {
+					if (currentLineRect == QRectF(0, 0, 0, 0)) currentLineRect = words.at(k)->charBoundingBox(rectIndex - wordStart);
+					for (int l = (rectIndex - wordStart) + 1; l < (rectIndex - wordStart) + qPhrase.length(); l++)
+						currentLineRect = currentLineRect.united(words.at(k)->charBoundingBox(l));
+					j = k;
+					m += words.at(k)->text().length();
+					if (m < qPhrase.length()) {
+						rectIndex += words.at(k)->text().length() + 1;
+						if (!qFuzzyCompare(words.at(k)->boundingBox().y(), words.at(k + 1)->boundingBox().y())) {
+							newResult.foundRect.append(currentLineRect);
+							currentLineRect = QRectF(0, 0, 0, 0);
+						}
+					}
+				}
+			}
+			newResult.foundRect.append(currentLineRect);
+
+			newResult.done = functioning != NULL ? functioning(ctx) : true;
+
+			//Insert HTML header and footer around found phrase
+			textTmp.insert(index, highlightHTMLHeader);
+			index += highlightHTMLHeader.size();
+			textTmp.insert(index + qPhraseLength, highlightHTMLFooter);
+
+			//Snippet radius is 40 characters
+			QString snippet = textTmp.mid(qMax(0, index - 40 - headerSize), qMin(textTmp.length(), index + qPhraseLength + footerSize + 40));
+			newResult.snippet = snippet;
+
+			//We had to skip the HTML header before
+			index -= highlightHTMLHeader.size();
+
+			index += direction == 2 ? -1 : qPhraseLength;
+
+			//Finished one result, send it to engine so it can send it to dialog box
+			if (emitter != NULL)
+				emitter(ctx, newResult);
+			else
+				results.append(newResult);
+		}
+	}
+
+	return results;
+}
+
+void FindAllWorker::emitterItem(SearchResult newResult)
+{
+	emit finishedResult(newResult);
+}
+
+void FindAllWorker::emitterItemStatic(void* ctx, SearchResult newResult) {
+	auto* self = static_cast<FindAllWorker*>(ctx);
+	return self->emitterItem(newResult);
+}
+
+bool FindAllWorker::isCancelled()
+{
+	return cancelled;
+}
+
+bool FindAllWorker::isCancelledStatic(void* ctx) {
+	auto* self = static_cast<FindAllWorker*>(ctx);
+	return self->isCancelled();
+}
+
 void FindAllWorker::cancel()
 {
 	this->blockSignals(true);
@@ -73,82 +183,8 @@ void FindAllWorker::run()
 
 		QList<Poppler::TextBox*> words = page->textList(pdfRotation);
 
-		//Check if there any actual results before continuing with the rest of search
-		if (!words.isEmpty()) {
-			//Save page text for snippet
-			QString text = "";
-			QList<int> wordLengthLookup;
-			int pos = 0;
-			for (int j = 0; j < words.length(); j++) {
-				QString wordStr = words.at(j)->text();
-				for (int k = 0; k < wordStr.length(); k++) {
-					text.append(wordStr.at(k));
-				}
-				wordLengthLookup.append(pos);
-				pos += wordStr.length();
-				if (words.at(j)->hasSpaceAfter()) {
-					text.append(' ');
-					pos++;
-				}
-				else if (j + 1 < words.length()) {
-					//Check if next word is on a different line by comparing Y position
-					if (!qFuzzyCompare(words.at(j)->boundingBox().y(), words.at(j + 1)->boundingBox().y())) {
-						text.append(' ');
-						pos++;
-					}
-				}
-			}
-			QString textTmp = text;
-
-			//Get all results in the page
-			int index = direction == 2 ? text.length()-1 : 0, j = direction == 2 ? words.length() - 1 : 0;
-			while ((direction == 2 && index >= 0 && (index = text.lastIndexOf(qPhrase, index, Qt::CaseInsensitive)) != -1) || (direction != 2 && index < text.length() && (index = text.indexOf(qPhrase, index, Qt::CaseInsensitive)) != -1)) {	
-				//Get new copy of text and save rect and page number in result
-				textTmp = text;
-				SearchResult newResult;
-				newResult.page = i;
-				QRectF currentLineRect = QRectF(0,0,0,0);
-				//Create found rect, use multiple words if necessary
-				for (int k = j, rectIndex = index, m = phrase.count(' '); direction == 2 ? k >= 0 : k < words.length(); direction == 2 ? k-- : k++) {
-					int wordStart = wordLengthLookup.at(k);
-					int wordEnd = wordStart + words.at(k)->text().length();
-					if (rectIndex >= wordStart && rectIndex < wordEnd) {
-						if (currentLineRect == QRectF(0, 0, 0, 0)) currentLineRect = words.at(k)->charBoundingBox(rectIndex - wordStart);
-						for (int l = (rectIndex - wordStart) + 1; l < (rectIndex - wordStart) + phrase.length(); l++)
-							currentLineRect = currentLineRect.united(words.at(k)->charBoundingBox(l));
-						j = k;
-						m += words.at(k)->text().length();
-						if (m < phrase.length()) {
-							rectIndex += words.at(k)->text().length() + 1;
-							if (!qFuzzyCompare(words.at(k)->boundingBox().y(), words.at(k + 1)->boundingBox().y())) {
-								newResult.foundRect.append(currentLineRect);
-								currentLineRect = QRectF(0, 0, 0, 0);
-							}
-						}
-					}
-				}
-				newResult.foundRect.append(currentLineRect);
-
-				newResult.done = cancelled;
-
-				//Insert HTML header and footer around found phrase
-				textTmp.insert(index, highlightHTMLHeader);
-				index += highlightHTMLHeader.size();
-				textTmp.insert(index + qPhraseLength, highlightHTMLFooter);
-
-				//Snippet radius is 40 characters
-				QString snippet = textTmp.mid(qMax(0, index - 40 - headerSize), qMin(textTmp.length(), index + qPhraseLength + footerSize + 40));
-				newResult.snippet = snippet;
-				
-				//We had to skip the HTML header before
-				index -= highlightHTMLHeader.size();
-
-				index += direction == 2 ? -1 : qPhraseLength;
-
-				//Finished one result, send it to engine so it can send it to dialog box
-				emit finishedResult(newResult);
-			}
-		}
+		FindAllWorker::wordBoxSearch(words, direction, i, qPhrase, highlightHTMLHeader, highlightHTMLFooter, &FindAllWorker::isCancelledStatic, &FindAllWorker::emitterItemStatic, this);
+		
 		qDeleteAll(words);
 		delete page;
 	}

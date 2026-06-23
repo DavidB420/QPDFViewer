@@ -79,7 +79,7 @@ private:
 	Page* outputLabel;
 	Poppler::Document* doc;
 	QList<QRectF> selectedRect;
-	QRectF foundRect;
+	QList <QRectF> foundRect;
 	Poppler::Page::Rotation pdfRotation;
 	int currentPage;
 	int scaleValue;
@@ -105,7 +105,7 @@ private:
 	bool useMultithreading;
 	void updateRenderTimeAvgs(qint64 elapsed);
 	void updateHeightValues(bool total);
-	bool documentSearch(Poppler::Page *page, int pageNum, std::string phrase, QRectF* foundRect, Poppler::Page::SearchDirection direction, Poppler::Page::Rotation rotation);
+	bool documentSearch(Poppler::Page *page, int pageNum, std::string phrase, QList <QRectF>* foundRect, Poppler::Page::SearchDirection direction, Poppler::Page::Rotation rotation);
 	void addHyperlinksToPage(Page* page, Poppler::Page* popplerPage, QImage image);
 	void killThread(PageRenderThread thread);
 	void unlockDocument();

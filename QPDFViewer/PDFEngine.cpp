@@ -199,7 +199,7 @@ bool PDFEngine::findPhraseInDocument(std::string phrase, Poppler::Page::SearchDi
 
 		//If its a new page reset the page rect, otherwise do not so the search picks more than just the first item on the page
 		if (currentPage != currentSearch)
-			foundRect = QRectF(0.0, 0.0, page->pageSizeF().width(), page->pageSizeF().height());
+			foundRect.clear();
 
 		//If we are searching backwards and are on a new page we have search all the way forward on that page to search backwards
 		if (direction == Poppler::Page::SearchDirection::PreviousResult && currentPage != currentSearch) {
@@ -220,7 +220,7 @@ bool PDFEngine::findPhraseInDocument(std::string phrase, Poppler::Page::SearchDi
 
 		//If a result has been found, select it, then break out of the loop
 		if (result) {
-			selectedRect.append(QRectF(foundRect.x(), foundRect.y(), foundRect.width(), foundRect.height()));
+			selectedRect.append(foundRect);
 			currentPage = currentSearch;
 			foundPageNum = currentSearch;
 			currentSearch = -1;
@@ -723,7 +723,7 @@ void PDFEngine::updateHeightValues(bool total)
 	}
 }
 
-bool PDFEngine::documentSearch(Poppler::Page* page, int pageNum, std::string phrase, QRectF* foundRect, Poppler::Page::SearchDirection direction, Poppler::Page::Rotation rotation)
+bool PDFEngine::documentSearch(Poppler::Page* page, int pageNum, std::string phrase, QList <QRectF>* foundRect, Poppler::Page::SearchDirection direction, Poppler::Page::Rotation rotation)
 {
 	//Index is saved throughout runs
 	static int vectorIndex = -1;
@@ -731,8 +731,11 @@ bool PDFEngine::documentSearch(Poppler::Page* page, int pageNum, std::string phr
 	bool result = false;
 
 	//Returns list of all results found for the page
-	QList<QRectF> pageResults = page->search(QString::fromStdString(phrase), Poppler::Page::IgnoreCase, rotation);
-	
+	QList<Poppler::TextBox*> words = page->textList(pdfRotation);
+	QList <SearchResult> results = FindAllWorker::wordBoxSearch(words, Poppler::Page::SearchDirection::NextResult, pageNum, QString::fromStdString(phrase), NULL, NULL, NULL, NULL, NULL);
+	QList <QList<QRectF>> pageResults;
+	for (int i = 0; i < results.length(); i++) pageResults.append(results.at(i).foundRect);
+
 	//If we are on a new page or the index fell outside of the bounds reset it back to default
 	if (pageNum != searchPos || vectorIndex < -1)
 		vectorIndex = -1;
