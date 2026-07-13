@@ -213,7 +213,7 @@ Viewer::Viewer(QWidget* parent)
 
 Viewer::~Viewer() 
 {
-	for (int i = 0; i < tabItems.size(); i++) delete tabItems.at(i);
+	for (int i = 0; i < tabItems.size(); i++) { delete tabItems.at(i)->getEngine(); delete tabItems.at(i); }
 }
 
 void Viewer::keyPressEvent(QKeyEvent* event)
@@ -857,7 +857,7 @@ void Viewer::openNewWindow(int index, const QPoint& windowPos)
 		//Disconnect current signals
 		disconnect(tabItems.at(index)->getScrollArea(), &TabScrollArea::hitExtremity, this, &Viewer::setPage);
 		disconnect(tabItems.at(index)->getEngine(), &PDFEngine::pageChanged, this, &Viewer::updatePageNumber);
-		disconnect(tabItems.at(currentTab)->getEngine(), &PDFEngine::attentionNeeded, this, &Viewer::giveTabAttention);
+		disconnect(tabItems.at(index)->getEngine(), &PDFEngine::attentionNeeded, this, &Viewer::giveTabAttention);
 
 		//Save tab pointer
 		TabItem* item = tabItems.at(index);

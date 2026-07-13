@@ -80,13 +80,14 @@ int main(int argc, char *argv[])
     parser.process(a);
 
     //Create viewer object and open file if necessary
-    Viewer vwr;
+    Viewer *vwr = new Viewer();
+    vwr->setAttribute(Qt::WA_DeleteOnClose);
     if (!parser.positionalArguments().isEmpty())
-        vwr.openFile({ parser.positionalArguments().first() });
-    vwr.show();
-    vwr.setWindowState((vwr.windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
-    vwr.raise();
-    vwr.activateWindow();
+        vwr->openFile({ parser.positionalArguments().first() });
+    vwr->show();
+    vwr->setWindowState((vwr->windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
+    vwr->raise();
+    vwr->activateWindow();
 
     //Signal that tells application to start a new app
     QObject::connect(&server, &QLocalServer::newConnection, [&]() {
@@ -94,7 +95,7 @@ int main(int argc, char *argv[])
         QObject::connect(clientSocket, &QLocalSocket::readyRead, [&, clientSocket]() {
             QString filePath = clientSocket->readAll();
             //Create a new window in already existing process
-            if (!(vwr.getOptionsParser()->returnSameViewer())) {
+            if (!(vwr->getOptionsParser()->returnSameViewer())) {
                 Viewer* newVwr = new Viewer();
                 newVwr->setAttribute(Qt::WA_DeleteOnClose);
                 if (filePath != startCmd)
@@ -107,8 +108,8 @@ int main(int argc, char *argv[])
                 clientSocket->deleteLater();
             }
             else {
-                vwr.addTabIfNecessary();
-                vwr.openFile({ filePath });
+                vwr->addTabIfNecessary();
+                vwr->openFile({ filePath });
             }
             });
         });
