@@ -146,7 +146,7 @@ void Page::drawSelection(QList<QRectF> rect)
 void Page::addHyperlink(HyperlinkObject* obj)
 {
 	for (int i = 0; i < hyperlinks.length(); i++) {
-		if (hyperlinks.at(i)->rect().intersects(obj->rect()) && obj->getIsPlainText() && !hyperlinks.at(i)->getIsPlainText()) {
+		if (hyperlinks.at(i)->geometry().intersects(obj->geometry()) && obj->getIsPlainText() && !hyperlinks.at(i)->getIsPlainText()) {
 			delete obj;
 			return;
 		}
