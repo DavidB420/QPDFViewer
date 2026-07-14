@@ -707,7 +707,7 @@ void Viewer::getPrintDialog()
 {
 	PrintDialog* pDialog = new PrintDialog(this);
 	pDialog->show();
-	QPrinter printer;
+	QPrinter printer(QPrinter::PrinterResolution);
 	
 	//Handle QPDFViewer's native print dialog, or give OS dialog
 	if (pDialog->exec() && pDialog->result() == QDialog::Accepted) {
@@ -780,13 +780,11 @@ void Viewer::getPrintDialog()
 							tabItems.at(currentTab)->getEngine()->setCurrentPage(j);
 							tabItems.at(currentTab)->updateScrollArea(true);
 							if (tabItems.at(currentTab)->getEngine()->checkFileAvailable(tabItems.at(currentTab)->getFilePath().toStdString()) != "" && tabItems.at(currentTab)->getEngine()->reloadDocAndPage()) {
-								QImage printImg = PDFEngine::returnImage(tabItems.at(currentTab)->getFilePath(), tabItems.at(currentTab)->getEngine()->getPassword(), tabItems.at(currentTab)->getEngine()->getHasPassword(), tabItems.at(currentTab)->getEngine()->getCurrentPage(), tabItems.at(currentTab)->getEngine()->getScaleValue(), tabItems.at(currentTab)->getEngine()->getCurrentRotation(), NULL, NULL, NULL);
+								QImage printImg = PDFEngine::returnImage(tabItems.at(currentTab)->getFilePath(), tabItems.at(currentTab)->getEngine()->getPassword(), tabItems.at(currentTab)->getEngine()->getHasPassword(), tabItems.at(currentTab)->getEngine()->getCurrentPage(), printer.resolution()/2, tabItems.at(currentTab)->getEngine()->getCurrentRotation(), NULL, NULL, NULL);
 								QPixmap pMap = QPixmap::fromImage(printImg);
 								QSize size = pMap.size();
 								size.scale(rect.size(), Qt::KeepAspectRatio);
-								painter.setViewport(rect.x(), rect.y(), size.width(), size.height());
-								painter.setWindow(pMap.rect());
-								painter.drawPixmap(0, 0, pMap);
+								painter.drawPixmap(QRect(rect.x(),rect.y(),size.width(),size.height()), pMap);
 							}
 							else {
 								delete pDialog;
