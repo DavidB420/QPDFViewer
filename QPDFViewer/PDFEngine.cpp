@@ -54,8 +54,12 @@ PDFEngine::PDFEngine(std::string fileName, QWidget *parentWindow)
 
 	doc = NULL;
 	
-	if (!refreshEngine())
+	int refreshResult = refreshEngine();
+	if (refreshResult < 1) {
+		if (refreshResult > -1) QMessageBox::critical(parentWindow,"Error loading document", "Failed to load: " + QString::fromStdString(fileName));
+		success = false;
 		return;
+	}
 	
 	//Unlock document if necessary
 	unlockDocument();
@@ -520,13 +524,13 @@ void PDFEngine::updateParentWindow(QWidget* parent)
 	this->parentWindow = parent; 
 }
 
-bool PDFEngine::refreshEngine()
+int PDFEngine::refreshEngine()
 {
 	//Should return file name if available
 	std::string tmp = checkFileAvailable(fileName);
 
 	if (tmp == "")
-		return false;
+		return -1;
 
 	if (doc != NULL)
 		delete doc;
@@ -536,7 +540,7 @@ bool PDFEngine::refreshEngine()
 	if (hasPassword)
 		doc->unlock(password.toLatin1(), password.toLatin1());
 
-	return true;
+	return doc != NULL ? 1 : 0;
 }
 
 void PDFEngine::rerenderAllPages()

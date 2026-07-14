@@ -68,7 +68,7 @@ public:
 	bool getSuccess();
 	bool getAllSearchResults(int direction, std::string phrase);
 	void updateParentWindow(QWidget* parent);
-	bool refreshEngine();
+	int refreshEngine();
 	void rerenderAllPages();
 	void updateCustomValues(bool unwrappedCopy, int cacheSize, int multithreadTime, int cacheTime);
 	void addPageDecorations(Page* pageObj, int pageNum, QImage renderedImg);
