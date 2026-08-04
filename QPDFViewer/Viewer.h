@@ -121,6 +121,7 @@ private slots:
 	void giveTabAttention();
 	void refreshTabs();
 	void findAllBoxDeleted();
+	void handleScrollZooming(bool direction);
 };
 
 #endif

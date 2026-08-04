@@ -125,7 +125,7 @@ public slots:
 	void cancelFindAllWorker();
 	void cancelFindAllWorkerGracefully();
 	void findAllResult(SearchResult result);
-	void onPageRendered(int pageNum, QImage renderedImg, int elapsedTime);
+	void onPageRendered(int pageNum, QImage renderedImg, int elapsedTime, int scale, Poppler::Page::Rotation rotation);
 };
 
 #endif

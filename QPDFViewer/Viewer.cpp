@@ -37,6 +37,7 @@
 #include <QtPrintSupport/qprintdialog.h>
 #include <vector>
 #include <QMimeData>
+#include <cmath>
 #include "TabItem.h"
 #include "OptionsDialog.h"
 #include "PrintDialog.h"
@@ -190,6 +191,7 @@ Viewer::Viewer(QWidget* parent)
 	tWidget->addTab(plusWdgt, tr("+"));
 	tWidget->tabBar()->setTabButton(tWidget->count() - 1, QTabBar::RightSide, nullptr);
 	connect(tabItems.at(currentTab)->getScrollArea(), &TabScrollArea::hitExtremity, this, &Viewer::setPage);
+	connect(tabItems.at(currentTab)->getScrollArea(), &TabScrollArea::scrollZooming, this, &Viewer::handleScrollZooming);
 	connect(tWidget, &QTabWidget::tabBarClicked, this, &Viewer::onTabClicked);
 	connect(tWidget->tabBar(), &QTabBar::tabMoved, this, &Viewer::onTabMoved);
 	connect(tWidget, &QTabWidget::tabCloseRequested, this, &Viewer::onTabCloseRequested);
@@ -351,6 +353,17 @@ void Viewer::refreshTabs()
 
 void Viewer::findAllBoxDeleted() { fBox = NULL; }
 
+void Viewer::handleScrollZooming(bool direction)
+{
+	double scaleValue = static_cast<double>(tabItems.at(currentTab)->getEngine()->getScaleValue());
+	if (direction) scaleValue *= 1.15;
+	else scaleValue /= 1.15;
+	int newScale = qMax(1, static_cast<int>(direction ? std::ceil(scaleValue) : std::floor(scaleValue)));
+	scaleBox->setCurrentText(QString::number(newScale) + "%");
+	tabItems.at(currentTab)->getEngine()->setCurrentScale(newScale);
+	tabItems.at(currentTab)->updateScrollArea();
+}
+
 void Viewer::exitApp() { close(); }
 
 void Viewer::aboutApp()
@@ -393,6 +406,7 @@ void Viewer::addTab(TabItem* item)
 	int currentIndex = tWidget->insertTab(currentTab, tabItems.at(currentTab), tabTitle != "" ? tabTitle : "No PDF loaded");
 	tWidget->setCurrentIndex(currentIndex);
 	connect(tabItems.at(currentTab)->getScrollArea(), &TabScrollArea::hitExtremity, this, &Viewer::setPage);
+	connect(tabItems.at(currentTab)->getScrollArea(), &TabScrollArea::scrollZooming, this, &Viewer::handleScrollZooming);
 	connect(tabItems.at(currentTab)->getEngine(), &PDFEngine::pageChanged, this, &Viewer::updatePageNumber);
 	connect(tabItems.at(currentTab)->getEngine(), &PDFEngine::attentionNeeded, this, &Viewer::giveTabAttention);
 	tabItems.at(currentTab)->updateParentWindow(this);
@@ -605,6 +619,7 @@ void Viewer::onTabClicked(int index)
 		int currentIndex = tWidget->insertTab(currentTab, tabItems.at(currentTab), "No PDF loaded");
 		tWidget->setCurrentIndex(currentIndex);
 		connect(tabItems.at(currentTab)->getScrollArea(), &TabScrollArea::hitExtremity, this, &Viewer::setPage);
+		connect(tabItems.at(currentTab)->getScrollArea(), &TabScrollArea::scrollZooming, this, &Viewer::handleScrollZooming);
 	}
 
 	//Update current tab if we are not pressing the the plus buttton
@@ -854,6 +869,7 @@ void Viewer::openNewWindow(int index, const QPoint& windowPos)
 	if (index < tabItems.size()) {
 		//Disconnect current signals
 		disconnect(tabItems.at(index)->getScrollArea(), &TabScrollArea::hitExtremity, this, &Viewer::setPage);
+		disconnect(tabItems.at(index)->getScrollArea(), &TabScrollArea::scrollZooming, this, &Viewer::handleScrollZooming);
 		disconnect(tabItems.at(index)->getEngine(), &PDFEngine::pageChanged, this, &Viewer::updatePageNumber);
 		disconnect(tabItems.at(index)->getEngine(), &PDFEngine::attentionNeeded, this, &Viewer::giveTabAttention);
 
@@ -884,6 +900,7 @@ void Viewer::mergeTabs(int index, QObject* srcViewer)
 
 	//Disconnect current signals
 	disconnect(item->getScrollArea(), &TabScrollArea::hitExtremity, vwr, &Viewer::setPage);
+	disconnect(item->getScrollArea(), &TabScrollArea::scrollZooming, this, &Viewer::handleScrollZooming);
 	disconnect(item->getEngine(), &PDFEngine::pageChanged, vwr, &Viewer::updatePageNumber);
 	disconnect(item->getEngine(), &PDFEngine::attentionNeeded, this, &Viewer::giveTabAttention);
 

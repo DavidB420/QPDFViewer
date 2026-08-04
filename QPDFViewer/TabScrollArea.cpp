@@ -299,11 +299,21 @@ void TabScrollArea::wheelEvent(QWheelEvent* event)
         return;
     }
 
-    QScrollBar* bar = verticalScrollBar();
+    if (!event->modifiers().testFlag(Qt::ControlModifier)) {
+        QScrollBar* bar = verticalScrollBar();
 
-    bar->setValue(bar->value() - delta * speedMultiplier / 120);
+        bar->setValue(bar->value() - delta * speedMultiplier / 120);
 
-    event->accept();
+        event->accept();
+    }
+    else {
+        if (delta > 0)
+            emit scrollZooming(true);
+        else if (delta < 0)
+            emit scrollZooming(false);
+        else
+            event->ignore();
+    }
 }
 
 void TabScrollArea::resizeEvent(QResizeEvent* event)

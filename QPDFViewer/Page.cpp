@@ -28,6 +28,7 @@ Page::Page(QWidget* parent, PDFEngine* pdfParent, QImage *img)
 	this->parent = pdfParent;
 	dragging = false;
 	isDragging = false;
+	loaded = true; //used for situations with placeholders (loading icon)
 	pageNumber = this->parent->getCurrentPage();
 
 	scale = this->parent->getScaleValue();
@@ -41,6 +42,10 @@ void Page::loadPixmap(QImage* img)
 	setFixedWidth(pagePixmap.width());
 	setFixedHeight(pagePixmap.height());
 }
+
+bool Page::isLoaded() {	return loaded; }
+
+void Page::setLoaded(bool loadedState) { loaded = loadedState; }
 
 void Page::drawRect(QPainter* painter, QRectF rect)
 {

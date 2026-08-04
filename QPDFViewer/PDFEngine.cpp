@@ -85,6 +85,7 @@ PDFEngine::PDFEngine(std::string fileName, QWidget *parentWindow)
 	useMultithreading = false;
 
 	qRegisterMetaType<SearchResult>("SearchResult");
+	qRegisterMetaType<Poppler::Page::Rotation>("Poppler::Page::Rotation");
 
 	cacheSize = 200;
 	multithreadTime = 400;
@@ -173,8 +174,7 @@ int PDFEngine::getScaleValue() { return scaleValue; }
 
 bool PDFEngine::setCurrentPage(int page)
 {
-	if (page <= 0 || page > getTotalNumberOfPages())
-		return false;
+	if (page <= 0 || page > getTotalNumberOfPages())	return false;
 
 	currentPage = page;
 
@@ -183,8 +183,7 @@ bool PDFEngine::setCurrentPage(int page)
 
 bool PDFEngine::setCurrentScale(int scale)
 {
-	if (scale <= 0)
-		return false;
+	if (scale <= 0)	return false;
 
 	scaleValue = scale;
 
@@ -373,6 +372,20 @@ QVector<Page*> PDFEngine::getVisiblePages()
 	int j = k <= 3 ? 1 : k - 2; //Page counter, starts two pages before the current page
 	int l = 0; //stores number of pages allowed after the max height limit
 	int n = j;
+
+	QSet<int> needed;
+	for (int p = n; p <= getTotalNumberOfPages(); ++p) needed.insert(p);
+	//Cancel any stale workers for pages no longer visible
+	const QList<int> activeKeys = renderThreadList.keys();
+	for (int key : activeKeys) {
+		PageRendererWorker* w = renderThreadList[key].worker;
+		bool outOfRange = !needed.contains(key);
+		bool staleParams = (w->getScale() != this->getScaleValue()) || (w->getRotation() != static_cast<int>(this->getCurrentRotation()));
+		if (outOfRange || staleParams) {
+			killThread(renderThreadList[key]);
+			renderThreadList.remove(key);
+		}
+	}
 	
 	//Run until offset limit is reached or we hit the end of the document
 	while ((l <= 4) && j <= getTotalNumberOfPages()) {
@@ -392,16 +405,7 @@ QVector<Page*> PDFEngine::getVisiblePages()
 				if (!renderThreadList.keys().contains(this->getCurrentPage())) {
 					if (doc->page(this->getCurrentPage() - 1) == NULL)
 						reloadDocAndPage();
-					QSet<int> needed;
-					for (int p = n; p <= getTotalNumberOfPages(); ++p) needed.insert(p);
-					//Cancel any stale workers for pages no longer visible
-					const QList<int> activeKeys = renderThreadList.keys();
-					for (int key : activeKeys) {
-						if (!needed.contains(key)) {
-							killThread(renderThreadList[key]);
-							renderThreadList.remove(key);
-						}
-					}
+
 					//Grab page from cache if available
 					if (pageCache.contains(getCurrentPage()) && pageCache[getCurrentPage()]->pdfRotation == this->getCurrentRotation() && pageCache[getCurrentPage()]->scaleValue == this->getScaleValue()) {
 						page = new Page(this->parentWindow, this, &pageCache[getCurrentPage()]->image);
@@ -419,10 +423,6 @@ QVector<Page*> PDFEngine::getVisiblePages()
 
 						PageRendererWorker* worker = new PageRendererWorker(renderTask);
 						QThread* thread = new QThread(this);
-						if (this->getCurrentPage() == k)
-							thread->setPriority(QThread::HighestPriority);
-						else
-							thread->setPriority(QThread::HighPriority);
 						struct PageRenderThread renderThreadStruct;
 						renderThreadStruct.renderThread = thread;
 						renderThreadStruct.worker = worker;
@@ -433,6 +433,10 @@ QVector<Page*> PDFEngine::getVisiblePages()
 						connect(thread, &QThread::finished, worker, &QObject::deleteLater);
 
 						thread->start();
+						if (this->getCurrentPage() == k)
+							thread->setPriority(QThread::HighestPriority);
+						else
+							thread->setPriority(QThread::HighPriority);
 					}
 				}
 				//Display default loading image
@@ -515,8 +519,7 @@ bool PDFEngine::getAllSearchResults(int direction, std::string phrase)
 		currentFindAllThread->start();
 		return true;
 	}
-	else
-		return false;
+	else return false;
 }
 
 void PDFEngine::updateParentWindow(QWidget* parent) 
@@ -609,9 +612,20 @@ void PDFEngine::findAllResult(SearchResult result)
 	if (!result.done) emit sendFindAllResult(result);
 }
 
-void PDFEngine::onPageRendered(int pageNum, QImage renderedImg, int elapsedTime)
+void PDFEngine::onPageRendered(int pageNum, QImage renderedImg, int elapsedTime, int scale, Poppler::Page::Rotation rotation)
 {
 	if (doc == NULL) return;
+
+	if (scale != scaleValue || rotation != pdfRotation) {
+		if (renderThreadList.contains(pageNum)) {
+			PageRendererWorker* w = renderThreadList[pageNum].worker;
+			if (w->getScale() != scaleValue || w->getRotation() != pdfRotation) {
+				killThread(renderThreadList[pageNum]);
+				renderThreadList.remove(pageNum);
+			}
+		}
+		return;
+	}
 	
 	//Update previous default page with newly rendered page, if it has been taking too long add it to cache
 	for (int i = 0; i < previousPages.length(); i++) {
