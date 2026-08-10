@@ -30,13 +30,14 @@ class FindAllBox : public QDialog
 {
 	Q_OBJECT
 public:
-	FindAllBox(QWidget* parent = 0, QString phrase="", int direction = 0); //0 - bidirectional, 1 - forward, 2 - backward
+	FindAllBox(QWidget* parent = 0, QString phrase="", int direction = 0, bool alldocs=false); //0 - bidirectional, 1 - forward, 2 - backward
 	~FindAllBox();
 private:
 	QTreeWidget* results;
 	QString baseTitle;
+	bool alldocs;
 signals:
-	void itemClicked(int page, QList<QRectF> rect);
+	void itemClicked(int page, int tabNum, QList<QRectF> rect);
 public slots:
 	void addItemToBox(SearchResult result);
 	void updateMsg(QString msg);

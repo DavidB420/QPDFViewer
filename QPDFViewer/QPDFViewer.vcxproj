@@ -184,6 +184,7 @@
     <Image Include="assets\aboutIcon.png" />
     <Image Include="assets\backwardsIcon.png" />
     <Image Include="assets\bidirectIcon.png" />
+    <Image Include="assets\bidirectIconAllDocs.png" />
     <Image Include="assets\closeIcon.png" />
     <Image Include="assets\downIcon.png" />
     <Image Include="assets\encrypted.png" />

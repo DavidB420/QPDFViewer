@@ -84,6 +84,7 @@ private:
 	QAction* findAllForward;
 	QAction* findAllBackward;
 	QAction* findAllBidirect;
+	QAction* findAllBidirectAllDocs;
 	QWidget* wdgt;
 	QWidget* plusWdgt;
 	DetachableTabWidget* tWidget;
@@ -93,6 +94,7 @@ private:
 	bool deleteTab;
 	FindAllBox* fBox;
 	OptionsParser* parser;
+	std::vector <int> docsToLookAt;
 signals:
 	void tabMerged(int index, QObject* srcViewer);
 public slots:
@@ -122,6 +124,7 @@ private slots:
 	void refreshTabs();
 	void findAllBoxDeleted();
 	void handleScrollZooming(bool direction);
+	void gotoFindAllResult(int page, int tabNum, QList<QRectF> rect);
 };
 
 #endif

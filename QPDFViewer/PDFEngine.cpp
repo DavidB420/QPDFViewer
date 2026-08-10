@@ -496,7 +496,7 @@ bool PDFEngine::getSuccess()
 	return success;
 }
 
-bool PDFEngine::getAllSearchResults(int direction, std::string phrase)
+bool PDFEngine::getAllSearchResults(int direction, std::string phrase, int tabNum)
 {
 	//Kill all workers currently running
 	cancelFindAllWorker();
@@ -506,7 +506,7 @@ bool PDFEngine::getAllSearchResults(int direction, std::string phrase)
 	
 	if (foundFileName != "") {
 		//Create a find all worker with proper parameters and run in seperate thread
-		currentFindAllWorker = new FindAllWorker(QString::fromStdString(foundFileName), QString::fromStdString(phrase), password, hasPassword, getCurrentPage(), getTotalNumberOfPages(), direction, getCurrentRotation());
+		currentFindAllWorker = new FindAllWorker(QString::fromStdString(foundFileName),  QString::fromStdString(phrase), password, hasPassword, getCurrentPage(), getTotalNumberOfPages(), direction, tabNum, getCurrentRotation());
 		currentFindAllThread = new QThread(this);
 
 		currentFindAllWorker->moveToThread(currentFindAllThread);
@@ -757,7 +757,7 @@ bool PDFEngine::documentSearch(Poppler::Page* page, int pageNum, std::string phr
 
 	//Returns list of all results found for the page
 	QList<Poppler::TextBox*> words = page->textList(pdfRotation);
-	QList <SearchResult> results = FindAllWorker::wordBoxSearch(words, Poppler::Page::SearchDirection::NextResult, pageNum, QString::fromStdString(phrase), NULL, NULL, NULL, NULL, NULL);
+	QList <SearchResult> results = FindAllWorker::wordBoxSearch(words, Poppler::Page::SearchDirection::NextResult, pageNum, QString::fromStdString(phrase), NULL, NULL, NULL, NULL, NULL, NULL);
 	QList <QList<QRectF>> pageResults;
 	for (int i = 0; i < results.length(); i++) pageResults.append(results.at(i).foundRect);
 

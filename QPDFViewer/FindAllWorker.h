@@ -26,8 +26,10 @@
 
 struct SearchResult {
 	QString snippet;
+	QString fn;
 	QList <QRectF> foundRect;
 	int page;
+	int tabNum;
 	bool done;
 };
 
@@ -38,15 +40,16 @@ class FindAllWorker: public QObject
 {
 	Q_OBJECT
 public:
-	FindAllWorker(QString fn="", QString phrase="", QString password="", bool hasPassword=false, int currentPage = 0, int totalNumberOfPages = 0, int direction = 0, Poppler::Page::Rotation pdfRotation = Poppler::Page::Rotate0);
+	FindAllWorker(QString fn="", QString phrase="", QString password="", bool hasPassword=false, int currentPage = 0, int totalNumberOfPages = 0, int direction = 0, int tabNum=0, Poppler::Page::Rotation pdfRotation = Poppler::Page::Rotate0);
 	~FindAllWorker();
-	static QList<SearchResult> wordBoxSearch(QList<Poppler::TextBox*> words, int direction, int pageNum, QString qPhrase, QString highlightHTMLHeader = "", QString higlightHTMLFooter = "", bool (*functioning)(void*) = NULL, void (*emitter)(void*, SearchResult) = NULL, void* ctx = NULL);
+	static QList<SearchResult> wordBoxSearch(QList<Poppler::TextBox*> words, int direction, int pageNum, QString qPhrase, QString highlightHTMLHeader = "", QString higlightHTMLFooter = "", QString fn = "", int tabNum = -1, bool (*functioning)(void*) = NULL, void (*emitter)(void*, SearchResult) = NULL, void* ctx = NULL);
 private:
 	QString fn;
 	QString phrase;
 	int currentPage;
 	int totalNumberOfPages;
 	int direction;
+	int tabNum;
 	bool cancelled;
 	Poppler::Document* doc;
 	Poppler::Page::Rotation pdfRotation;

@@ -66,7 +66,7 @@ public:
 	QVector <int> getPageHeights();
 	Poppler::Page::Rotation getCurrentRotation();
 	bool getSuccess();
-	bool getAllSearchResults(int direction, std::string phrase);
+	bool getAllSearchResults(int direction, std::string phrase, int tabNum);
 	void updateParentWindow(QWidget* parent);
 	int refreshEngine();
 	void rerenderAllPages();
