@@ -324,9 +324,9 @@ void Viewer::findAllSearch()
 				connect(tabItems.at(docsToLookAt.at(i))->getEngine(), &PDFEngine::findAllBoxMsg, fBox, &FindAllBox::updateMsg);
 				connect(fBox, &QObject::destroyed, tabItems.at(docsToLookAt.at(i))->getEngine(), &PDFEngine::cancelFindAllWorker);
 			}
-			connect(fBox, &QObject::destroyed, this, &Viewer::findAllBoxDeleted);
-			connect(fBox, &FindAllBox::itemClicked, this, &Viewer::gotoFindAllResult);
 		}
+		connect(fBox, &QObject::destroyed, this, &Viewer::findAllBoxDeleted);
+		connect(fBox, &FindAllBox::itemClicked, this, &Viewer::gotoFindAllResult);
 		fBox->setAttribute(Qt::WA_DeleteOnClose);
 		fBox->show();
 	}
