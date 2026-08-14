@@ -37,6 +37,7 @@
 #include <QtPrintSupport/qprintdialog.h>
 #include <vector>
 #include <QMimeData>
+#include <cmath>
 #include "TabItem.h"
 #include "OptionsDialog.h"
 #include "PrintDialog.h"
@@ -96,6 +97,10 @@ Viewer::Viewer(QWidget* parent)
 	navBarShowAct->setCheckable(true);
 	connect(navBarShowAct, &QAction::triggered, this, &Viewer::showNavBar);
 	navMenu->addAction(navBarShowAct);
+	findAllBidirectAllDocs = new QAction(tr("&Find all (all documents)"));
+	findAllBidirectAllDocs->setIcon(QIcon(":/images/assets/bidirectIconAllDocs.png"));
+	connect(findAllBidirectAllDocs, &QAction::triggered, this, &Viewer::findAllSearch);
+	navMenu->addAction(findAllBidirectAllDocs);
 	findAllForward = new QAction(tr("&Find all forward"));
 	findAllForward->setIcon(QIcon(":/images/assets/forwardsIcon.png"));
 	connect(findAllForward, &QAction::triggered, this, &Viewer::findAllSearch);
@@ -190,6 +195,7 @@ Viewer::Viewer(QWidget* parent)
 	tWidget->addTab(plusWdgt, tr("+"));
 	tWidget->tabBar()->setTabButton(tWidget->count() - 1, QTabBar::RightSide, nullptr);
 	connect(tabItems.at(currentTab)->getScrollArea(), &TabScrollArea::hitExtremity, this, &Viewer::setPage);
+	connect(tabItems.at(currentTab)->getScrollArea(), &TabScrollArea::scrollZooming, this, &Viewer::handleScrollZooming);
 	connect(tWidget, &QTabWidget::tabBarClicked, this, &Viewer::onTabClicked);
 	connect(tWidget->tabBar(), &QTabBar::tabMoved, this, &Viewer::onTabMoved);
 	connect(tWidget, &QTabWidget::tabCloseRequested, this, &Viewer::onTabCloseRequested);
@@ -245,7 +251,7 @@ void Viewer::openFile(QStringList fileNames)
 				connect(tabItems.at(currentTab)->getEngine(), &PDFEngine::pageFinished, tabItems.at(currentTab)->getScrollArea(), &TabScrollArea::refreshScrollArea);
 				tabItems.at(currentTab)->setFilePath(fileNames.at(i));
 				tabItems.at(currentTab)->updateScrollArea();
-				tWidget->setTabText(currentTab, QString::fromStdString(tabItems.at(currentTab)->getFileName()));
+				tWidget->setTabText(currentTab, TabItem::getFileName(tabItems.at(currentTab)->getFilePath()));
 				totalPage->setText(" of " + QString::number(tabItems.at(currentTab)->getEngine()->getTotalNumberOfPages()) + " ");
 				pageNumber->setText(QString::number(tabItems.at(currentTab)->getEngine()->getCurrentPage()));
 				this->setWindowTitle("QPDFViewer - " + fileNames.at(i));
@@ -298,19 +304,29 @@ void Viewer::findAllSearch()
 	
 	//Open find all box and start search, end search if dialog is destroyed
 	if (fBox != NULL) {
-		disconnect(tabItems.at(currentTab)->getEngine(), &PDFEngine::sendFindAllResult, fBox, &FindAllBox::addItemToBox);
-		emit tabItems.at(currentTab)->getEngine()->findAllBoxMsg("Interrupted");
-		disconnect(tabItems.at(currentTab)->getEngine(), &PDFEngine::findAllBoxMsg, fBox, &FindAllBox::updateMsg);
-		disconnect(fBox, &QObject::destroyed, tabItems.at(currentTab)->getEngine(), &PDFEngine::cancelFindAllWorker);
+		for (int i = 0; i < docsToLookAt.size(); i++) {
+			disconnect(tabItems.at(docsToLookAt.at(i))->getEngine(), &PDFEngine::sendFindAllResult, fBox, &FindAllBox::addItemToBox);
+			emit tabItems.at(docsToLookAt.at(i))->getEngine()->findAllBoxMsg("Interrupted");
+			disconnect(tabItems.at(docsToLookAt.at(i))->getEngine(), &PDFEngine::findAllBoxMsg, fBox, &FindAllBox::updateMsg);
+			disconnect(fBox, &QObject::destroyed, tabItems.at(docsToLookAt.at(i))->getEngine(), &PDFEngine::cancelFindAllWorker);
+		}
 	}
 
-	if (tabItems.at(currentTab)->getEngine()->getAllSearchResults(direction, searchBox->text().toStdString())) {
-		fBox = new FindAllBox(this, searchBox->text(), direction);
-		connect(tabItems.at(currentTab)->getEngine(), &PDFEngine::sendFindAllResult, fBox, &FindAllBox::addItemToBox);
-		connect(tabItems.at(currentTab)->getEngine(), &PDFEngine::findAllBoxMsg, fBox, &FindAllBox::updateMsg);
-		connect(fBox, &QObject::destroyed, tabItems.at(currentTab)->getEngine(), &PDFEngine::cancelFindAllWorker);
-		connect(fBox, &QObject::destroyed, this, &Viewer::findAllBoxDeleted);
-		connect(fBox, &FindAllBox::itemClicked, tabItems.at(currentTab)->getEngine(), &PDFEngine::goToPhrase);
+	docsToLookAt.clear();
+	docsToLookAt.push_back(currentTab);
+	if (sender() == findAllBidirectAllDocs)	for (int i = 0; i < tabItems.size(); i++) { if (i != currentTab) docsToLookAt.push_back(i); }
+
+	if (tabItems.at(currentTab)->getEngine()->getAllSearchResults(direction, searchBox->text().toStdString(), currentTab)) {
+		fBox = new FindAllBox(this, searchBox->text(), direction, sender() == findAllBidirectAllDocs);
+		for (int i = 0; i < docsToLookAt.size(); i++) {
+			if ((docsToLookAt.at(i) != currentTab && tabItems.at(docsToLookAt.at(i))->getEngine() != NULL && tabItems.at(docsToLookAt.at(i))->getEngine()->getAllSearchResults(direction, searchBox->text().toStdString(),docsToLookAt.at(i))) || (docsToLookAt.at(i) == currentTab)) {
+				connect(tabItems.at(docsToLookAt.at(i))->getEngine(), &PDFEngine::sendFindAllResult, fBox, &FindAllBox::addItemToBox);
+				connect(tabItems.at(docsToLookAt.at(i))->getEngine(), &PDFEngine::findAllBoxMsg, fBox, &FindAllBox::updateMsg);
+				connect(fBox, &QObject::destroyed, tabItems.at(docsToLookAt.at(i))->getEngine(), &PDFEngine::cancelFindAllWorker);
+			}
+			connect(fBox, &QObject::destroyed, this, &Viewer::findAllBoxDeleted);
+			connect(fBox, &FindAllBox::itemClicked, this, &Viewer::gotoFindAllResult);
+		}
 		fBox->setAttribute(Qt::WA_DeleteOnClose);
 		fBox->show();
 	}
@@ -351,6 +367,19 @@ void Viewer::refreshTabs()
 
 void Viewer::findAllBoxDeleted() { fBox = NULL; }
 
+void Viewer::handleScrollZooming(bool direction)
+{
+	double scaleValue = static_cast<double>(tabItems.at(currentTab)->getEngine()->getScaleValue());
+	if (direction) scaleValue *= 1.15;
+	else scaleValue /= 1.15;
+	int newScale = qMax(1, static_cast<int>(direction ? std::ceil(scaleValue) : std::floor(scaleValue)));
+	scaleBox->setCurrentText(QString::number(newScale) + "%");
+	tabItems.at(currentTab)->getEngine()->setCurrentScale(newScale);
+	tabItems.at(currentTab)->updateScrollArea();
+}
+
+void Viewer::gotoFindAllResult(int page, int tabNum, QList<QRectF> rect) { if (tabNum >= tabItems.size()) { return; } tabItems.at(tabNum)->getEngine()->goToPhrase(page, rect); }
+
 void Viewer::exitApp() { close(); }
 
 void Viewer::aboutApp()
@@ -389,10 +418,11 @@ void Viewer::addTab(TabItem* item)
 
 	//Load tab into this window
 	currentTab = tWidget->count() - 1;
-	QString tabTitle = QString::fromStdString(tabItems.at(currentTab)->getFileName());
+	QString tabTitle = TabItem::getFileName(tabItems.at(currentTab)->getFilePath());
 	int currentIndex = tWidget->insertTab(currentTab, tabItems.at(currentTab), tabTitle != "" ? tabTitle : "No PDF loaded");
 	tWidget->setCurrentIndex(currentIndex);
 	connect(tabItems.at(currentTab)->getScrollArea(), &TabScrollArea::hitExtremity, this, &Viewer::setPage);
+	connect(tabItems.at(currentTab)->getScrollArea(), &TabScrollArea::scrollZooming, this, &Viewer::handleScrollZooming);
 	connect(tabItems.at(currentTab)->getEngine(), &PDFEngine::pageChanged, this, &Viewer::updatePageNumber);
 	connect(tabItems.at(currentTab)->getEngine(), &PDFEngine::attentionNeeded, this, &Viewer::giveTabAttention);
 	tabItems.at(currentTab)->updateParentWindow(this);
@@ -605,6 +635,7 @@ void Viewer::onTabClicked(int index)
 		int currentIndex = tWidget->insertTab(currentTab, tabItems.at(currentTab), "No PDF loaded");
 		tWidget->setCurrentIndex(currentIndex);
 		connect(tabItems.at(currentTab)->getScrollArea(), &TabScrollArea::hitExtremity, this, &Viewer::setPage);
+		connect(tabItems.at(currentTab)->getScrollArea(), &TabScrollArea::scrollZooming, this, &Viewer::handleScrollZooming);
 	}
 
 	//Update current tab if we are not pressing the the plus buttton
@@ -838,6 +869,7 @@ void Viewer::checkIfPDFLoaded()
 	findAllBackward->setEnabled(toggle);
 	findAllForward->setEnabled(toggle);
 	findAllBidirect->setEnabled(toggle);
+	findAllBidirectAllDocs->setEnabled(toggle);
 
 	if (!toggle) {
 		totalPage->setText(" out of ");
@@ -854,6 +886,7 @@ void Viewer::openNewWindow(int index, const QPoint& windowPos)
 	if (index < tabItems.size()) {
 		//Disconnect current signals
 		disconnect(tabItems.at(index)->getScrollArea(), &TabScrollArea::hitExtremity, this, &Viewer::setPage);
+		disconnect(tabItems.at(index)->getScrollArea(), &TabScrollArea::scrollZooming, this, &Viewer::handleScrollZooming);
 		disconnect(tabItems.at(index)->getEngine(), &PDFEngine::pageChanged, this, &Viewer::updatePageNumber);
 		disconnect(tabItems.at(index)->getEngine(), &PDFEngine::attentionNeeded, this, &Viewer::giveTabAttention);
 
@@ -884,6 +917,7 @@ void Viewer::mergeTabs(int index, QObject* srcViewer)
 
 	//Disconnect current signals
 	disconnect(item->getScrollArea(), &TabScrollArea::hitExtremity, vwr, &Viewer::setPage);
+	disconnect(item->getScrollArea(), &TabScrollArea::scrollZooming, this, &Viewer::handleScrollZooming);
 	disconnect(item->getEngine(), &PDFEngine::pageChanged, vwr, &Viewer::updatePageNumber);
 	disconnect(item->getEngine(), &PDFEngine::attentionNeeded, this, &Viewer::giveTabAttention);
 

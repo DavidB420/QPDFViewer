@@ -18,10 +18,11 @@
  */
 
 #include "FindAllWorker.h"
+#include "TabItem.h"
 
 #include <qthread.h>
 
-FindAllWorker::FindAllWorker(QString fn, QString phrase, QString password, bool hasPassword, int currentPage, int totalNumberOfPages, int direction, Poppler::Page::Rotation pdfRotation)
+FindAllWorker::FindAllWorker(QString fn, QString phrase, QString password, bool hasPassword, int currentPage, int totalNumberOfPages, int direction, int tabNum, Poppler::Page::Rotation pdfRotation)
 {
 	//Save parameters and reload document seperately for the worker, as poppler is not thread safe
 	this->fn = fn;
@@ -30,6 +31,7 @@ FindAllWorker::FindAllWorker(QString fn, QString phrase, QString password, bool 
 	this->totalNumberOfPages = totalNumberOfPages;
 	this->direction = direction;
 	this->pdfRotation = pdfRotation;
+	this->tabNum = tabNum;
 
 	cancelled = false;
 
@@ -44,7 +46,7 @@ FindAllWorker::~FindAllWorker()
 	delete doc;
 }
 
-QList <SearchResult> FindAllWorker::wordBoxSearch(QList<Poppler::TextBox*> words, int direction, int pageNum, QString qPhrase, QString highlightHTMLHeader, QString highlightHTMLFooter, bool (*functioning)(void*), void (*emitter)(void*,SearchResult), void* ctx)
+QList <SearchResult> FindAllWorker::wordBoxSearch(QList<Poppler::TextBox*> words, int direction, int pageNum, QString qPhrase, QString highlightHTMLHeader, QString highlightHTMLFooter, QString fn, int tabNum, bool (*functioning)(void*), void (*emitter)(void*,SearchResult), void* ctx)
 {	
 	QList<SearchResult> results;
 
@@ -119,6 +121,9 @@ QList <SearchResult> FindAllWorker::wordBoxSearch(QList<Poppler::TextBox*> words
 			QString snippet = textTmp.mid(qMax(0, index - 40 - headerSize), qMin(textTmp.length(), index + qPhraseLength + footerSize + 40));
 			newResult.snippet = snippet;
 
+			newResult.fn = TabItem::getFileName(fn);
+			newResult.tabNum = tabNum;
+
 			//We had to skip the HTML header before
 			index -= highlightHTMLHeader.size();
 
@@ -189,7 +194,7 @@ void FindAllWorker::run()
 
 		QList<Poppler::TextBox*> words = page->textList(pdfRotation);
 
-		FindAllWorker::wordBoxSearch(words, direction, i, qPhrase, highlightHTMLHeader, highlightHTMLFooter, &FindAllWorker::isCancelledStatic, &FindAllWorker::emitterItemStatic, this);
+		FindAllWorker::wordBoxSearch(words, direction, i, qPhrase, highlightHTMLHeader, highlightHTMLFooter, fn, tabNum, &FindAllWorker::isCancelledStatic, &FindAllWorker::emitterItemStatic, this);
 		
 		qDeleteAll(words);
 		delete page;

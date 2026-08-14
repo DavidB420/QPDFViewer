@@ -38,6 +38,10 @@ PageRendererWorker::PageRendererWorker(PageRenderTask renderTask)
 	reloadResult = 0;
 }
 
+int PageRendererWorker::getScale(){	return scale; }
+
+Poppler::Page::Rotation PageRendererWorker::getRotation() { return rotation; }
+
 void PageRendererWorker::cancel() { cancelled = true; }
 
 void PageRendererWorker::run()
@@ -49,13 +53,13 @@ void PageRendererWorker::run()
 	QImage image = PDFEngine::returnImage(fileName, password, hasPassword, pageNum, scale, rotation, NULL, &PageRendererWorker::check1Static, &PageRendererWorker::check1Static, this);
 
 	if (!cancelled)
-		emit finished(pageNum, image,timer.elapsed());
+		emit finished(pageNum, image,timer.elapsed(), scale, rotation);
 }
 
 Poppler::Document* PageRendererWorker::check1() 
 {
 	//Failed run
-	emit finished(-1, QImage(), -1);
+	emit finished(-1, QImage(), -1, -1, Poppler::Page::Rotate0);
 	return NULL;
 }
 

@@ -40,7 +40,7 @@ public:
 	void setFilePath(QString filePath);
 	void updateScrollArea(bool dontRefresh=false);
 	void setUseNavBar(bool enabled);
-	std::string getFileName();
+	static QString getFileName(QString filePath);
 	void rerenderUpdateScrollArea();
 	void updateParentWindow(QWidget* parent);
 	void refreshTab();

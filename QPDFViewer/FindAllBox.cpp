@@ -23,10 +23,13 @@
 #include <qpainter.h>
 #include <qtextdocument.h>
 
-FindAllBox::FindAllBox(QWidget* parent, QString phrase, int direction)
+FindAllBox::FindAllBox(QWidget* parent, QString phrase, int direction, bool alldocs)
 {
 	//Create dialog box with proper HTML rich text formatting for the snippets
 	this->setWindowTitle("Find all '" + phrase + "'");
+	this->alldocs = alldocs;
+	if (alldocs)
+		this->setWindowTitle(this->windowTitle() + " in all open documents");
 	switch (direction) {
 	case 1:
 		this->setWindowTitle(this->windowTitle() + " forwards");
@@ -42,8 +45,9 @@ FindAllBox::FindAllBox(QWidget* parent, QString phrase, int direction)
 	this->setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
 	results = new QTreeWidget(this);
-	results->setColumnCount(2);
-	results->setHeaderLabels({ "Page","Snippet" });
+	results->setColumnCount(3);
+	results->setHeaderLabels({ "Document", "Page", "Snippet" });
+	if (!alldocs) results->setColumnHidden(0, true);
 	results->setRootIsDecorated(false);
 	results->setUniformRowHeights(true);
 	results->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -51,7 +55,7 @@ FindAllBox::FindAllBox(QWidget* parent, QString phrase, int direction)
 	results->setTextElideMode(Qt::ElideNone);
 	results->setWordWrap(true);
 	HtmlItemDelegate* delegate = new HtmlItemDelegate(this);
-	results->setItemDelegateForColumn(1, delegate);
+	results->setItemDelegateForColumn(2, delegate);
 
 	QVBoxLayout* layout = new QVBoxLayout;
 	layout->addWidget(results);
@@ -59,7 +63,6 @@ FindAllBox::FindAllBox(QWidget* parent, QString phrase, int direction)
 
 	//Detect clicks
 	connect(results, &QTreeWidget::itemActivated, this, &FindAllBox::selectResult);
-
 }
 
 FindAllBox::~FindAllBox()
@@ -76,17 +79,20 @@ void FindAllBox::addItemToBox(SearchResult result)
 {
 	//Add item sent from pdf engine
 	QTreeWidgetItem* newItem = new QTreeWidgetItem(results);
-	newItem->setText(0, QString::number(result.page));
-	newItem->setText(1, result.snippet);
-	newItem->setData(0, Qt::UserRole, result.page);
-	newItem->setData(1, Qt::UserRole, QVariant::fromValue(result.foundRect));
+
+	newItem->setText(0, result.fn);
+	newItem->setText(1, QString::number(result.page));
+	newItem->setText(2, result.snippet);
+	newItem->setData(0, Qt::UserRole, result.tabNum);
+	newItem->setData(1, Qt::UserRole, result.page);
+	newItem->setData(2, Qt::UserRole, QVariant::fromValue(result.foundRect));
 	this->updateMsg("Page: " + QString::number(result.page));
 }
 
 void FindAllBox::selectResult(QTreeWidgetItem* item, int column)
 {
 	//Emit item clicked which is sent back to pdf engine
-	emit itemClicked(item->data(0, Qt::UserRole).toInt(), item->data(1, Qt::UserRole).value<QList<QRectF>>());
+	emit itemClicked(item->data(1, Qt::UserRole).toInt(), item->data(0, Qt::UserRole).toInt(), item->data(2, Qt::UserRole).value<QList<QRectF>>());
 }
 
 void HtmlItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const

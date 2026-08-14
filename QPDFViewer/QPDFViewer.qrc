@@ -18,5 +18,6 @@
         <file>assets/refreshIcon.png</file>
         <file>assets/loadingIcon.png</file>
         <file>assets/optionIcon.png</file>
+        <file>assets/bidirectIconAllDocs.png</file>
     </qresource>
 </RCC>

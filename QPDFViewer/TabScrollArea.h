@@ -58,6 +58,7 @@ private:
 	bool dying;
 signals:
 	void hitExtremity();
+	void scrollZooming(bool direction);
 private slots:
 	void onVerticalScrollChanged(int value);
 	void onHorizontalScrollChanged(int value);

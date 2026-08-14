@@ -26,6 +26,7 @@
 #include <qdrag.h>
 #include <qmimedata.h>
 #include <QStylePainter>
+#include <qtabbar.h>
 
 DetachableTabBar::DetachableTabBar(QWidget* parent)
 {
@@ -140,6 +141,32 @@ void DetachableTabBar::paintEvent(QPaintEvent* event)
 		//Draw tab
 		painter.drawControl(QStyle::CE_TabBarTab, opt);
 	}
+}
+
+void DetachableTabBar::wheelEvent(QWheelEvent* event)
+{
+	//Support horizontal mouse wheels on higher end mice alongside vertical mouse wheels
+	int angleDelta = event->angleDelta().x() ? event->angleDelta().x() : event->angleDelta().y();
+
+	//Handle scrolling between tabs
+	int i = currentIndex();
+	
+	if (angleDelta > 0)
+		i--;
+	else if (angleDelta < 0)
+		i++;
+	else {
+		event->ignore();
+		return;
+	}
+
+	if (i >= 0 && i < count() - 1) {
+		setCurrentIndex(i);
+		emit tabBarClicked(i);
+		event->accept();
+	}
+	else
+		event->ignore();
 }
 
 void DetachableTabBar::mouseReleaseEvent(QMouseEvent* event)

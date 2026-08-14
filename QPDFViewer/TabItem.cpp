@@ -104,12 +104,12 @@ void TabItem::setUseNavBar(bool enabled)
 	useNavBar = enabled;
 }
 
-std::string TabItem::getFileName()
+QString TabItem::getFileName(QString filePath)
 {
 	//Remove file path and just get the file name
 	int startFN = 0;
 
-	std::string filePathStd = filePath.toStdString();
+	QString filePathStd = filePath;
 
 	for (int i = filePathStd.length() - 1; i >= 0; i--) {
 		if (filePathStd.at(i) == '\\' || filePathStd.at(i) == '/') {
@@ -118,7 +118,7 @@ std::string TabItem::getFileName()
 		}
 	}
 
-	return filePathStd.substr(startFN,filePathStd.length());
+	return filePathStd.mid(startFN,filePathStd.length());
 }
 
 void TabItem::rerenderUpdateScrollArea()

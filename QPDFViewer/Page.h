@@ -49,8 +49,10 @@ public:
 	void drawSelection(QList<QRectF> rect);
 	void addHyperlink(HyperlinkObject* obj);
 	void loadPixmap(QImage* img);
+	bool isLoaded();
+	void setLoaded(bool loadedState);
 private:
-	bool dragging, isDragging;
+	bool dragging, isDragging, loaded;
 	QPixmap pagePixmap;
 	QPointF firstPoint, currentPoint;
 	QList <QRectF> rects;

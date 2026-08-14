@@ -40,6 +40,8 @@ class PageRendererWorker: public QObject
     Q_OBJECT
 public:
     PageRendererWorker(PageRenderTask renderTask);
+    int getScale();
+    Poppler::Page::Rotation getRotation();
     void cancel();
 public slots:
     void run();
@@ -55,7 +57,7 @@ private:
     Poppler::Document* check1();
     static Poppler::Document* check1Static(void *ctx);
 signals:
-    void finished(int pageNum, QImage renderedImg, qint64 elapsedTime);
+    void finished(int pageNum, QImage image, int elapsedTime, int scale, Poppler::Page::Rotation rotation);
     void needReloadCheck(PageRendererWorker *worker);
 };
 

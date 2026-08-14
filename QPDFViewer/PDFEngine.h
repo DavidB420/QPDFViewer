@@ -66,7 +66,7 @@ public:
 	QVector <int> getPageHeights();
 	Poppler::Page::Rotation getCurrentRotation();
 	bool getSuccess();
-	bool getAllSearchResults(int direction, std::string phrase);
+	bool getAllSearchResults(int direction, std::string phrase, int tabNum);
 	void updateParentWindow(QWidget* parent);
 	int refreshEngine();
 	void rerenderAllPages();
@@ -125,7 +125,7 @@ public slots:
 	void cancelFindAllWorker();
 	void cancelFindAllWorkerGracefully();
 	void findAllResult(SearchResult result);
-	void onPageRendered(int pageNum, QImage renderedImg, int elapsedTime);
+	void onPageRendered(int pageNum, QImage renderedImg, int elapsedTime, int scale, Poppler::Page::Rotation rotation);
 };
 
 #endif
