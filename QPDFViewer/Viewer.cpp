@@ -738,8 +738,8 @@ void Viewer::getPrintDialog()
 {
 	PrintDialog* pDialog = new PrintDialog(this);
 	pDialog->show();
-	QPrinter printer(QPrinter::PrinterResolution);
-	
+	QPrinter printer(QPrinter::HighResolution);
+
 	//Handle QPDFViewer's native print dialog, or give OS dialog
 	if (pDialog->exec() && pDialog->result() == QDialog::Accepted) {
 		QPrintDialog dialog(&printer, this);
@@ -784,7 +784,8 @@ void Viewer::getPrintDialog()
 			int copies = printer.copyCount(); //we handle multiple copies, not the printer driver, so qprinter's copy count must be set to 1
 			printer.setCopyCount(1);
 			QPainter painter(&printer);
-			QRect rect = painter.viewport();
+			QRect rect = printer.pageLayout().paintRectPixels(printer.resolution());
+			rect.moveTo(0, 0);
 
 			//Check if we are printing all or just a selection
 			if (printer.printRange() == QPrinter::AllPages) {
@@ -811,11 +812,11 @@ void Viewer::getPrintDialog()
 							tabItems.at(currentTab)->getEngine()->setCurrentPage(j);
 							tabItems.at(currentTab)->updateScrollArea(true);
 							if (tabItems.at(currentTab)->getEngine()->checkFileAvailable(tabItems.at(currentTab)->getFilePath().toStdString()) != "" && tabItems.at(currentTab)->getEngine()->reloadDocAndPage()) {
-								QImage printImg = PDFEngine::returnImage(tabItems.at(currentTab)->getFilePath(), tabItems.at(currentTab)->getEngine()->getPassword(), tabItems.at(currentTab)->getEngine()->getHasPassword(), tabItems.at(currentTab)->getEngine()->getCurrentPage(), printer.resolution()/2, tabItems.at(currentTab)->getEngine()->getCurrentRotation(), NULL, NULL, NULL);
+								QImage printImg = PDFEngine::returnImage(tabItems.at(currentTab)->getFilePath(), tabItems.at(currentTab)->getEngine()->getPassword(), tabItems.at(currentTab)->getEngine()->getHasPassword(), tabItems.at(currentTab)->getEngine()->getCurrentPage(), qBound(150, printer.resolution() / 2, 300), tabItems.at(currentTab)->getEngine()->getCurrentRotation(), NULL, NULL, NULL);
 								QPixmap pMap = QPixmap::fromImage(printImg);
 								QSize size = pMap.size();
 								size.scale(rect.size(), Qt::KeepAspectRatio);
-								painter.drawPixmap(QRect(rect.x(),rect.y(),size.width(),size.height()), pMap);
+								painter.drawPixmap(QRect((rect.width() - size.width()) / 2,(rect.height() - size.height()) / 2,size.width(), size.height()), pMap);
 							}
 							else {
 								delete pDialog;

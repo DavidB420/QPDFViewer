@@ -94,6 +94,9 @@ PDFEngine::PDFEngine(std::string fileName, QWidget *parentWindow)
 
 PDFEngine::~PDFEngine()
 {
+	emit findAllBoxMsg("Interrupted");
+	cancelFindAllWorker();
+	
 	QList<int> keys = renderThreadList.keys();
 	for (int i = 0; i < keys.length(); i++)
 		killThread(renderThreadList[keys.at(i)]);
