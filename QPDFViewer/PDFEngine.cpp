@@ -796,10 +796,12 @@ void PDFEngine::addHyperlinksToPage(Page* page, Poppler::Page* popplerPage, QIma
 	QList<Poppler::TextBox*> textBoxes = popplerPage->textList();
 	for (int i = 0; i < textBoxes.length(); i++) {
 		QString word = textBoxes.at(i)->text().trimmed();
-		if (word.contains("http", Qt::CaseInsensitive) || word.contains("www.", Qt::CaseInsensitive)) {
+		while (!word.isEmpty() && QString("([{<\"'").contains(word.front()))	word.remove(0, 1);
+		if ((word.startsWith("http://", Qt::CaseInsensitive) || word.startsWith("https://", Qt::CaseInsensitive) || word.startsWith("www.", Qt::CaseInsensitive))) {
 			int lastIdx = i;
 			//Add other possible text boxes
 			for (int j = i + 1; j < textBoxes.length(); j++) {
+				if (textBoxes.at(lastIdx)->hasSpaceAfter()) break;
 				QString next = textBoxes.at(j)->text();
 				QString nextTrim = next.trimmed();
 				if (nextTrim.isEmpty() || next.contains(' ') || next.contains('\t')) break;
@@ -807,13 +809,16 @@ void PDFEngine::addHyperlinksToPage(Page* page, Poppler::Page* popplerPage, QIma
 				if (word.endsWith('/')) break;
 				if (nextTrim.contains(':')) break;
 				if (!nextTrim.isEmpty() && nextTrim.at(0).isUpper()) break;
+				if (textBoxes.at(lastIdx)->hasSpaceAfter()) break;
+				QRectF p = textBoxes.at(lastIdx)->boundingBox(), c = textBoxes.at(j)->boundingBox();
+				if (!(qAbs(c.center().y() - p.center().y()) < p.height() * 0.5 ? c.left() - p.right() <= p.height() * 0.3 : c.top() - p.bottom() <= p.height() * 1.2 && c.bottom() >= p.top() && c.left() < p.left())) break;
 				word += nextTrim;
 				lastIdx = j;
 			}
 			//Remove possible illegal characters from end of url
 			while (!word.isEmpty() && QString(".,;:!?)]}>\"'").contains(word.back())) word.chop(1);
 			if (!word.startsWith("http", Qt::CaseInsensitive)) word.prepend("https://");
-			for (int k = i; k <= lastIdx; k++)	page->addHyperlink(new HyperlinkObject(page, toImageRect(textBoxes.at(k)->boundingBox(), image, popplerPage), word, true));
+			if (QUrl::fromUserInput(word).host().contains('.') || QUrl::fromUserInput(word).host() == "localhost" || QUrl::fromUserInput(word).host().contains(":"))	for (int k = i; k <= lastIdx; k++)	page->addHyperlink(new HyperlinkObject(page, toImageRect(textBoxes.at(k)->boundingBox(), image, popplerPage), word, true));
 			i = lastIdx;
 		}
 	}
