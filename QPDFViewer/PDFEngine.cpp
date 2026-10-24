@@ -38,6 +38,7 @@
 #include "PasswordBoxDialog.h"
 #include "FindAllWorker.h"
 #include "PageRendererWorker.h"
+#include <qregularexpression.h>
 
 PDFEngine::PDFEngine(std::string fileName, QWidget *parentWindow)
 {
@@ -793,6 +794,7 @@ void PDFEngine::addHyperlinksToPage(Page* page, Poppler::Page* popplerPage, QIma
 			page->addHyperlink(new HyperlinkObject(page, toImageRect(QRectF(r.x() * popplerPage->pageSizeF().width(), r.y() * popplerPage->pageSizeF().height(), r.width() * popplerPage->pageSizeF().width(), r.height() * popplerPage->pageSizeF().height()),image,popplerPage), lb->url()));
 		}
 	}
+	qDeleteAll(links);
 	QList<Poppler::TextBox*> textBoxes = popplerPage->textList();
 	for (int i = 0; i < textBoxes.length(); i++) {
 		QString word = textBoxes.at(i)->text().trimmed();
@@ -808,15 +810,15 @@ void PDFEngine::addHyperlinksToPage(Page* page, Poppler::Page* popplerPage, QIma
 				if (nextTrim.startsWith("http", Qt::CaseInsensitive) ||	nextTrim.startsWith("www.", Qt::CaseInsensitive)) break;
 				if (word.endsWith('/')) break;
 				if (nextTrim.contains(':')) break;
-				if (!nextTrim.isEmpty() && nextTrim.at(0).isUpper()) break;
-				if (textBoxes.at(lastIdx)->hasSpaceAfter()) break;
+				if (nextTrim.at(0).isUpper() || (nextTrim.at(0).unicode() > 127 && !nextTrim.at(0).isLetterOrNumber())) break;
+				if (!QRegularExpression(QStringLiteral("^[!#-;=?-\\[\\]_a-z~]*$")).match(nextTrim).hasMatch()) break;
 				QRectF p = textBoxes.at(lastIdx)->boundingBox(), c = textBoxes.at(j)->boundingBox();
 				if (!(qAbs(c.center().y() - p.center().y()) < p.height() * 0.5 ? c.left() - p.right() <= p.height() * 0.3 : c.top() - p.bottom() <= p.height() * 1.2 && c.bottom() >= p.top() && c.left() < p.left())) break;
 				word += nextTrim;
 				lastIdx = j;
 			}
 			//Remove possible illegal characters from end of url
-			while (!word.isEmpty() && QString(".,;:!?)]}>\"'").contains(word.back())) word.chop(1);
+			while (!word.isEmpty() && (word.back().unicode() >= 0x7F || QString(".,;:!?)]}>\"'").contains(word.back()))) word.chop(1);
 			if (!word.startsWith("http", Qt::CaseInsensitive)) word.prepend("https://");
 			if (QUrl::fromUserInput(word).host().contains('.') || QUrl::fromUserInput(word).host() == "localhost" || QUrl::fromUserInput(word).host().contains(":"))	for (int k = i; k <= lastIdx; k++)	page->addHyperlink(new HyperlinkObject(page, toImageRect(textBoxes.at(k)->boundingBox(), image, popplerPage), word, true));
 			i = lastIdx;
