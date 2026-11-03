@@ -108,6 +108,7 @@ PDFEngine::~PDFEngine()
 QImage PDFEngine::returnImage(QString fileName, QString password, bool hasPassword, int pageNum, int scaleValue, Poppler::Page::Rotation pdfRotation, Poppler::Document* document, Poppler::Document* (*check1)(void*), Poppler::Document* (*check2)(void*), void* ctx)
 {
 	Poppler::Document* doc = document != NULL ? document : Poppler::Document::load(fileName);
+	bool ownsDoc = (document == NULL);
 
 	if (doc == NULL)
 		return QImage();
@@ -119,33 +120,39 @@ QImage PDFEngine::returnImage(QString fileName, QString password, bool hasPasswo
 	doc->setRenderHint(Poppler::Document::TextAntialiasing, true);
 
 	//Create poppler image based on current page, rotation and scale values
-	Poppler::Page* page = doc->page(pageNum-1);
+	Poppler::Page* page = doc->page(pageNum - 1);
 
 	//Reload if page is unavailable
 	if (check1 != NULL && page == NULL) {
+		if (ownsDoc) delete doc; //only delete if we own, prevents leak when multithreading with no doc specified
 		doc = check1(ctx);
+		ownsDoc = false;
 		if (doc == NULL)	return QImage();
 		page = doc->page(pageNum - 1);
 	}
 
-	if (!page) return QImage();
+	if (!page) {
+		if (ownsDoc) delete doc;
+		return QImage();
+	}
 
 	//Convert the poppler into QImage
-	QImage image = page->renderToImage((float)72 * scaleValue / 75, (float)72 * scaleValue / 75,
-		-1, -1, -1, -1, pdfRotation);
+	QImage image = page->renderToImage((float)72 * scaleValue / 75, (float)72 * scaleValue / 75,-1, -1, -1, -1, pdfRotation);
 
 	//Reload page if image is null
-	if (check2 != NULL && image.isNull()){
+	if (check2 != NULL && image.isNull()) {
+		delete page;
+		if (ownsDoc) delete doc;
 		doc = check2(ctx);
+		ownsDoc = false;
 		if (doc == NULL)	return QImage();
 		page = doc->page(pageNum - 1);
-		image = page->renderToImage((float)72 * scaleValue / 75, (float)72 * scaleValue / 75,
-			-1, -1, -1, -1, pdfRotation);
+		image = page->renderToImage((float)72 * scaleValue / 75, (float)72 * scaleValue / 75,-1, -1, -1, -1, pdfRotation);
 	}
 
 	//Delete poppler page
 	delete page;
-	if (document == NULL) delete doc;
+	if (ownsDoc) delete doc;
 
 	return image;
 }
@@ -918,10 +925,8 @@ std::string PDFEngine::checkFileAvailable(std::string fileName)
 		//Reload the file if accepted or get the viewer to close the tab
 		Viewer* vwr = reinterpret_cast<Viewer*>(parentWindow);
 
-		if (msgBox.exec() == QMessageBox::Accepted)
-			vwr->reloadFile();
-		else
-			vwr->reloadFile(false);
+		if (msgBox.exec() == QMessageBox::Accepted)	vwr->reloadFile();
+		else vwr->reloadFile(false);
 	
 		return {};
 	}
@@ -932,13 +937,11 @@ std::string PDFEngine::checkFileAvailable(std::string fileName)
 Poppler::Page* PDFEngine::reloadDocAndPage()
 {
 	//Reload the current page
-	if (checkFileAvailable(fileName) == "")
-		return NULL;
+	if (checkFileAvailable(fileName) == "")	return NULL;
 	delete doc;
 	doc = Poppler::Document::load(QString::fromStdString(this->fileName));
 
-	if (hasPassword)
-		doc->unlock(password.toLatin1(), password.toLatin1());
+	if (hasPassword) doc->unlock(password.toLatin1(), password.toLatin1());
 
 	doc->setRenderHint(Poppler::Document::Antialiasing, true);
 	doc->setRenderHint(Poppler::Document::TextAntialiasing, true);
