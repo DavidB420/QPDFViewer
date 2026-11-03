@@ -890,8 +890,7 @@ QRectF PDFEngine::toImageRect(QRectF r, QImage image, Poppler::Page* popplerPage
 Poppler::Document* PDFEngine::check1()
 {
 	//Reload document if issues crop up
-	if (checkFileAvailable(fileName) == "")
-		return NULL;
+	if (checkFileAvailable(fileName) == "")	return NULL;
 	Poppler::Document* doc = Poppler::Document::load(QString::fromStdString(fileName));
 	doc->setRenderHint(Poppler::Document::Antialiasing, true);
 	doc->setRenderHint(Poppler::Document::TextAntialiasing, true);
@@ -907,7 +906,8 @@ Poppler::Document* PDFEngine::check1Static(void* ctx)
 std::string PDFEngine::checkFileAvailable(std::string fileName)
 {
 	//Check if file exists
-	QFileInfo checkFile(QString::fromStdString(fileName));
+	QString utf8Fn = QString::fromUtf8(fileName.c_str());
+	QFileInfo checkFile(utf8Fn);
 
 	if (!(checkFile.exists() && checkFile.isFile())) {
 		//Loading was unsuccessful
@@ -917,7 +917,7 @@ std::string PDFEngine::checkFileAvailable(std::string fileName)
 		QMessageBox msgBox(parentWindow);
 		msgBox.setIcon(QMessageBox::Critical);
 		msgBox.setWindowTitle(tr("File Not Found"));
-		msgBox.setText(tr(("The PDF file " + fileName + " could not be found.").c_str()));
+		msgBox.setText(tr("The PDF file %1 could not be found.").arg(utf8Fn));
 		msgBox.setInformativeText(tr("The file may have been moved, renamed, or deleted."));
 		QPushButton* closeTabBtn = msgBox.addButton("Close tab", QMessageBox::RejectRole);
 		QPushButton* locateFileBtn = msgBox.addButton("Locate file...", QMessageBox::AcceptRole);
