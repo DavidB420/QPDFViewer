@@ -804,31 +804,29 @@ void PDFEngine::addHyperlinksToPage(Page* page, Poppler::Page* popplerPage, QIma
 	}
 	qDeleteAll(links);
 	QList<Poppler::TextBox*> textBoxes = popplerPage->textList();
+	QVector<bool> breakAfter(textBoxes.length(), true);
+	for (int i = 0; i + 1 < textBoxes.length(); i++) {
+		QRectF currentBox = textBoxes.at(i)->boundingBox(), nextBox = textBoxes.at(i + 1)->boundingBox();
+		if (qAbs(nextBox.center().y() - currentBox.center().y()) < currentBox.height() * 0.5) breakAfter[i] = textBoxes.at(i)->hasSpaceAfter() || nextBox.left() - currentBox.right() > currentBox.height() * 0.3; //same line, different text box
+		else breakAfter[i] = !(textBoxes.at(i)->text().trimmed().endsWith('-') && nextBox.top() >= currentBox.center().y() && nextBox.top() - currentBox.bottom() <= currentBox.height() * 1.2); //different line
+	}
 	for (int i = 0; i < textBoxes.length(); i++) {
 		QString word = textBoxes.at(i)->text().trimmed();
-		while (!word.isEmpty() && QString("([{<\"'").contains(word.front()))	word.remove(0, 1);
+		while (!word.isEmpty() && (word.front().unicode() >= 0x7F || QString("([{<\"'").contains(word.front())))	word.remove(0, 1);
 		if ((word.startsWith("http://", Qt::CaseInsensitive) || word.startsWith("https://", Qt::CaseInsensitive) || word.startsWith("www.", Qt::CaseInsensitive))) {
 			int lastIdx = i;
 			//Add other possible text boxes
-			for (int j = i + 1; j < textBoxes.length(); j++) {
+			for (int j = i + 1; j < textBoxes.length() && !breakAfter[lastIdx]; j++) {
 				if (textBoxes.at(lastIdx)->hasSpaceAfter()) break;
 				QString next = textBoxes.at(j)->text();
 				QString nextTrim = next.trimmed();
 				if (nextTrim.isEmpty() || next.contains(' ') || next.contains('\t')) break;
 				if (nextTrim.startsWith("http", Qt::CaseInsensitive) ||	nextTrim.startsWith("www.", Qt::CaseInsensitive)) break;
-				if (word.endsWith('/')) break;
-				if (nextTrim.contains(':')) break;
-				if (nextTrim.at(0).isUpper() || (nextTrim.at(0).unicode() > 127 && !nextTrim.at(0).isLetterOrNumber())) break;
-				if (!QRegularExpression(QStringLiteral("^[!#-;=?-\\[\\]_a-z~]*$")).match(nextTrim).hasMatch()) break;
-				QRectF p = textBoxes.at(lastIdx)->boundingBox(), c = textBoxes.at(j)->boundingBox();
-				if (qAbs(c.center().y() - p.center().y()) < p.height() * 0.5)
-					if (c.left() - p.right() > p.height() * 0.3) break;
-				else if (!(c.top() >= p.center().y() && c.top() - p.bottom() <= p.height() * 1.2 && c.left() < p.right())) break;
 				word += nextTrim;
 				lastIdx = j;
 			}
 			//Remove possible illegal characters from end of url
-			while (!word.isEmpty() && (word.back().unicode() >= 0x7F || QString(".,;:!?)]}>\"'").contains(word.back()))) word.chop(1);
+			while (!word.isEmpty() && ((word.back().unicode() >= 0x7F && !word.back().isLetterOrNumber()) || QString(".,;:!?)]}>\"'").contains(word.back()))) word.chop(1);
 			if (!word.startsWith("http", Qt::CaseInsensitive)) word.prepend("https://");
 			if (QUrl::fromUserInput(word).host().contains('.') || QUrl::fromUserInput(word).host() == "localhost" || QUrl::fromUserInput(word).host().contains(":"))	for (int k = i; k <= lastIdx; k++)	page->addHyperlink(new HyperlinkObject(page, toImageRect(textBoxes.at(k)->boundingBox(), image, popplerPage), word, true));
 			i = lastIdx;
