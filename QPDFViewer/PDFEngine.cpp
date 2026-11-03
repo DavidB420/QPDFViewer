@@ -54,7 +54,9 @@ PDFEngine::PDFEngine(std::string fileName, QWidget *parentWindow)
 	this->fileName = fileName;
 
 	doc = NULL;
-	
+	currentFindAllWorker = NULL;
+	currentFindAllThread = NULL;
+
 	int refreshResult = refreshEngine();
 	if (refreshResult < 1) {
 		if (refreshResult > -1) QMessageBox::critical(parentWindow,"Error loading document", "Failed to load: " + QString::fromStdString(fileName));
@@ -78,8 +80,6 @@ PDFEngine::PDFEngine(std::string fileName, QWidget *parentWindow)
 	foundPageNum = -1;
 
 	searchPos = 0;
-
-	currentFindAllWorker = NULL;
 
 	rerender = false;
 
@@ -552,7 +552,7 @@ int PDFEngine::refreshEngine()
 	
 	doc = Poppler::Document::load(QString::fromStdString(this->fileName));
 
-	if (hasPassword)
+	if (doc != NULL && hasPassword)
 		doc->unlock(password.toLatin1(), password.toLatin1());
 
 	return doc != NULL ? 1 : 0;
@@ -846,7 +846,7 @@ void PDFEngine::killThread(PageRenderThread thread)
 
 void PDFEngine::unlockDocument()
 {
-	while (doc->isLocked()) {
+	while (doc != NULL && doc->isLocked()) {
 		PasswordBoxDialog* dialog = new PasswordBoxDialog();
 		
 		//If user rejects dialog, document will fail to load

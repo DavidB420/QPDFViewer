@@ -241,6 +241,10 @@ void Viewer::openFile(QStringList fileNames)
 			onTabClicked(tWidget->count() - 1);
 
 		if (fileNames.at(i) != NULL) {
+			if (fBox != NULL) {
+				delete fBox;
+				fBox = NULL;
+			}
 			//Create and setup pdf engine and other controls based on file
 			PDFEngine* tmp = tabItems.at(currentTab)->getEngine();
 			if (tabItems.at(currentTab)->setPDFEngine(fileNames.at(i).toStdString(), this)) {
@@ -279,16 +283,14 @@ void Viewer::openFile(QStringList fileNames)
 		}
 
 		//If there are more files to load, add a new tab
-		if (i < fileNames.length()-1)
-			onTabClicked(tWidget->count() - 1);
+		if (i < fileNames.length()-1) onTabClicked(tWidget->count() - 1);
 	}
 }
 
 void Viewer::openFileDialog()
 {
 	//Create open file dialog then open the selected file
-	QStringList fileNames = QFileDialog::getOpenFileNames(this,
-		tr("Open PDF file"), NULL, tr("PDF Files (*.pdf)"));
+	QStringList fileNames = QFileDialog::getOpenFileNames(this,tr("Open PDF file"), NULL, tr("PDF Files (*.pdf)"));
 
 	openFile(fileNames);
 }
@@ -378,7 +380,16 @@ void Viewer::handleScrollZooming(bool direction)
 	tabItems.at(currentTab)->updateScrollArea();
 }
 
-void Viewer::gotoFindAllResult(int page, int tabNum, QList<QRectF> rect) { if (tabNum >= tabItems.size()) { return; } tabItems.at(tabNum)->getEngine()->goToPhrase(page, rect); }
+void Viewer::gotoFindAllResult(QString fn, int page, int tabNum, QList<QRectF> rect)
+{ 
+	int idx = -1;
+
+	if (tabNum >= 0 && tabNum < tabItems.size() && TabItem::getFileName(tabItems.at(tabNum)->getFilePath()) == fn) idx = tabNum;
+	else for (int i = 0; i < tabItems.size(); i++) 	if (TabItem::getFileName(tabItems.at(i)->getFilePath()) == fn) 	{ idx = i; break; }
+
+	if (idx < 0 || tabItems.at(idx)->getEngine() == NULL)	return;
+	tabItems.at(idx)->getEngine()->goToPhrase(page, rect); 
+}
 
 void Viewer::exitApp() { close(); }
 
@@ -838,8 +849,7 @@ void Viewer::getPrintDialog()
 					tabItems.at(currentTab)->getEngine()->setCurrentPage(tmp);
 					tabItems.at(currentTab)->updateScrollArea(true);
 				}
-				else
-					QMessageBox::critical(this, "Page range out of bounds", "Entered page range ( " + QString::number(min) + " , " + QString::number(max) + " ) out of bounds!");
+				else QMessageBox::critical(this, "Page range out of bounds", "Entered page range ( " + QString::number(min) + " , " + QString::number(max) + " ) out of bounds!");
 			}
 			delete printDoc;
 		}

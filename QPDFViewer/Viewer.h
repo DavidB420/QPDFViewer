@@ -124,7 +124,7 @@ private slots:
 	void refreshTabs();
 	void findAllBoxDeleted();
 	void handleScrollZooming(bool direction);
-	void gotoFindAllResult(int page, int tabNum, QList<QRectF> rect);
+	void gotoFindAllResult(QString fn, int page, int tabNum, QList<QRectF> rect);
 };
 
 #endif
