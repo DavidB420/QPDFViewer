@@ -47,14 +47,12 @@ int main(int argc, char *argv[])
 
     //If we are connected, theres another program running, so either give it our cmd paramter or tell it create a new window
     if (socket.waitForConnected(500)) {
-        if (argc > 1) {
-            socket.write(argv[1]);
-            socket.waitForBytesWritten();
-        }
-        else {
-            socket.write(startCmd.toLatin1());
-            socket.waitForBytesWritten();
-        }
+        QString payload = (a.arguments().size() > 1) ? a.arguments()[1] : startCmd;
+        QByteArray block;
+        QDataStream out(&block, QIODevice::WriteOnly);
+        out << payload;
+        socket.write(block);
+        socket.waitForBytesWritten();
 
         #ifdef Q_OS_WIN
             AllowSetForegroundWindow(ASFW_ANY);
@@ -94,7 +92,10 @@ int main(int argc, char *argv[])
     QObject::connect(&server, &QLocalServer::newConnection, [&]() {
         QLocalSocket* clientSocket = server.nextPendingConnection();
         QObject::connect(clientSocket, &QLocalSocket::readyRead, [&, clientSocket]() {
-            QString filePath = clientSocket->readAll();
+            QDataStream in(clientSocket);
+            in.startTransaction();
+            QString filePath;
+            in >> filePath;
             //Create a new window in already existing process
             if (vwr.isNull() || !(vwr->getOptionsParser()->returnSameViewer())) {
                 Viewer* newVwr = new Viewer();

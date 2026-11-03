@@ -92,7 +92,7 @@ void FindAllBox::addItemToBox(SearchResult result)
 void FindAllBox::selectResult(QTreeWidgetItem* item, int column)
 {
 	//Emit item clicked which is sent back to pdf engine
-	emit itemClicked(item->data(1, Qt::UserRole).toInt(), item->data(0, Qt::UserRole).toInt(), item->data(2, Qt::UserRole).value<QList<QRectF>>());
+	emit itemClicked(item->text(0),item->data(1, Qt::UserRole).toInt(), item->data(0, Qt::UserRole).toInt(), item->data(2, Qt::UserRole).value<QList<QRectF>>());
 }
 
 void HtmlItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const

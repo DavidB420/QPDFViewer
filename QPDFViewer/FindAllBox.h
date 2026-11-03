@@ -37,7 +37,7 @@ private:
 	QString baseTitle;
 	bool alldocs;
 signals:
-	void itemClicked(int page, int tabNum, QList<QRectF> rect);
+	void itemClicked(QString fn, int page, int tabNum, QList<QRectF> rect);
 public slots:
 	void addItemToBox(SearchResult result);
 	void updateMsg(QString msg);
