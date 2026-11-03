@@ -72,7 +72,7 @@ public:
 	void rerenderAllPages();
 	void updateCustomValues(bool unwrappedCopy, int cacheSize, int multithreadTime, int cacheTime);
 	void addPageDecorations(Page* pageObj, int pageNum, QImage renderedImg);
-	Poppler::Page* reloadDocAndPage();
+	bool reloadDocAndPage();
 	std::string checkFileAvailable(std::string fileName);
 private:
 	QWidget *parentWindow;

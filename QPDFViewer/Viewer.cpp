@@ -784,9 +784,11 @@ void Viewer::getPrintDialog()
 			int copies = printer.copyCount(); //we handle multiple copies, not the printer driver, so qprinter's copy count must be set to 1
 			printer.setCopyCount(1);
 			QPainter painter(&printer);
+			painter.setRenderHint(QPainter::SmoothPixmapTransform);
 			QRect rect = printer.pageLayout().paintRectPixels(printer.resolution());
 			rect.moveTo(0, 0);
 
+			Poppler::Document* printDoc = Poppler::Document::load(tabItems.at(currentTab)->getFilePath());
 			//Check if we are printing all or just a selection
 			if (printer.printRange() == QPrinter::AllPages) {
 				MinMaxTuple newTuple;
@@ -812,13 +814,14 @@ void Viewer::getPrintDialog()
 							tabItems.at(currentTab)->getEngine()->setCurrentPage(j);
 							tabItems.at(currentTab)->updateScrollArea(true);
 							if (tabItems.at(currentTab)->getEngine()->checkFileAvailable(tabItems.at(currentTab)->getFilePath().toStdString()) != "" && tabItems.at(currentTab)->getEngine()->reloadDocAndPage()) {
-								QImage printImg = PDFEngine::returnImage(tabItems.at(currentTab)->getFilePath(), tabItems.at(currentTab)->getEngine()->getPassword(), tabItems.at(currentTab)->getEngine()->getHasPassword(), tabItems.at(currentTab)->getEngine()->getCurrentPage(), qBound(150, printer.resolution() / 2, 300), tabItems.at(currentTab)->getEngine()->getCurrentRotation(), NULL, NULL, NULL);
+								QImage printImg = PDFEngine::returnImage(tabItems.at(currentTab)->getFilePath(), tabItems.at(currentTab)->getEngine()->getPassword(), tabItems.at(currentTab)->getEngine()->getHasPassword(), tabItems.at(currentTab)->getEngine()->getCurrentPage(), qMin(printer.resolution(), 600) * 75 / 72, tabItems.at(currentTab)->getEngine()->getCurrentRotation(), printDoc, NULL, NULL);
 								QPixmap pMap = QPixmap::fromImage(printImg);
 								QSize size = pMap.size();
 								size.scale(rect.size(), Qt::KeepAspectRatio);
 								painter.drawPixmap(QRect((rect.width() - size.width()) / 2,(rect.height() - size.height()) / 2,size.width(), size.height()), pMap);
 							}
 							else {
+								delete printDoc;
 								delete pDialog;
 								return;
 							}
@@ -838,6 +841,7 @@ void Viewer::getPrintDialog()
 				else
 					QMessageBox::critical(this, "Page range out of bounds", "Entered page range ( " + QString::number(min) + " , " + QString::number(max) + " ) out of bounds!");
 			}
+			delete printDoc;
 		}
 	}
 
@@ -849,10 +853,8 @@ void Viewer::checkIfPDFLoaded()
 	//Turn controls on or off depending if we have the engine loaded or we are on the invisible tab
 	bool toggle;
 
-	if ((tWidget->count() == 2 && tWidget->widget(0)->isEnabled() == false) || tabItems.at(currentTab)->getEngine() == NULL)
-		toggle = false;
-	else
-		toggle = true;
+	if ((tWidget->count() == 2 && tWidget->widget(0)->isEnabled() == false) || tabItems.at(currentTab)->getEngine() == NULL) toggle = false;
+	else toggle = true;
 
 	pageTextAct->setEnabled(toggle);
 	printAct->setEnabled(toggle);
@@ -928,8 +930,7 @@ void Viewer::mergeTabs(int index, QObject* srcViewer)
 	vwr->toggleDeleteTab();
 
 	//Create new tab if necessary
-	if (tabItems.size() < 1)
-		onTabClicked(tWidget->count() - 1);
+	if (tabItems.size() < 1) onTabClicked(tWidget->count() - 1);
 
 	//add tab object to this window
 	this->addTab(item);
