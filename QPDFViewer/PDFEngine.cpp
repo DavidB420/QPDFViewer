@@ -120,7 +120,7 @@ QImage PDFEngine::returnImage(QString fileName, QString password, bool hasPasswo
 	doc->setRenderHint(Poppler::Document::TextAntialiasing, true);
 
 	//Create poppler image based on current page, rotation and scale values
-	Poppler::Page* page = doc->page(pageNum - 1);
+	Poppler::Page* page = doc->page(pageNum-1);
 
 	//Reload if page is unavailable
 	if (check1 != NULL && page == NULL) {
@@ -376,7 +376,7 @@ unsigned long PDFEngine::getDocumentHeight()
 QVector<Page*> PDFEngine::getVisiblePages()
 {
 	QVector <Page*> visiblePages;
-	
+
 	int maxHeight = parentWindow->height(); //Use max height as upper limit, after tha
 	int i = 0; //stores current height of the pages
 	int k = getCurrentPage(); //stores current page for restore later
@@ -397,7 +397,7 @@ QVector<Page*> PDFEngine::getVisiblePages()
 			renderThreadList.remove(key);
 		}
 	}
-	
+
 	//Run until offset limit is reached or we hit the end of the document
 	while ((l <= 4) && j <= getTotalNumberOfPages()) {
 		//Switch to page to be rendered
@@ -406,7 +406,7 @@ QVector<Page*> PDFEngine::getVisiblePages()
 		//Only render page if necessary, otherwise keep existing page
 		Page* page = NULL;
 		for (int m = 0; m < previousPages.length(); m++) {
-			if (!rerender && previousPages.at(m)->getPageNumber() == getCurrentPage() && previousPages.at(m)->getParent() == this && previousPages.at(m)->getScale() == scaleValue && previousPages.at(m)->getRotation() == pdfRotation && 
+			if (!rerender && previousPages.at(m)->getPageNumber() == getCurrentPage() && previousPages.at(m)->getParent() == this && previousPages.at(m)->getScale() == scaleValue && previousPages.at(m)->getRotation() == pdfRotation &&
 				previousPages.at(m)->getCurrentPoint().x() == 0 && previousPages.at(m)->getCurrentPoint().y() == 0 && previousPages.at(m)->getFirstPoint().x() == 0 && previousPages.at(m)->getFirstPoint().y() == 0 && foundPageNum != getCurrentPage())
 				page = previousPages.at(m);
 		}
@@ -414,8 +414,9 @@ QVector<Page*> PDFEngine::getVisiblePages()
 			//Use multithreading if taking too long
 			if (useMultithreading) {
 				if (!renderThreadList.keys().contains(this->getCurrentPage())) {
-					if (doc->page(this->getCurrentPage() - 1) == NULL)
-						reloadDocAndPage();
+					Poppler::Page* probe = doc->page(this->getCurrentPage() - 1);
+					if (probe == NULL)	reloadDocAndPage();
+					else delete probe;
 
 					//Grab page from cache if available
 					if (pageCache.contains(getCurrentPage()) && pageCache[getCurrentPage()]->pdfRotation == this->getCurrentRotation() && pageCache[getCurrentPage()]->scaleValue == this->getScaleValue()) {
@@ -480,7 +481,7 @@ QVector<Page*> PDFEngine::getVisiblePages()
 
 	//Restore current page
 	setCurrentPage(k);
-	
+
 	//Save page list for next run
 	previousPages = visiblePages;
 
@@ -597,7 +598,7 @@ void PDFEngine::cancelFindAllWorker()
 	disconnect(currentFindAllWorker, &FindAllWorker::finishedResult, this, &PDFEngine::findAllResult);
 	disconnect(currentFindAllWorker, &FindAllWorker::finished, this, &PDFEngine::cancelFindAllWorker);
 
-	currentFindAllWorker->blockSignals(true);	
+	currentFindAllWorker->blockSignals(true);
 
 	currentFindAllWorker->cancel();
 	currentFindAllThread->requestInterruption();
@@ -605,7 +606,7 @@ void PDFEngine::cancelFindAllWorker()
 	currentFindAllThread->quit();
 	currentFindAllThread->wait();
 
-	currentFindAllWorker->deleteLater();
+	delete currentFindAllWorker;
 	currentFindAllThread->deleteLater();
 
 	currentFindAllWorker = nullptr;
@@ -873,17 +874,13 @@ QRectF PDFEngine::toImageRect(QRectF r, QImage image, Poppler::Page* popplerPage
 	switch (pdfRotation) {
 	default:
 	case Poppler::Page::Rotate0:
-		return QRectF(r.x() / popplerPage->pageSizeF().width() * image.width(), r.y() / popplerPage->pageSizeF().height() * image.height(),
-			r.width() / popplerPage->pageSizeF().width() * image.width(), r.height() / popplerPage->pageSizeF().height() * image.height());
+		return QRectF(r.x() / popplerPage->pageSizeF().width() * image.width(), r.y() / popplerPage->pageSizeF().height() * image.height(),	r.width() / popplerPage->pageSizeF().width() * image.width(), r.height() / popplerPage->pageSizeF().height() * image.height());
 	case Poppler::Page::Rotate90:
-		return QRectF((1.0 - (r.y() + r.height()) / popplerPage->pageSizeF().height()) * image.width(), r.x() / popplerPage->pageSizeF().width() * image.height(),
-			r.height() / popplerPage->pageSizeF().height() * image.width(), r.width() / popplerPage->pageSizeF().width() * image.height());
+		return QRectF((1.0 - (r.y() + r.height()) / popplerPage->pageSizeF().height()) * image.width(), r.x() / popplerPage->pageSizeF().width() * image.height(), r.height() / popplerPage->pageSizeF().height() * image.width(), r.width() / popplerPage->pageSizeF().width() * image.height());
 	case Poppler::Page::Rotate180:
-		return QRectF((1.0 - (r.x() + r.width()) / popplerPage->pageSizeF().width()) * image.width(), (1.0 - (r.y() + r.height()) / popplerPage->pageSizeF().height()) * image.height(),
-			r.width() / popplerPage->pageSizeF().width() * image.width(), r.height() / popplerPage->pageSizeF().height() * image.height());
+		return QRectF((1.0 - (r.x() + r.width()) / popplerPage->pageSizeF().width()) * image.width(), (1.0 - (r.y() + r.height()) / popplerPage->pageSizeF().height()) * image.height(), r.width() / popplerPage->pageSizeF().width() * image.width(), r.height() / popplerPage->pageSizeF().height() * image.height());
 	case Poppler::Page::Rotate270:
-		return QRectF(r.y() / popplerPage->pageSizeF().height() * image.width(), (1.0 - (r.x() + r.width()) / popplerPage->pageSizeF().width()) * image.height(),
-			r.height() / popplerPage->pageSizeF().height() * image.width(), r.width() / popplerPage->pageSizeF().width() * image.height());
+		return QRectF(r.y() / popplerPage->pageSizeF().height() * image.width(), (1.0 - (r.x() + r.width()) / popplerPage->pageSizeF().width()) * image.height(), r.height() / popplerPage->pageSizeF().height() * image.width(), r.width() / popplerPage->pageSizeF().width() * image.height());
 	}
 }
 
@@ -891,7 +888,10 @@ Poppler::Document* PDFEngine::check1()
 {
 	//Reload document if issues crop up
 	if (checkFileAvailable(fileName) == "")	return NULL;
-	Poppler::Document* doc = Poppler::Document::load(QString::fromStdString(fileName));
+	delete doc;
+	doc = Poppler::Document::load(QString::fromStdString(fileName));
+	if (doc == NULL) return NULL;
+	if (hasPassword) doc->unlock(password.toLatin1(), password.toLatin1());
 	doc->setRenderHint(Poppler::Document::Antialiasing, true);
 	doc->setRenderHint(Poppler::Document::TextAntialiasing, true);
 	return doc;
@@ -934,18 +934,18 @@ std::string PDFEngine::checkFileAvailable(std::string fileName)
 		return fileName;
 }
 
-Poppler::Page* PDFEngine::reloadDocAndPage()
+bool PDFEngine::reloadDocAndPage()
 {
 	//Reload the current page
-	if (checkFileAvailable(fileName) == "")	return NULL;
+	if (checkFileAvailable(fileName) == "")	return false;
 	delete doc;
 	doc = Poppler::Document::load(QString::fromStdString(this->fileName));
-
+	if (doc == NULL) return false;
 	if (hasPassword) doc->unlock(password.toLatin1(), password.toLatin1());
-
 	doc->setRenderHint(Poppler::Document::Antialiasing, true);
 	doc->setRenderHint(Poppler::Document::TextAntialiasing, true);
-
-	return doc->page(currentPage - 1);
+	Poppler::Page* page = doc->page(currentPage - 1);
+	bool result = page != NULL;
+	delete page;
+	return result;
 }
-

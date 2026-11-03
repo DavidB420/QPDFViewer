@@ -22,6 +22,7 @@
 #include <QCommandLineParser>
 #include <QtNetwork/QLocalServer>
 #include <QtNetwork/QLocalSocket>
+#include <QPointer>
 #ifdef Q_OS_WIN
     #include <windows.h>
 #endif
@@ -33,9 +34,9 @@ int main(int argc, char *argv[])
     //Fix dpi issues
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
     QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
-    
+
     QApplication a(argc, argv);
-    
+
     //App name for local server and command to tell main program to start a new window
     QString appName = QString("QPDFViewer%1%2").arg(MAJOR_VERSION).arg(MINOR_VERSION, 2, 10, QChar('0'));
     QString startCmd = "/<QPdfStart>\"?:|";
@@ -80,7 +81,7 @@ int main(int argc, char *argv[])
     parser.process(a);
 
     //Create viewer object and open file if necessary
-    Viewer *vwr = new Viewer();
+    QPointer<Viewer> vwr = new Viewer();
     vwr->setAttribute(Qt::WA_DeleteOnClose);
     if (!parser.positionalArguments().isEmpty())
         vwr->openFile({ parser.positionalArguments().first() });
@@ -95,7 +96,7 @@ int main(int argc, char *argv[])
         QObject::connect(clientSocket, &QLocalSocket::readyRead, [&, clientSocket]() {
             QString filePath = clientSocket->readAll();
             //Create a new window in already existing process
-            if (!(vwr->getOptionsParser()->returnSameViewer())) {
+            if (vwr.isNull() || !(vwr->getOptionsParser()->returnSameViewer())) {
                 Viewer* newVwr = new Viewer();
                 newVwr->setAttribute(Qt::WA_DeleteOnClose);
                 if (filePath != startCmd)
@@ -104,13 +105,14 @@ int main(int argc, char *argv[])
                 newVwr->setWindowState((newVwr->windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
                 newVwr->raise();
                 newVwr->activateWindow();
-                clientSocket->disconnectFromServer();
-                clientSocket->deleteLater();
+                if (vwr.isNull()) vwr = newVwr;
             }
             else {
                 vwr->addTabIfNecessary();
                 vwr->openFile({ filePath });
             }
+            clientSocket->disconnectFromServer();
+            clientSocket->deleteLater();
             });
         });
 
