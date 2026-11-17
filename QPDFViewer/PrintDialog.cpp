@@ -84,6 +84,17 @@ PrintDialog::PrintDialog(QWidget* parent)
 	connect(pagesPullDown, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, &PrintDialog::handlePagePullDown);
 	connect(pagesPullDown, &QComboBox::currentTextChanged, this, &PrintDialog::handleIllegalChars);
 
+	QLabel* dpiLabel = new QLabel(this);
+	dpiLabel->setText("DPI");
+	dpiPullDown = new QComboBox(this);
+	QHBoxLayout* dpiLayout = new QHBoxLayout;
+	dpiLayout->addWidget(dpiLabel, 1);
+	dpiLayout->addWidget(dpiPullDown, 3);
+	dpiPullDown->addItem("Default DPI");
+	dpiPullDown->addItem("");
+	connect(dpiPullDown, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, &PrintDialog::handleDpiPullDown);
+	connect(dpiPullDown, &QComboBox::currentTextChanged, this, &PrintDialog::handleIllegalChars);
+
 	ClickableLink* osDialogLink = new ClickableLink("Print using OS dialog",this);
 	osDialogLink->setMaximumHeight(20);
 	osDialogLink->setCursor(Qt::PointingHandCursor);
@@ -108,6 +119,7 @@ PrintDialog::PrintDialog(QWidget* parent)
 	layout->addLayout(copiesLayout,4);
 	layout->addLayout(colorLayout,4);
 	layout->addLayout(pagesLayout,4);
+	layout->addLayout(dpiLayout, 4);
 	layout->addLayout(osDialogLayout);
 	layout->addLayout(buttonLayout,4);
 	layout->setSpacing(20);
@@ -151,21 +163,23 @@ void PrintDialog::printPressed()
 			printerInfo.selectedPrinter = printer.printerName();
 	}
 	printerInfo.pageRange = pagesPullDown->currentIndex() == 0 ? pagesPullDown->itemText(pagesPullDown->currentIndex()) : pagesPullDown->lineEdit()->text();
+	printerInfo.dpi = dpiPullDown->currentIndex() == 0 ? -1 : dpiPullDown->lineEdit()->text().toInt();
 	this->accept();
 }
 
-void PrintDialog::handleIllegalChars()
+void PrintDialog::handleIllegalChars(QString str)
 {
+	QComboBox* comboBox = qobject_cast<QComboBox*>(sender());
 	//Remove any character entered that is not numerical or a comma or hyphen
-	if (pagesPullDown->isEditable()) {
-		QString pagesStr = pagesPullDown->lineEdit()->text();
+	if (comboBox && comboBox->isEditable()) {
+		QString pagesStr = comboBox->lineEdit()->text();
 		if (pagesStr.length() > 0) {
 			QChar currentCharacter = pagesStr.at(pagesStr.length() - 1);
-			if ((currentCharacter < '0' || currentCharacter > '9') && (currentCharacter < ',' || currentCharacter > '-')) {
+			if ((currentCharacter < '0' || currentCharacter > '9') && (comboBox != pagesPullDown && (currentCharacter < ',' || currentCharacter > '-'))) {
 				pagesStr.truncate(pagesStr.length() - 1);
-				pagesPullDown->blockSignals(true);
-				pagesPullDown->lineEdit()->setText(pagesStr);
-				pagesPullDown->blockSignals(false);
+				comboBox->blockSignals(true);
+				comboBox->lineEdit()->setText(pagesStr);
+				comboBox->blockSignals(false);
 			}
 		}
 	}
@@ -173,9 +187,13 @@ void PrintDialog::handleIllegalChars()
 
 void PrintDialog::handlePagePullDown()
 {
-	//Only allow editing for the second option for page selection
-	if (pagesPullDown->currentIndex() == 0)
-		pagesPullDown->setEditable(false);
-	else
-		pagesPullDown->setEditable(true);
+	//Only allow editing for the second option for page and dpi selection
+	if (pagesPullDown->currentIndex() == 0) pagesPullDown->setEditable(false);
+	else pagesPullDown->setEditable(true);
+}
+
+void PrintDialog::handleDpiPullDown()
+{
+	if (dpiPullDown->currentIndex() == 0) dpiPullDown->setEditable(false);
+	else dpiPullDown->setEditable(true);
 }
