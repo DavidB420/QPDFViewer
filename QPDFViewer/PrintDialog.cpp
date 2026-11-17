@@ -42,8 +42,10 @@ PrintDialog::PrintDialog(QWidget* parent)
 	printerLayout->addWidget(printerLabel,1);
 	printerLayout->addWidget(printerPullDown,3);
 	printers = QPrinterInfo::availablePrinters();
-	for (const QPrinterInfo printer : printers)
+	for (const QPrinterInfo printer : printers) {
 		printerPullDown->addItem(printer.printerName());
+		if (printer.isDefault()) printerPullDown->setCurrentIndex(printerPullDown->count() - 1);
+	}
 
 
 	QLabel* orientationLabel = new QLabel(this);
