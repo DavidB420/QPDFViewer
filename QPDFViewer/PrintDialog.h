@@ -31,6 +31,7 @@ struct PrintTaskInfo {
 	QString selectedPrinter;
 	QString pageRange;
 	int copies;
+	int dpi;
 	bool orientation;
 	bool colorMode;
 };
@@ -45,6 +46,7 @@ public:
 private:
 	QList<QPrinterInfo> printers;
 	QComboBox *pagesPullDown;
+	QComboBox *dpiPullDown;
 	PrintTaskInfo printerInfo;
 	QSpinBox* copiesTextBox;
 	QComboBox* colorPullDown;
@@ -53,10 +55,11 @@ private:
 	bool showOSDialog;
 private slots:
 	void handlePagePullDown();
+	void handleDpiPullDown();
 	void exitDialog();
 	void openOSPrintDialog();
 	void printPressed();
-	void handleIllegalChars();
+	void handleIllegalChars(QString str);
 };
 
 class ClickableLink : public QLabel {
